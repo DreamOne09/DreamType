@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DreamType試用</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#18181b;background:#fafafa}*{box-sizing:border-box}body{max-width:650px;margin:auto;padding:26px 20px}h1{font-size:28px;margin:4px 0 10px}p{line-height:1.65}small{color:#52525b}.card{background:white;padding:20px;border-radius:18px;margin:18px 0;box-shadow:0 2px 10px #1231}button{font:inherit;border:0;border-radius:12px;padding:13px 18px;background:#18181b;color:white;cursor:pointer}button:disabled{opacity:.5}#record{width:100%;font-size:20px;min-height:70px}input,textarea{font:inherit;width:100%;padding:12px;border:1px solid #a1a1aa;border-radius:10px}textarea{min-height:180px;line-height:1.7}summary{cursor:pointer;padding:10px 0}.row{display:flex;gap:10px;flex-wrap:wrap}.secondary{background:#f4f4f5;color:#18181b}#status{min-height:25px;white-space:pre-wrap}.error{color:#aa2929}pre{white-space:pre-wrap;word-break:break-word}label{display:block;margin:10px 0}
+</style>
+<h1>說話，讓電腦幫你整理</h1>
+<p>這是手機連線測試頁。語音由你的電腦處理，連線經 Cloudflare。Surfshark 可以保持開啟。</p>
+<section class="card"><h2 style="font-size:21px;margin-top:0">安裝 Android 語音鍵盤</h2>
+<p><a href="/download/localvoice.apk" download="DreamType-0.2.0.apk">① 下載「DreamType」APK</a></p>
+<button id="pair">② 配對已安裝的鍵盤</button>
+<p>安裝後回到這裡按配對。App 會填入連線資料；請按「儲存並測試連線」，允許麥克風，再啟用「DreamType」鍵盤。</p>
+<small>APK 不含你的金鑰。若 Android 詢問安裝來源，只需允許目前下載用的瀏覽器安裝此 APK。</small></section>
+<details class="card" id="settings"><summary>連線與手動配對設定</summary>
+<label>專用金鑰<input id="key" type="password" autocomplete="off" placeholder="貼上電腦提供的金鑰"></label>
+<div class="row"><button id="save">儲存在這個分頁</button><button class="secondary" id="copyKey">複製金鑰</button></div>
+<p>「DreamType」App 的電腦網址：</p><input id="endpoint" readonly><button class="secondary" id="copyUrl">複製網址</button>
+<p>App 已設定繁體中文與自動排版，不必另外選模型。若一鍵配對無法開啟 App，可手動填入上面的網址與金鑰。</p>
+</details>
+<section class="card"><button id="record">開始說話</button><p id="status" role="status" aria-live="polite">正在檢查電腦連線…</p><small>先說 5～30 秒。停止後會上傳並整理。首次需允許麥克風。</small></section>
+<section class="card"><label for="result">整理後文字</label><textarea id="result" placeholder="結果會出現在這裡，也可以手動修改"></textarea><button id="copy" class="secondary">複製文字</button>
+<details><summary>查看原始辨識與時間</summary><pre id="raw"></pre><p id="timing"></p></details></section>
+<small>這個網頁用來先驗證連線，不能直接在 LINE 輸入。語音鍵盤設定完成後，就能在支援的輸入框使用。電腦關機、休眠或隧道關閉時無法使用；試用網址重新啟動後可能改變。</small>
+<script>
+const $=id=>document.getElementById(id);let recorder,stream,chunks=[],busy=false,timer,started=0;
+const fragment=new URLSearchParams(location.hash.slice(1));let key=fragment.get('key')||sessionStorage.getItem('localVoiceKey')||'';
+if(fragment.has('key')){sessionStorage.setItem('localVoiceKey',key);history.replaceState(null,'',location.pathname)}
+$('key').value=key;$('endpoint').value=location.origin;if(!key)$('settings').open=true;
+function status(text,error=false){$('status').textContent=text;$('status').className=error?'error':''}
+async function copy(text){try{await navigator.clipboard.writeText(text);status('已複製')}catch{status('無法自動複製，請長按文字手動複製',true)}}
+$('save').onclick=()=>{key=$('key').value.trim();sessionStorage.setItem('localVoiceKey',key);status('金鑰已儲存在這個分頁')};
+$('pair').onclick=()=>{key=$('key').value.trim();if(!key){$('settings').open=true;status('請先使用專用 QR 碼開啟頁面，或填入金鑰',true);return;}location.href='intent://pair?server='+encodeURIComponent(location.origin)+'&key='+encodeURIComponent(key)+'#Intent;scheme=localvoice;package=tw.localvoice.keyboard;end';};
+$('copyKey').onclick=()=>copy($('key').value);$('copyUrl').onclick=()=>copy($('endpoint').value);$('copy').onclick=()=>copy($('result').value);
+fetch('/health').then(r=>r.json()).then(h=>status(h.status==='ready'?'電腦已就緒，可以開始說話':'已連到電腦，模型還在準備')).catch(()=>status('目前連不到電腦，請確認服務和隧道已啟動',true));
+$('record').onclick=async()=>{
+if(busy)return;
+if(recorder&&recorder.state==='recording'){recorder.stop();return}
+key=$('key').value.trim();if(!key){$('settings').open=true;status('請先填入專用金鑰',true);return}
+try{
+stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];
+const type=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t));
+recorder=new MediaRecorder(stream,type?{mimeType:type}:undefined);
+recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+recorder.onstop=async()=>{
+ clearInterval(timer);stream.getTracks().forEach(t=>t.stop());busy=true;$('record').disabled=true;$('record').textContent='電腦整理中…';status('正在上傳並整理，請稍候');
+ const form=new FormData();form.append('file',new Blob(chunks,{type:recorder.mimeType}),recorder.mimeType.includes('mp4')?'recording.m4a':'recording.webm');form.append('model','local-dictation');form.append('language','zh');form.append('response_format','json');
+ const begin=performance.now();
+ try{const r=await fetch('/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+key},body:form,signal:AbortSignal.timeout(120000)});if(!r.ok)throw new Error(r.status===401?'金鑰不正確，請重新填入':r.status===429?'上一段還在處理，請稍後再試':'處理失敗（'+r.status+'）');
+ const data=await r.json();$('result').value=data.text;$('raw').textContent=data.raw_text||data.text;$('timing').textContent='錄音 '+data.duration.toFixed(1)+' 秒；電腦處理 '+data.timings.total_seconds+' 秒；包含網路 '+((performance.now()-begin)/1000).toFixed(2)+' 秒';status(data.warning?'辨識完成，但排版暫時失敗；已保留原文':data.text?'完成，請確認文字':'沒有辨識到語音，請再試一次',!!data.warning);
+ }catch(e){status(e.name==='TimeoutError'?'等待逾時，請縮短錄音或檢查電腦':e.message,true)}finally{busy=false;$('record').disabled=false;$('record').textContent='開始說話'}
+};recorder.start();started=Date.now();$('record').textContent='停止並整理';status('錄音中 0 秒');timer=setInterval(()=>{let s=Math.floor((Date.now()-started)/1000);status('錄音中 '+s+' 秒');if(s>=120)recorder.stop()},500);
+}catch(e){if(stream)stream.getTracks().forEach(t=>t.stop());status('無法使用麥克風，請確認瀏覽器權限：'+e.message,true)}
+};
+</script></html>

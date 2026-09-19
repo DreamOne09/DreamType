@@ -1,0 +1,3 @@
+<input-method xmlns:android="http://schemas.android.com/apk/res/android" android:settingsActivity="tw.localvoice.keyboard.SetupActivity" android:supportsSwitchingToNextInputMethod="true">
+    <subtype android:label="@string/language" android:imeSubtypeLocale="zh_TW" android:imeSubtypeMode="voice" />
+</input-method>
