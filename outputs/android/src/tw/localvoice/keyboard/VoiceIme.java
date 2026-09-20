@@ -26,7 +26,7 @@ public final class VoiceIme extends InputMethodService {
     private volatile boolean destroyed=false;
     private String lastText="";
     private TextView status,preview;
-    private Button mic,insert;
+    private Button mic,insert,edit,discard;
     private final Runnable tick=new Runnable(){public void run(){if(!recordingNow)return;long seconds=(SystemClock.elapsedRealtime()-began)/1000;status.setText("正在錄音　"+seconds+" 秒");if(seconds>=120){finishRecording();return;}main.postDelayed(this,500);}};
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
     private void setup(){Intent i=new Intent(this,SetupActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}
@@ -45,7 +45,10 @@ public final class VoiceIme extends InputMethodService {
         button(row,"刪除",v->{InputConnection c=getCurrentInputConnection();if(c!=null)c.deleteSurroundingTextInCodePoints(1,0);},.85f);
         button(row,"換行",v->{InputConnection c=getCurrentInputConnection();if(c!=null)c.commitText("\n",1);},.85f);
         insert=button(row,"插入",v->insertPending(),.85f);
-        button(row,"設定",v->setup(),.85f);
+        button(row,"管理",v->{Intent i=new Intent(this,ManageActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);},.85f);
+        LinearLayout editRow=new LinearLayout(this);root.addView(editRow);
+        edit=button(editRow,"修改文字",v->{if(!pending||busy||protectedField)return;Draft.begin(lastText);Intent i=new Intent(this,EditActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);},2f);
+        discard=button(editRow,"捨棄",v->{pending=false;lastText="";Draft.clear();preview.setText("");refresh();},1f);
         preview.setText(lastText);refresh();return root;
     }
     @Override public void onStartInput(EditorInfo info,boolean restarting){super.onStartInput(info,restarting);generation++;cancelRecording();
@@ -53,12 +56,15 @@ public final class VoiceIme extends InputMethodService {
         protectedField=(cls==InputType.TYPE_CLASS_TEXT&&(var==InputType.TYPE_TEXT_VARIATION_PASSWORD||var==InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD||var==InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD))||(cls==InputType.TYPE_CLASS_NUMBER&&var==InputType.TYPE_NUMBER_VARIATION_PASSWORD);
         refresh();
     }
-    @Override public void onStartInputView(EditorInfo info,boolean restarting){super.onStartInputView(info,restarting);refresh();}
+    @Override public void onStartInputView(EditorInfo info,boolean restarting){super.onStartInputView(info,restarting);if(!getPackageName().equals(info.packageName)&&Draft.edited){lastText=Draft.text==null?"":Draft.text;pending=!lastText.trim().isEmpty();if(preview!=null)preview.setText(lastText);Draft.clear();}refresh();}
     @Override public void onFinishInputView(boolean finishingInput){generation++;cancelRecording();super.onFinishInputView(finishingInput);}
     @Override public void onFinishInput(){generation++;cancelRecording();super.onFinishInput();}
     private void refresh() {
         if(mic==null)return;
-        mic.setText(recordingNow?"停止並整理":busy?"電腦整理中…":"開始說話");mic.setEnabled(!busy&&!protectedField);insert.setEnabled(pending&&!protectedField&&!busy);
+        mic.setText(recordingNow?"停止並整理":busy?"電腦整理中…":"開始說話");mic.setEnabled(!busy&&!protectedField&&!pending);insert.setEnabled(pending&&!protectedField&&!busy);
+        if(discard!=null)discard.setEnabled(pending&&!busy&&!recordingNow);
+        if(edit!=null)edit.setEnabled(pending&&!protectedField&&!busy&&!recordingNow);
+        if(getCurrentInputEditorInfo()!=null&&getPackageName().equals(getCurrentInputEditorInfo().packageName)){mic.setEnabled(false);insert.setEnabled(false);if(edit!=null)edit.setEnabled(false);status.setText("請切換 Gboard 修改；完成後回到原 App 插入。");return;}
         if(recordingNow)return;
         if(protectedField)status.setText("密碼欄位不使用語音，請切回原本鍵盤。");
         else if(busy)status.setText("正在傳給電腦整理…");
@@ -76,7 +82,7 @@ public final class VoiceIme extends InputMethodService {
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);recorder.setAudioSamplingRate(16000);recorder.setAudioEncodingBitRate(64000);
             recorder.setOutputFile(recording.getAbsolutePath());recorder.prepare();recorder.start();
-            began=SystemClock.elapsedRealtime();recordingNow=true;pending=false;lastText="";preview.setText("");refresh();main.post(tick);
+            began=SystemClock.elapsedRealtime();recordingNow=true;pending=false;lastText="";Draft.clear();preview.setText("");refresh();main.post(tick);
         } catch(Exception e){cancelRecording();refresh();status.setText("無法錄音，請確認麥克風權限或其他 App 是否正在使用麥克風。");}
     }
     private void finishRecording() {
@@ -106,7 +112,7 @@ public final class VoiceIme extends InputMethodService {
     }
     private boolean insertPending(){
         if(!pending||protectedField)return false;InputConnection c=getCurrentInputConnection();if(c==null)return false;
-        if(c.commitText(lastText,1)){pending=false;insert.setEnabled(false);return true;}return false;
+        if(c.commitText(lastText,1)){pending=false;Draft.clear();refresh();status.setText("已插入，可以繼續說話。");return true;}return false;
     }
     private void cancelRecording(){main.removeCallbacks(tick);recordingNow=false;if(recorder!=null){try{recorder.stop();}catch(Exception ignored){}recorder.release();recorder=null;}if(recording!=null){recording.delete();recording=null;}}
     @Override public void onDestroy(){destroyed=true;cancelRecording();worker.shutdownNow();main.removeCallbacksAndMessages(null);super.onDestroy();}

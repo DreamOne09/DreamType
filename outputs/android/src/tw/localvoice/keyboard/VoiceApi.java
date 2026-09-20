@@ -35,6 +35,9 @@ final class VoiceApi {
             part(body,boundary,"model","local-dictation");
             part(body,boundary,"language","zh");
             part(body,boundary,"response_format","json");
+            part(body,boundary,"personal_prompt",config.personalPrompt);
+            part(body,boundary,"vocabulary",config.vocabulary);
+            part(body,boundary,"taiwan_places",String.valueOf(config.taiwanPlaces));
             body.append("--").append(boundary).append("\r\nContent-Disposition: form-data; name=\"file\"; filename=\"voice.m4a\"\r\nContent-Type: audio/mp4\r\n\r\n");
             byte[] head=body.toString().getBytes(StandardCharsets.UTF_8);
             byte[] tail=("\r\n--"+boundary+"--\r\n").getBytes(StandardCharsets.UTF_8);

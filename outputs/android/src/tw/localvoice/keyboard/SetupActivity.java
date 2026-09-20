@@ -39,6 +39,7 @@ public final class SetupActivity extends Activity {
         scroll.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());return insets;});
         text(column,"DreamType",32);
         text(column,"自然說，清楚寫。",17);
+        button(column,"我的偏好、詞庫與更新",v->startActivity(new Intent(this,ManageActivity.class)));
         status=text(column,AppConfig.load(this).ready()?"已儲存連線 · 電腦需保持開啟":"完成以下設定，就能開始說話",15);
         button(column,"01  連接電腦 / 修改連線",v->connection.setVisibility(connection.getVisibility()==View.VISIBLE?View.GONE:View.VISIBLE));
         connection=new LinearLayout(this);connection.setOrientation(LinearLayout.VERTICAL);column.addView(connection);

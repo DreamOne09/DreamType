@@ -13,10 +13,14 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
 final class AppConfig {
-    final String server, key;
-    final boolean autoInsert;
+    final String server, key, personalPrompt, vocabulary;
+    final boolean autoInsert, taiwanPlaces;
     AppConfig(String server, String key, boolean autoInsert) {
+        this(server,key,autoInsert,"","",true);
+    }
+    AppConfig(String server, String key, boolean autoInsert,String personalPrompt,String vocabulary,boolean taiwanPlaces) {
         this.server=server; this.key=key; this.autoInsert=autoInsert;
+        this.personalPrompt=personalPrompt;this.vocabulary=vocabulary;this.taiwanPlaces=taiwanPlaces;
     }
     boolean ready() { return !server.isEmpty() && !key.isEmpty(); }
     static String normalize(String text) throws Exception {
@@ -49,7 +53,8 @@ final class AppConfig {
                 key=new String(cipher.doFinal(Base64.decode(p.getString("cipher",""),Base64.NO_WRAP)),java.nio.charset.StandardCharsets.UTF_8);
             }
         } catch(Exception ignored) { /* Re-pair if a restored/invalid key cannot be decrypted. */ }
-        return new AppConfig(p.getString("server",""),key,p.getBoolean("auto",true));
+        SharedPreferences style=c.getSharedPreferences("style",Context.MODE_PRIVATE);
+        return new AppConfig(p.getString("server",""),key,p.getBoolean("auto",false),style.getString("prompt",""),style.getString("vocabulary",""),style.getBoolean("taiwan",true));
     }
     void save(Context c) throws Exception {
         Cipher cipher=Cipher.getInstance("AES/GCM/NoPadding"); cipher.init(Cipher.ENCRYPT_MODE,secret());

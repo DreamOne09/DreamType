@@ -23,6 +23,7 @@ from fastapi.responses import PlainTextResponse, FileResponse
 from faster_whisper import WhisperModel
 from faster_whisper.audio import decode_audio
 from opencc import OpenCC
+from personalization import formatting_prompt, speech_hint, validate_preferences
 
 PROMPT = (Path(__file__).parent / 'formatting.txt').read_text(encoding='utf-8')
 KEY_PATH = WORK / 'local-voice.key'
@@ -63,10 +64,10 @@ async def test_page():
 
 @app.get('/download/localvoice.apk')
 async def android_apk():
-    apk = Path(__file__).parent.parent / 'android/DreamType-0.2.0.apk'
+    apk = Path(__file__).parent.parent / 'android/DreamType-0.3.0.apk'
     if not apk.exists():
         raise HTTPException(404, 'Android package is not ready')
-    return FileResponse(apk, filename='DreamType-0.2.0.apk',
+    return FileResponse(apk, filename='DreamType-0.3.0.apk',
         media_type='application/vnd.android.package-archive',
         headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
 
@@ -88,14 +89,14 @@ async def health():
             'speech_ready': model is not None, 'formatting_ready': llm_ready,
             'processing': 'local', 'version': 1}
 
-async def format_text(text):
+async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=True):
     if not text.strip():
         return ''
     async with httpx.AsyncClient(timeout=90) as client:
         result = await client.post('http://127.0.0.1:19871/v1/chat/completions',
             headers={'Authorization': 'Bearer ' + API_KEY}, json={
             'model': 'local-format', 'messages': [
-                {'role': 'system', 'content': PROMPT},
+                {'role': 'system', 'content': formatting_prompt(PROMPT, personal_prompt, vocabulary, taiwan_places)},
                 {'role': 'user', 'content': text}],
             'temperature': 0.1, 'max_tokens': 2048, 'stream': False,
             'chat_template_kwargs': {'enable_thinking': False}})
@@ -126,12 +127,18 @@ async def models():
 @app.post('/v1/audio/transcriptions', dependencies=[Depends(authorize)])
 async def transcribe(file: UploadFile = File(...), model: str = Form('local-dictation'),
                      language: str = Form('zh'), response_format: str = Form('json'),
-                     prompt: str = Form('以下為台灣繁體中文，可能包含英文專有名詞。')):
+                     prompt: str = Form('以下為台灣繁體中文，可能包含英文專有名詞。'),
+                     personal_prompt: str = Form(''), vocabulary: str = Form(''),
+                     taiwan_places: bool = Form(True)):
     started = time.perf_counter()
     try:
         data = await file.read(MAX_BYTES + 1)
     finally:
         await file.close()
+    try:
+        validate_preferences(personal_prompt, vocabulary, taiwan_places)
+    except ValueError as error:
+        raise HTTPException(400, str(error))
     if not data or len(data) > MAX_BYTES:
         raise HTTPException(413, 'Empty recording or recording too large')
     try:
@@ -145,13 +152,13 @@ async def transcribe(file: UploadFile = File(...), model: str = Form('local-dict
     try:
         speech_start = time.perf_counter()
         raw, detected = await asyncio.to_thread(recognize, audio,
-            None if language in ('', 'auto') else language, prompt[:2000])
+            None if language in ('', 'auto') else language, speech_hint(prompt, vocabulary, taiwan_places))
         speech_seconds = time.perf_counter() - speech_start
         format_start = time.perf_counter()
         text, warning = raw, None
         if raw and model != 'local-raw':
             try:
-                text = await format_text(raw)
+                text = await format_text(raw, personal_prompt, vocabulary, taiwan_places)
             except (httpx.HTTPError, ValueError, KeyError, IndexError):
                 warning = 'Formatting unavailable; returning original transcription'
         timings = {'speech_seconds': round(speech_seconds, 3),
@@ -176,9 +183,13 @@ async def cleanup(request: Request):
         raise HTTPException(400, 'Expected a transcript shorter than 12000 characters')
     if body.get('stream'):
         raise HTTPException(400, 'Streaming is not enabled for this private formatter')
+    try:
+        preferences = validate_preferences(body.get('personal_prompt', ''), body.get('vocabulary', ''), body.get('taiwan_places', True))
+    except ValueError as error:
+        raise HTTPException(400, str(error))
     await acquire()
     try:
-        result = await format_text(text)
+        result = await format_text(text, *preferences)
         return {'id': 'local-' + secrets.token_hex(6), 'object': 'chat.completion',
             'created': int(time.time()), 'model': 'local-format',
             'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': result},
