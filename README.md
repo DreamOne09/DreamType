@@ -1,15 +1,21 @@
 # DreamType
 
+![DreamType](outputs/brand/dreamtype-preview.png)
+
 **自然說，清楚寫。** Android 語音鍵盤，由你的 Windows 電腦辨識與整理繁體中文。
 
 [下載 Android APK](https://github.com/DreamOne09/DreamType/releases/latest/download/DreamType.apk) · [安裝步驟](docs/INSTALL.md) · [版本與限制](docs/STATUS.md)
 
-> 目前為 0.3.0 試用版。GitHub 提供程式與安裝檔，不會替你運行 AI。電腦必須開著；新版原生鍵盤仍待 Pixel 9 實機驗收。
+> 目前為 0.3.1 試用版。GitHub 提供程式與安裝檔，不會替你運行 AI。電腦必須開著；新版原生鍵盤仍待 Pixel 9 實機驗收。
+
+## 0.3.1：更簡單的操作
+
+新 D 字母與聲波 logo；支援 Android 自適應圖示及 Android 13+ 主題圖示。首頁依目前設定狀態，只引導下一步。鍵盤主要按鈕依狀態顯示「開始說話 → 停止並整理 → 插入文字」，結果出來才顯示修改／捨棄。刪除、換行、偏好和連線收進「更多」。
 
 ## 我已經有電腦服務，只要裝手機
 
 1. 下載上方 APK，在 Chrome 的「下載」開啟，完成安裝。
-2. 開啟 **DreamType**，展開「連接電腦」，填入私人電腦網址與金鑰，按「儲存並測試連線」。也可沿用私人配對頁的配對按鈕。
+2. 開啟 **DreamType**，按「連接電腦」，填入私人電腦網址與金鑰，按「儲存並測試連線」。也可沿用私人配對頁的配對按鈕。
 3. 允許麥克風，在 Android 鍵盤設定啟用 DreamType，保留 Gboard。
 4. 到記事本的輸入框切換鍵盤，按「開始說話」，說完按「停止並整理」。
 
@@ -30,9 +36,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1
 
 停止：`powershell -ExecutionPolicy Bypass -File .\scripts\stop.ps1`
 
-## 我的偏好、詞庫與更新
+## 我的設定
 
-開啟 App 的「我的偏好、詞庫與更新」，或在鍵盤按「管理」。
+開啟 App 的「我的設定」，或在鍵盤按「更多 → 我的設定」。
 
 - **台灣地名**：內建縣市名稱參考，可開關。鄉鎮、路名、人名等常用詞可以自行加入；不保證同音字完全正確。
 - **個人提示詞**：每支手機保存自己的整理偏好，每次錄音獨立套用，不會改其他手機的偏好。最多 2,000 字。

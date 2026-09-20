@@ -26,7 +26,9 @@ public final class VoiceIme extends InputMethodService {
     private volatile boolean destroyed=false;
     private String lastText="";
     private TextView status,preview;
-    private Button mic,insert,edit,discard;
+    private Button mic,edit,discard;
+    private LinearLayout editRow;
+    private ScrollView resultArea;
     private final Runnable tick=new Runnable(){public void run(){if(!recordingNow)return;long seconds=(SystemClock.elapsedRealtime()-began)/1000;status.setText("正在錄音　"+seconds+" 秒");if(seconds>=120){finishRecording();return;}main.postDelayed(this,500);}};
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
     private void setup(){Intent i=new Intent(this,SetupActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}
@@ -38,15 +40,12 @@ public final class VoiceIme extends InputMethodService {
     @Override public View onCreateInputView() {
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(12),dp(12),dp(12),dp(12));root.setBackgroundColor(Ui.PAPER);
         status=new TextView(this);status.setTextSize(14);status.setTextColor(Ui.INK);status.setPadding(dp(5),dp(3),dp(5),dp(6));status.setMaxLines(3);root.addView(status);
-        ScrollView scroll=new ScrollView(this);preview=new TextView(this);preview.setTextSize(17);preview.setTextColor(Ui.INK);preview.setPadding(dp(8),dp(4),dp(8),dp(4));scroll.addView(preview);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(66)));
-        mic=new Button(this);mic.setAllCaps(false);mic.setTextSize(20);mic.setTextColor(Color.WHITE);Ui.button(mic,true);mic.setOnClickListener(v->{if(recordingNow)finishRecording();else startRecording();});root.addView(mic,new LinearLayout.LayoutParams(-1,dp(64)));
+        ScrollView scroll=new ScrollView(this);resultArea=scroll;preview=new TextView(this);preview.setTextSize(17);preview.setTextColor(Ui.INK);preview.setPadding(dp(8),dp(4),dp(8),dp(4));scroll.addView(preview);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(66)));
+        mic=new Button(this);mic.setAllCaps(false);mic.setTextSize(20);mic.setTextColor(Color.WHITE);Ui.button(mic,true);mic.setOnClickListener(v->{if(pending)insertPending();else if(recordingNow)finishRecording();else startRecording();});root.addView(mic,new LinearLayout.LayoutParams(-1,dp(64)));
         LinearLayout row=new LinearLayout(this);root.addView(row);
         button(row,"換鍵盤",v->((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showInputMethodPicker(),1.15f);
-        button(row,"刪除",v->{InputConnection c=getCurrentInputConnection();if(c!=null)c.deleteSurroundingTextInCodePoints(1,0);},.85f);
-        button(row,"換行",v->{InputConnection c=getCurrentInputConnection();if(c!=null)c.commitText("\n",1);},.85f);
-        insert=button(row,"插入",v->insertPending(),.85f);
-        button(row,"管理",v->{Intent i=new Intent(this,ManageActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);},.85f);
-        LinearLayout editRow=new LinearLayout(this);root.addView(editRow);
+        button(row,"更多",v->{PopupMenu menu=new PopupMenu(this,v);String[] items={"刪除一字","換行","我的設定","連線設定"};for(String item:items)menu.getMenu().add(item);menu.setOnMenuItemClickListener(item->{String name=item.getTitle().toString();InputConnection c=getCurrentInputConnection();if(name.equals("刪除一字")){if(c!=null)c.deleteSurroundingTextInCodePoints(1,0);}else if(name.equals("換行")){if(c!=null)c.commitText("\n",1);}else if(name.equals("我的設定")){Intent i=new Intent(this,ManageActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}else setup();return true;});menu.show();},1f);
+        editRow=new LinearLayout(this);root.addView(editRow);
         edit=button(editRow,"修改文字",v->{if(!pending||busy||protectedField)return;Draft.begin(lastText);Intent i=new Intent(this,EditActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);},2f);
         discard=button(editRow,"捨棄",v->{pending=false;lastText="";Draft.clear();preview.setText("");refresh();},1f);
         preview.setText(lastText);refresh();return root;
@@ -61,15 +60,17 @@ public final class VoiceIme extends InputMethodService {
     @Override public void onFinishInput(){generation++;cancelRecording();super.onFinishInput();}
     private void refresh() {
         if(mic==null)return;
-        mic.setText(recordingNow?"停止並整理":busy?"電腦整理中…":"開始說話");mic.setEnabled(!busy&&!protectedField&&!pending);insert.setEnabled(pending&&!protectedField&&!busy);
+        mic.setText(recordingNow?"停止並整理":busy?"正在整理…":pending?"插入文字":"開始說話");mic.setEnabled(!busy&&!protectedField);
+        if(editRow!=null)editRow.setVisibility(pending?View.VISIBLE:View.GONE);
+        if(resultArea!=null)resultArea.setVisibility(pending?View.VISIBLE:View.GONE);
         if(discard!=null)discard.setEnabled(pending&&!busy&&!recordingNow);
         if(edit!=null)edit.setEnabled(pending&&!protectedField&&!busy&&!recordingNow);
-        if(getCurrentInputEditorInfo()!=null&&getPackageName().equals(getCurrentInputEditorInfo().packageName)){mic.setEnabled(false);insert.setEnabled(false);if(edit!=null)edit.setEnabled(false);status.setText("請切換 Gboard 修改；完成後回到原 App 插入。");return;}
+        if(getCurrentInputEditorInfo()!=null&&getPackageName().equals(getCurrentInputEditorInfo().packageName)){mic.setEnabled(false);if(edit!=null)edit.setEnabled(false);status.setText("請切換 Gboard 修改；完成後回到原 App 插入。");return;}
         if(recordingNow)return;
         if(protectedField)status.setText("密碼欄位不使用語音，請切回原本鍵盤。");
         else if(busy)status.setText("正在傳給電腦整理…");
-        else if(!AppConfig.load(this).ready())status.setText("請先按「設定」，連接你的電腦。");
-        else if(pending)status.setText("文字已整理好，按「插入」。");
+        else if(!AppConfig.load(this).ready())status.setText("請從「更多」開啟連線設定。");
+        else if(pending)status.setText("文字已整理好，可修改或插入。");
         else status.setText("DreamType · 自然說，清楚寫。");
     }
     private void startRecording() {
