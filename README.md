@@ -2,86 +2,75 @@
 
 ![DreamType](outputs/brand/dreamtype-preview.png)
 
-**自然說，清楚寫。** Android 語音鍵盤，由你的 Windows 電腦辨識與整理繁體中文。
+**自然說，清楚寫。** Android 語音鍵盤，使用家用主機的 AI 辨識並整理繁體中文。
 
-[下載 Android APK](https://github.com/DreamOne09/DreamType/releases/latest/download/DreamType.apk) · [安裝步驟](docs/INSTALL.md) · [版本與限制](docs/STATUS.md)
+[下載 Android APK](https://github.com/DreamOne09/DreamType/releases/latest/download/DreamType.apk) · [安裝步驟](docs/INSTALL.md) · [試用驗收與限制](docs/BETA_ACCEPTANCE.md)
 
-> 目前為 0.3.1 試用版。GitHub 提供程式與安裝檔，不會替你運行 AI。電腦必須開著；新版原生鍵盤仍待 Pixel 9 實機驗收。
+> 0.4.0 封閉試用版：已加入帳號、個人設定同步、排隊與管理介面。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
 
-## 下一階段：登入即可使用的商店版
+## 下載後怎麼用
 
-**2026-09-21 最新部署決定：先由開發者家中的電腦提供服務。** 使用者的手機連到這台主機，使用者不必開自己的電腦；登入與付費仍為後續商店版目標。未來可搬到開發者的 AI PC，再視需要接雲端 API。目前不採購外部辨識／整理 API。詳見 [家用主機部署決策](docs/HOME_SERVER.md)。
+**已收到試用邀請：** 安裝 APK → 開啟 DreamType → 登入管理者提供的服務網址、帳號與密碼 → 允許麥克風 → 啟用鍵盤。到記事本切換 DreamType，按「開始說話」，說完按「停止並整理」，確認後「插入文字」。
 
-已確認方向：上架 Google Play，提供登入與付費機制，由雲端處理語音，使用者不必開自己的電腦。保留整合兩到三個工具／服務的彈性，辨識、文字整理、登入與付款分開設計，避免綁死單一供應商。
+你只需要手機和網路，不必開自己的電腦。管理者的主機需保持開啟；目前沒有固定網域，臨時網址變更時需重新填網址並登入。GitHub 是下載程式的地方，不是 AI 服務網址，也不會自動提供帳號。
 
-這是下一階段規劃，**目前 APK 尚未具備雲端帳號、訂閱或商店上架能力**。現有本機版保留作為開發與效果比較用途；不要求商店版使用者設定私人網址、金鑰或 Cloudflare Tunnel。
+**原本使用私人金鑰：** 覆蓋安裝即可保留設定；首頁「私人電腦連線」仍可配對。不要把私人金鑰分享成多人帳號。新版與舊版套件、簽章相同，不必先刪除舊版。
 
-詳見 [商店版與多工具整合規劃](docs/STORE_ROADMAP.md)。這次先更新文件，工具名單、訂閱價格與雲端部署仍待選定。
+## 這版能做什麼
 
-已補上 [三組雲端方案與成本試算](docs/CLOUD_COSTS.md)：以每天 40 分鐘比較 API 費用，包含零碎錄音的成本影響、營運預算與品質驗證方式。屬研究建議，尚未購買或串接服務。
+- **簡單的語音鍵盤**：黑白介面、D 聲波圖示，主要按鈕依錄音／整理／插入狀態變化。
+- **個人提示詞**：最多 2,000 字，可要求條列、語氣和排版；保留原意，不替你補寫沒說的需求。
+- **台灣地名與常用詞**：縣市參考可開關，自訂詞庫最多 1,000 字；不保證同音字完全正確。
+- **先修改再插入**：可用 Gboard 修改本次文字，再回原 App 插入；不替你傳送訊息。
+- **帳號與換機**：受邀帳號登入後取回偏好，可查本月額度、修改密碼、登出及刪除帳號。
+- **管理介面**：建立帳號、調整每月分鐘額度、停用帳號、查看排隊與用量。
+- **更新檢查**：「我的設定」開啟 GitHub 新版 APK，由你確認安裝；不會自動升級後端。
 
-## 0.3.1：更簡單的操作
+私人金鑰模式的偏好只在手機，帳號模式的偏好存在主機並快取在手機。切换成帳號時載入該帳號偏好，不自動上傳舊私人設定。
 
-新 D 字母與聲波 logo；支援 Android 自適應圖示及 Android 13+ 主題圖示。首頁依目前設定狀態，只引導下一步。鍵盤主要按鈕依狀態顯示「開始說話 → 停止並整理 → 插入文字」，結果出來才顯示修改／捨棄。刪除、換行、偏好和連線收進「更多」。
+## 主機第一次設定
 
-## 我已經有電腦服務，只要裝手機
+目前支援 Windows x64 + NVIDIA CUDA，建議 8 GB 顯示記憶體、16 GB RAM、至少 15 GB 可用空間；先裝 Python 3.12 與 NVIDIA 驅動。其他硬體及乾淨 Windows 完整重裝尚未驗證。
 
-1. 下載上方 APK，在 Chrome 的「下載」開啟，完成安裝。
-2. 開啟 **DreamType**，按「連接電腦」，填入私人電腦網址與金鑰，按「儲存並測試連線」。也可沿用私人配對頁的配對按鈕。
-3. 允許麥克風，在 Android 鍵盤設定啟用 DreamType，保留 Gboard。
-4. 到記事本的輸入框切換鍵盤，按「開始說話」，說完按「停止並整理」。
-
-安裝與配對完成後，不需要開網頁。升級直接安裝新版，不用刪除舊版。
-
-## 新電腦第一次設定
-
-此版本支援 **Windows x64 + NVIDIA CUDA 顯示卡**，建議 8 GB 顯示記憶體、16 GB RAM、至少 15 GB 可用空間，並先安裝 Python 3.12 與 NVIDIA 驅動。其他硬體尚未驗證。
-
-下載此 repo 的 ZIP 並解壓縮，或使用 `git clone`。在資料夾開啟 PowerShell：
+下載 repo ZIP 解壓縮，或 git clone，在資料夾的 PowerShell 執行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1
 ```
 
-第一次會下載數 GB 的 Whisper、Qwen 模型與運行工具，耗時取決於網速。啟動後會在 `work/pairing.html` 產生私人連線資料，在電腦開啟即可查看；不要上傳或分享給其他人。
+第一次下載數 GB 的模型與工具。開啟多人試用管理：
 
-停止：`powershell -ExecutionPolicy Bypass -File .\scripts\stop.ps1`
+```powershell
+.\work\venv\Scripts\python.exe .\scripts\admin.py
+```
 
-## 我的設定
+在私人管理入口按「連接管理服務」，建立試用帳號，再私下提供服務網址、帳號及初始密碼。不要分享 `work/admin-access.html`、`work/pairing.html` 或任何金鑰。停止服務使用 `scripts/stop.ps1`。
 
-開啟 App 的「我的設定」，或在鍵盤按「更多 → 我的設定」。
+升級主機：先備份私有資料，再更新 repo 並重新啟動服務。執行 `work/venv/Scripts/python.exe outputs/local_voice/control.py restart` 只重啟模型與 API，保留現有通道；再次執行 start.ps1 可能重開通道並改網址。
 
-- **台灣地名**：內建縣市名稱參考，可開關。鄉鎮、路名、人名等常用詞可以自行加入；不保證同音字完全正確。
-- **個人提示詞**：每支手機保存自己的整理偏好，每次錄音獨立套用，不會改其他手機的偏好。最多 2,000 字。
-- **常用詞庫**：最多 1,000 字，最常用的放前面；作為語音與文字整理參考。
-- **修改文字**：關閉「整理完成後直接插入」，錄音後先按「修改文字」，切換 Gboard 修改。完成後回原 App 切回 DreamType，再按「插入」。新安裝預設先確認，舊版升級保留原設定。捨棄可清掉本次草稿。
-- **更新**：管理頁按「檢查 App 更新」，有新版時開啟 GitHub 下載並覆蓋安裝。不是背景自動安裝。
+## 怎麼運作與限制
 
-這是每支手機的個人設定，不是多人帳號、管理員權限或跨裝置雲端同步。提示詞與词库會送到你設定的電腦處理，手機端保存設定，伺服器不保存個人檔案。
+Android 錄音 → HTTPS 通道 → 帳號驗證與排隊 → Whisper 辨識 → Qwen 整理 → 手機確認並插入。
 
-電腦服務也必須更新到 0.3.0，才能套用提示詞與詞庫。目前使用中的電腦已同步更新。其他電腦可更新 repo 後重新啟動服務；重新開通道可能改網址，需要重新配對。
+- 目前全用主機上的模型，沒有付費 AI API；仍有電費、網路與維護成本。
+- 手機可用行動網路並保留 Surfshark；錄音經 Cloudflare 代理，不是裝置間端對端加密。
+- 最長兩分鐘一段；每帳號一筆未完成工作，服務最多八筆等待。成功才扣用量；處理失敗不扣。
+- 草稿及伺服器結果為暫存，不能當成文件儲存工具；App 程序結束、結果過期或主機重啟可能無法取回。
+- 同時 1／2／3 筆約 29 秒錄音已跑通；這不代表已確認長期容量。完整證據與手機驗收清單見 [BETA_ACCEPTANCE](docs/BETA_ACCEPTANCE.md)。
 
-## 怎麼運作
+## 後續商店版
 
-Android 錄音 → HTTPS 通道 → 電腦上的 Whisper 辨識 → Qwen 整理 → 放回手機輸入框。
+先由開發者家中電腦提供服务，未來可搬到 AI PC。推論轉接介面可替換，目前只實作本機供應者，沒有偷偷呼叫外部 API。Google Play 訂閱、付款驗證、固定入口、備援與正式上架仍未完成。
 
-- 自動整理口頭禪、標點、段落與適合的列點；不承諾逐字正確。
-- 不會替你傳送訊息，也不會自動補寫你沒說的需求。
-- 沒有按字數計費的 AI API；仍有電費、網路費。
-- 手機可用行動網路並保持 Surfshark。錄音經 Cloudflare 代理，並非裝置間端對端加密。
-- 臨時通道重開可能換網址，要重新填入 App；換 Android 手機亦需安裝及配對。iPhone 不能安裝此 APK。
+[家用部署決策](docs/HOME_SERVER.md) · [商店與多工具規劃](docs/STORE_ROADMAP.md) · [未來 API 成本研究](docs/CLOUD_COSTS.md)
 
-## 專案結構
+## 開發與第三方元件
 
-`outputs/android`：原生 Java 鍵盤與建置腳本。`outputs/local_voice`：FastAPI 服務、手機配對頁、整理提示詞。`scripts`：安裝與啟停。`work`：僅在本機生成的模型、私鑰、日誌，不納入 Git。
+`outputs/android` 是原生 Java 鍵盤；`outputs/local_voice` 是 FastAPI、帳號資料庫與佇列；`scripts` 是安裝及管理工具。`work` 僅供本機私有資料，不纳入 Git。
 
-## 修改與建置
+後端測試：`work/venv/Scripts/python.exe -m unittest discover -s outputs/local_voice -p "test_*.py" -v`。
 
-文字整理規則在 `outputs/local_voice/formatting.txt`。修改後重啟服務。
+Android 建置：先 `python scripts/download_android_tools.py`，再 `python outputs/android/build.py`。自行建置會使用自己的簽章，無法覆蓋不同憑證的 APK；維護者必須保留原簽章材料。
 
-如需自行編譯 Android：先執行 `python scripts/download_android_tools.py`，再執行 `python outputs/android/build.py`。建置會下載官方 SDK / JDK，並在 `work` 產生自己的簽署憑證。自行簽署的 APK 無法覆蓋其他憑證簽署的版本。維護者更新必須保留原簽署憑證，切勿提交到 GitHub。
-
-## 第三方元件
-
-使用 faster-whisper / CTranslate2、llama.cpp、Qwen、Whisper、FastAPI、OpenCC、Cloudflare Tunnel，以及 Android SDK。模型與工具從原始提供者下載，各自遵循其授權；本 repo 不包含模型權重或第三方工具二進位檔。DreamType 與 Typeless 無隸屬關係。
+採用 faster-whisper / CTranslate2、llama.cpp、Qwen、Whisper、FastAPI、OpenCC、Cloudflare Tunnel 和 Android SDK。模型與工具各遵循其授權，本 repo 不含模型權重與第三方二進位檔。DreamType 與 Typeless 無隸屬關係。

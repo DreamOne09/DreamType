@@ -24,6 +24,7 @@ from faster_whisper import WhisperModel
 from faster_whisper.audio import decode_audio
 from opencc import OpenCC
 from personalization import formatting_prompt, speech_hint, validate_preferences
+from beta_api import install_beta, LocalProvider, audio_duration
 
 PROMPT = (Path(__file__).parent / 'formatting.txt').read_text(encoding='utf-8')
 KEY_PATH = WORK / 'local-voice.key'
@@ -35,6 +36,7 @@ converter = OpenCC('s2twp')
 model = None
 gpu_lock = asyncio.Lock()
 MAX_BYTES = 25 * 1024 * 1024
+beta = install_beta(app, WORK, LocalProvider('http://127.0.0.1:19870', API_KEY), audio_duration)
 
 async def authorize(request: Request):
     value = request.headers.get('authorization', '')
@@ -64,10 +66,10 @@ async def test_page():
 
 @app.get('/download/localvoice.apk')
 async def android_apk():
-    apk = Path(__file__).parent.parent / 'android/DreamType-0.3.1.apk'
+    apk = Path(__file__).parent.parent / 'android/DreamType-0.4.0.apk'
     if not apk.exists():
         raise HTTPException(404, 'Android package is not ready')
-    return FileResponse(apk, filename='DreamType-0.3.1.apk',
+    return FileResponse(apk, filename='DreamType-0.4.0.apk',
         media_type='application/vnd.android.package-archive',
         headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
 

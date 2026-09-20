@@ -25,13 +25,14 @@ public final class VoiceIme extends InputMethodService {
     private boolean recordingNow=false,busy=false,pending=false,protectedField=false;
     private volatile boolean destroyed=false;
     private String lastText="";
+    private String sessionKey="";
     private TextView status,preview;
     private Button mic,edit,discard;
     private LinearLayout editRow;
     private ScrollView resultArea;
     private final Runnable tick=new Runnable(){public void run(){if(!recordingNow)return;long seconds=(SystemClock.elapsedRealtime()-began)/1000;status.setText("正在錄音　"+seconds+" 秒");if(seconds>=120){finishRecording();return;}main.postDelayed(this,500);}};
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
-    private void setup(){Intent i=new Intent(this,SetupActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}
+    private void setup(){Intent i=new Intent(this,HomeActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}
     private Button button(LinearLayout parent,String label,View.OnClickListener action,float weight) {
         Button b=new Button(this);b.setText(label);b.setAllCaps(false);b.setTextSize(15);b.setMinWidth(0);b.setPadding(dp(3),0,dp(3),0);b.setOnClickListener(action);
         Ui.button(b,false);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(48),weight);lp.setMargins(dp(2),dp(8),dp(2),0);parent.addView(b,lp);return b;
@@ -60,6 +61,8 @@ public final class VoiceIme extends InputMethodService {
     @Override public void onFinishInput(){generation++;cancelRecording();super.onFinishInput();}
     private void refresh() {
         if(mic==null)return;
+        String active=AppConfig.load(this).key;
+        if(!sessionKey.equals(active)){sessionKey=active;pending=false;lastText="";Draft.clear();preview.setText("");}
         mic.setText(recordingNow?"停止並整理":busy?"正在整理…":pending?"插入文字":"開始說話");mic.setEnabled(!busy&&!protectedField);
         if(editRow!=null)editRow.setVisibility(pending?View.VISIBLE:View.GONE);
         if(resultArea!=null)resultArea.setVisibility(pending?View.VISIBLE:View.GONE);
@@ -68,7 +71,7 @@ public final class VoiceIme extends InputMethodService {
         if(getCurrentInputEditorInfo()!=null&&getPackageName().equals(getCurrentInputEditorInfo().packageName)){mic.setEnabled(false);if(edit!=null)edit.setEnabled(false);status.setText("請切換 Gboard 修改；完成後回到原 App 插入。");return;}
         if(recordingNow)return;
         if(protectedField)status.setText("密碼欄位不使用語音，請切回原本鍵盤。");
-        else if(busy)status.setText("正在傳給電腦整理…");
+        else if(busy)status.setText("已送出，正在排隊或整理…");
         else if(!AppConfig.load(this).ready())status.setText("請從「更多」開啟連線設定。");
         else if(pending)status.setText("文字已整理好，可修改或插入。");
         else status.setText("DreamType · 自然說，清楚寫。");
@@ -101,6 +104,7 @@ public final class VoiceIme extends InputMethodService {
             final VoiceApi.Result done=result;final String problem=error;
             main.post(()->{
                 if(destroyed)return;busy=false;
+                if(!AppConfig.load(this).key.equals(config.key)){refresh();status.setText("帳號已切換，上一筆結果已清除。");return;}
                 if(problem!=null){refresh();status.setText(problem+" 請重新錄音。");return;}
                 lastText=done.text;pending=!lastText.trim().isEmpty();preview.setText(lastText);refresh();
                 boolean inserted=false;

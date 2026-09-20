@@ -28,20 +28,21 @@ public final class HomeActivity extends Activity {
   detail=text(p,"",15);detail.setTextColor(Ui.MUTED);
   action=button(p,"開始使用",true,v->next());
   button(p,"我的設定",false,v->startActivity(new Intent(this,ManageActivity.class)));
-  button(p,"連線設定",false,v->startActivity(new Intent(this,SetupActivity.class)));
-  text(p,"電腦保持開啟，就能在手機輸入框使用。",14).setTextColor(Ui.MUTED);
+  button(p,"我的帳號",false,v->startActivity(new Intent(this,AccountActivity.class)));
+  button(p,"私人電腦連線",false,v->startActivity(new Intent(this,SetupActivity.class)));
+  text(p,"手機連上網路，就能使用家中電腦的 AI。",14).setTextColor(Ui.MUTED);
  }
  @Override protected void onResume(){super.onResume();refresh();}
  private void refresh(){
   action.setEnabled(true);
-  if(!AppConfig.load(this).ready()){step=0;state.setText("先連接你的電腦");detail.setText("只需填入電腦網址與金鑰。");action.setText("連接電腦");return;}
+  if(!AppConfig.load(this).ready()){step=0;state.setText("先登入試用帳號");detail.setText("輸入管理者提供的服務網址與帳號。");action.setText("登入開始使用");return;}
   if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){step=1;state.setText("再允許麥克風");detail.setText("只有你按下錄音時才會使用。");action.setText("允許麥克風");return;}
   boolean enabled=false;for(InputMethodInfo i:((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).getEnabledInputMethodList())if(getPackageName().equals(i.getPackageName()))enabled=true;
   if(!enabled){step=2;state.setText("最後，啟用 DreamType 鍵盤");detail.setText("原本的 Gboard 可以保留。");action.setText("啟用鍵盤");return;}
   step=3;state.setText("設定完成");detail.setText("開啟記事本或聊天輸入框，切換至 DreamType。");action.setText("切換到 DreamType");
  }
  private void next(){
-  if(step==0)startActivity(new Intent(this,SetupActivity.class));
+  if(step==0)startActivity(new Intent(this,AccountActivity.class));
   else if(step==1)requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},1);
   else if(step==2)startActivity(new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS));
   else{action.setEnabled(false);state.setText("確認電腦連線…");worker.execute(()->{String error=null;try{VoiceApi.verify(AppConfig.load(this));}catch(Exception e){error=VoiceApi.friendly(e);}final String problem=error;runOnUiThread(()->{if(isDestroyed()||isFinishing())return;action.setEnabled(true);if(problem!=null){state.setText("目前連不到電腦");detail.setText(problem);return;}state.setText("電腦已就緒");((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showInputMethodPicker();});});}

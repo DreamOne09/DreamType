@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="tw.localvoice.keyboard" android:versionCode="4" android:versionName="0.3.1">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="tw.localvoice.keyboard" android:versionCode="5" android:versionName="0.4.0">
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -10,6 +10,7 @@
             <intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="localvoice" android:host="pair" /></intent-filter>
         </activity>
         <activity android:name=".ManageActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".AccountActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".EditActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <service android:name=".VoiceIme" android:exported="true" android:label="DreamType" android:permission="android.permission.BIND_INPUT_METHOD">
             <intent-filter><action android:name="android.view.InputMethod" /></intent-filter>

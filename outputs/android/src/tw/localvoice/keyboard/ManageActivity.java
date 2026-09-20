@@ -20,8 +20,8 @@ public final class ManageActivity extends Activity {
  @Override public void onCreate(Bundle state){super.onCreate(state);
   ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Ui.PAPER);LinearLayout p=new LinearLayout(this);p.setOrientation(1);p.setPadding(dp(24),dp(16),dp(24),dp(24));scroll.addView(p);setContentView(scroll);
   scroll.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
-  text(p,"我的 DreamType",28);text(p,"設定只保存在這支手機；其他人的偏好不會被改動。",16);
   AppConfig config=AppConfig.load(this);
+  text(p,"我的 DreamType",28);text(p,config.accountMode?"偏好儲存在你的帳號，可在其他裝置取回。":"設定只保存在這支手機；其他人的偏好不會被改動。",16);
   text(p,"我的整理提示詞",20);
   EditText prompt=field(p,"例如：使用台灣口語；工作安排用條列；保留所有時間與條件。",config.personalPrompt,2000);
   text(p,"最多 2,000 字。調整語氣和排版，不補寫沒說過的事。",14);
@@ -32,13 +32,18 @@ public final class ManageActivity extends Activity {
   CheckBox automatic=new CheckBox(this);automatic.setText("整理完成後直接插入（不先修改）");automatic.setChecked(config.autoInsert);p.addView(automatic);
   status=new TextView(this);status.setTextColor(Ui.MUTED);status.setTextSize(15);status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);p.addView(status);
   Button save=button(p,"儲存我的偏好",v->{
-   getSharedPreferences("style",MODE_PRIVATE).edit().putString("prompt",prompt.getText().toString().trim()).putString("vocabulary",words.getText().toString().trim()).putBoolean("taiwan",taiwan.isChecked()).apply();
-   getSharedPreferences("connection",MODE_PRIVATE).edit().putBoolean("auto",automatic.isChecked()).apply();
-   status.setText("已儲存，下次錄音生效。");
+   final String personal=prompt.getText().toString().trim(),vocabulary=words.getText().toString().trim();final boolean places=taiwan.isChecked(),auto=automatic.isChecked();
+   v.setEnabled(false);status.setText("正在儲存…");worker.execute(()->{String message;
+    try{AppConfig active=AppConfig.load(this);if(!active.key.equals(config.key))throw new Exception("帳號已切換，請重新開啟設定。");
+     org.json.JSONObject prefs=new org.json.JSONObject().put("personal_prompt",personal).put("vocabulary",vocabulary).put("taiwan_places",places);
+     if(active.accountMode)VoiceApi.json(active,"POST","/v2/me/preferences",prefs);
+     AppConfig.saveStyle(this,prefs);getSharedPreferences("connection",MODE_PRIVATE).edit().putBoolean("auto",auto).commit();message="已儲存，下次錄音生效。";
+    }catch(Exception e){message=VoiceApi.friendly(e);}final String result=message;runOnUiThread(()->{if(!isDestroyed()){status.setText(result);v.setEnabled(true);}});
+   });
   });Ui.button(save,true);
   text(p,"連線與更新",20);
   button(p,"測試電腦連線",v->{status.setText("正在測試…");v.setEnabled(false);worker.execute(()->{String result;try{VoiceApi.verify(AppConfig.load(this));result="電腦已連線。";}catch(Exception e){result=VoiceApi.friendly(e);}final String message=result;runOnUiThread(()->{if(!isDestroyed()){status.setText(message);v.setEnabled(true);}});});});
-  button(p,"修改電腦網址與金鑰",v->{startActivity(new Intent(this,SetupActivity.class));finish();});
+  button(p,config.accountMode?"帳號與本月用量":"修改電腦網址與金鑰",v->{startActivity(new Intent(this,config.accountMode?AccountActivity.class:SetupActivity.class));finish();});
   button(p,"檢查 App 更新",v->{status.setText("正在檢查 GitHub…");v.setEnabled(false);worker.execute(()->{String tag=null,problem=null;try{tag=UpdateCheck.latest();}catch(Exception e){problem="暫時無法檢查更新，請稍後再試。";}final String version=tag,error=problem;runOnUiThread(()->{if(isDestroyed())return;v.setEnabled(true);if(error!=null){status.setText(error);return;}try{String current=getPackageManager().getPackageInfo(getPackageName(),0).versionName;if(!UpdateCheck.newer(version,current)){status.setText("目前已是最新版本 "+current);return;}new AlertDialog.Builder(this).setTitle("有新版 "+version).setMessage("開啟 GitHub 下載 APK，安裝時選擇更新。已儲存設定會保留。").setPositiveButton("開啟下載",(d,w)->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://github.com/DreamOne09/DreamType/releases/latest")))).setNegativeButton("稍後",null).show();}catch(Exception e){status.setText("請到 GitHub Releases 查看更新。");}});});});
   try{text(p,"App 版本 "+getPackageManager().getPackageInfo(getPackageName(),0).versionName,14);}catch(Exception ignored){}
   button(p,"返回",v->finish());

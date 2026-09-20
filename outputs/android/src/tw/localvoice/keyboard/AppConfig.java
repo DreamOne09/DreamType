@@ -14,13 +14,17 @@ import javax.crypto.spec.GCMParameterSpec;
 
 final class AppConfig {
     final String server, key, personalPrompt, vocabulary;
-    final boolean autoInsert, taiwanPlaces;
+    final boolean autoInsert, taiwanPlaces, accountMode;
     AppConfig(String server, String key, boolean autoInsert) {
         this(server,key,autoInsert,"","",true);
     }
     AppConfig(String server, String key, boolean autoInsert,String personalPrompt,String vocabulary,boolean taiwanPlaces) {
+        this(server,key,autoInsert,personalPrompt,vocabulary,taiwanPlaces,false);
+    }
+    AppConfig(String server, String key, boolean autoInsert,String personalPrompt,String vocabulary,boolean taiwanPlaces,boolean accountMode) {
         this.server=server; this.key=key; this.autoInsert=autoInsert;
         this.personalPrompt=personalPrompt;this.vocabulary=vocabulary;this.taiwanPlaces=taiwanPlaces;
+        this.accountMode=accountMode;
     }
     boolean ready() { return !server.isEmpty() && !key.isEmpty(); }
     static String normalize(String text) throws Exception {
@@ -54,13 +58,23 @@ final class AppConfig {
             }
         } catch(Exception ignored) { /* Re-pair if a restored/invalid key cannot be decrypted. */ }
         SharedPreferences style=c.getSharedPreferences("style",Context.MODE_PRIVATE);
-        return new AppConfig(p.getString("server",""),key,p.getBoolean("auto",false),style.getString("prompt",""),style.getString("vocabulary",""),style.getBoolean("taiwan",true));
+        return new AppConfig(p.getString("server",""),key,p.getBoolean("auto",false),style.getString("prompt",""),style.getString("vocabulary",""),style.getBoolean("taiwan",true),p.getBoolean("account",false));
     }
     void save(Context c) throws Exception {
         Cipher cipher=Cipher.getInstance("AES/GCM/NoPadding"); cipher.init(Cipher.ENCRYPT_MODE,secret());
         String encrypted=Base64.encodeToString(cipher.doFinal(key.getBytes(java.nio.charset.StandardCharsets.UTF_8)),Base64.NO_WRAP);
         c.getSharedPreferences("connection",Context.MODE_PRIVATE).edit().putString("server",server)
             .putString("cipher",encrypted).putString("iv",Base64.encodeToString(cipher.getIV(),Base64.NO_WRAP))
-            .putBoolean("auto",autoInsert).apply();
+            .putBoolean("auto",autoInsert).putBoolean("account",accountMode).commit();
+    }
+    static void saveStyle(Context c,org.json.JSONObject prefs) {
+        c.getSharedPreferences("style",Context.MODE_PRIVATE).edit().putString("prompt",prefs.optString("personal_prompt",""))
+            .putString("vocabulary",prefs.optString("vocabulary","" )).putBoolean("taiwan",prefs.optBoolean("taiwan_places",true)).commit();
+    }
+    static void clearSession(Context c) {
+        String server=load(c).server;
+        c.getSharedPreferences("connection",Context.MODE_PRIVATE).edit().clear().putString("server",server).commit();
+        c.getSharedPreferences("style",Context.MODE_PRIVATE).edit().clear().commit();
+        Draft.clear();
     }
 }

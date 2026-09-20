@@ -48,7 +48,7 @@ public final class SetupActivity extends Activity {
         text(connection,"專用金鑰",14);
         key=new EditText(this);key.setSingleLine(true);key.setTextSize(15);key.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);key.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);connection.addView(key);
         auto=new CheckBox(this);auto.setText("說完後自動放進原本輸入框");auto.setTextSize(16);connection.addView(auto);
-        AppConfig config=AppConfig.load(this);server.setText(config.server);key.setText(config.key);auto.setChecked(config.autoInsert);
+        AppConfig config=AppConfig.load(this);server.setText(config.server);key.setText(config.accountMode?"":config.key);auto.setChecked(config.autoInsert);
         save=button(connection,"儲存並測試連線",v->saveAndTest());
         Ui.button(save,true);
         button(column,"返回首頁",v->{startActivity(new Intent(this,HomeActivity.class));finish();});
@@ -75,7 +75,7 @@ public final class SetupActivity extends Activity {
         save.setEnabled(false);status.setText("正在連接你的電腦…");
         worker.execute(()->{
             String message;
-            try {VoiceApi.verify(config);config.save(this);message="已儲存，電腦連線成功。返回首頁繼續設定。";}
+            try {VoiceApi.verify(config);if(AppConfig.load(this).accountMode)AppConfig.clearSession(this);config.save(this);message="已儲存，電腦連線成功。返回首頁繼續設定。";}
             catch(Exception e){message=VoiceApi.friendly(e);}
             final String result=message;
             runOnUiThread(()->{if(!isFinishing()&&!isDestroyed()){status.setText(result);save.setEnabled(true);}});

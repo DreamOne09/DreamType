@@ -1,0 +1,59 @@
+{
+  "date": "2026-09-21",
+  "transport": "localhost HTTP; actual Whisper/Qwen GPU",
+  "native_pixel9_tested": false,
+  "rounds": [
+    {
+      "simultaneous_requests": 1,
+      "results": [
+        {
+          "total_seconds": 2.28,
+          "inference_seconds": 1.966,
+          "warning": null,
+          "used_seconds": 5
+        }
+      ]
+    },
+    {
+      "simultaneous_requests": 2,
+      "results": [
+        {
+          "total_seconds": 0.75,
+          "inference_seconds": 0.509,
+          "warning": null,
+          "used_seconds": 5
+        },
+        {
+          "total_seconds": 1.28,
+          "inference_seconds": 0.363,
+          "warning": null,
+          "used_seconds": 5
+        }
+      ]
+    },
+    {
+      "simultaneous_requests": 3,
+      "results": [
+        {
+          "total_seconds": 1.75,
+          "inference_seconds": 0.35,
+          "warning": null,
+          "used_seconds": 5
+        },
+        {
+          "total_seconds": 0.92,
+          "inference_seconds": 0.616,
+          "warning": null,
+          "used_seconds": 5
+        },
+        {
+          "total_seconds": 1.2,
+          "inference_seconds": 0.354,
+          "warning": null,
+          "used_seconds": 5
+        }
+      ]
+    }
+  ],
+  "accounts_remaining": 0
+}

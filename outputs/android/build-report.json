@@ -1,9 +1,9 @@
 {
-  "file": "DreamType-0.3.1.apk",
-  "bytes": 37661,
-  "sha256": "37df235b9296a23b061e00c6d0cd2cc5ff30e9b18f857da72662ddb5654e7311",
+  "file": "DreamType-0.4.0.apk",
+  "bytes": 45853,
+  "sha256": "f83f19c6e9e585815ff4871d6b788b822423ca6f6502ae1b681f5a0b0a36d552",
   "package": "tw.localvoice.keyboard",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "minSdk": 26,
   "targetSdk": 35,
   "secrets_embedded": false,
