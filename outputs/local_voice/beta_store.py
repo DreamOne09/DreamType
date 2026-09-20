@@ -98,6 +98,9 @@ class Store:
         return dict(row)
     def state(self,uid,jid,state):
         with self.db() as db:db.execute('UPDATE jobs SET state=? WHERE uid=? AND id=?',(state,uid,jid))
+    def latest(self,uid):
+        with self.db() as db:row=db.execute('SELECT id FROM jobs WHERE uid=? ORDER BY created DESC,id DESC LIMIT 1',(uid,)).fetchone()
+        return row['id'] if row else None
     def recover(self):
         with self.db() as db:
             db.execute("UPDATE jobs SET state='failed' WHERE state IN ('queued','running')")

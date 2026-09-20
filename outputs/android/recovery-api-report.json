@@ -1,0 +1,9 @@
+{
+  "https_login": true,
+  "preferences": true,
+  "total_seconds": 3.1953841,
+  "queued_upload": true,
+  "native_device_test": false,
+  "usage": true,
+  "recovery_without_recharge": true
+}

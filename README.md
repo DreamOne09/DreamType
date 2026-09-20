@@ -6,7 +6,11 @@
 
 [下載 Android APK](https://github.com/DreamOne09/DreamType/releases/latest/download/DreamType.apk) · [安裝步驟](docs/INSTALL.md) · [試用驗收與限制](docs/BETA_ACCEPTANCE.md)
 
-> 0.4.0 封閉試用版：已加入帳號、個人設定同步、排隊與管理介面。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
+> 0.5.0 封閉試用版：已加入帳號、個人設定同步、排隊與管理介面。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
+
+## 0.5.0 新增
+
+斷線時重查結果，鍵盤「更多 → 取回上一筆」可在結果有效期間取回同帳號文字，不重送、不重扣。服務網址的 `/account` 可在沒有 App 時查用量或刪除線上帳號。另提供私人 SQLite 備份與新主機恢復工具。[操作、測試與限制](docs/RECOVERY.md)。
 
 ## 下載後怎麼用
 

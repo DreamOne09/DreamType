@@ -30,7 +30,7 @@ public final class VoiceIme extends InputMethodService {
     private Button mic,edit,discard;
     private LinearLayout editRow;
     private ScrollView resultArea;
-    private final Runnable tick=new Runnable(){public void run(){if(!recordingNow)return;long seconds=(SystemClock.elapsedRealtime()-began)/1000;status.setText("正在錄音　"+seconds+" 秒");if(seconds>=120){finishRecording();return;}main.postDelayed(this,500);}};
+    private final Runnable tick=new Runnable(){public void run(){if(!recordingNow)return;long seconds=(SystemClock.elapsedRealtime()-began)/1000;status.setText("正在錄音　"+seconds+" 秒");if(seconds>=118){finishRecording();return;}main.postDelayed(this,500);}};
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
     private void setup(){Intent i=new Intent(this,HomeActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}
     private Button button(LinearLayout parent,String label,View.OnClickListener action,float weight) {
@@ -45,7 +45,7 @@ public final class VoiceIme extends InputMethodService {
         mic=new Button(this);mic.setAllCaps(false);mic.setTextSize(20);mic.setTextColor(Color.WHITE);Ui.button(mic,true);mic.setOnClickListener(v->{if(pending)insertPending();else if(recordingNow)finishRecording();else startRecording();});root.addView(mic,new LinearLayout.LayoutParams(-1,dp(64)));
         LinearLayout row=new LinearLayout(this);root.addView(row);
         button(row,"換鍵盤",v->((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showInputMethodPicker(),1.15f);
-        button(row,"更多",v->{PopupMenu menu=new PopupMenu(this,v);String[] items={"刪除一字","換行","我的設定","連線設定"};for(String item:items)menu.getMenu().add(item);menu.setOnMenuItemClickListener(item->{String name=item.getTitle().toString();InputConnection c=getCurrentInputConnection();if(name.equals("刪除一字")){if(c!=null)c.deleteSurroundingTextInCodePoints(1,0);}else if(name.equals("換行")){if(c!=null)c.commitText("\n",1);}else if(name.equals("我的設定")){Intent i=new Intent(this,ManageActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}else setup();return true;});menu.show();},1f);
+        button(row,"更多",v->{PopupMenu menu=new PopupMenu(this,v);String[] items={"刪除一字","換行","取回上一筆","我的設定","連線設定"};for(String item:items)menu.getMenu().add(item);menu.setOnMenuItemClickListener(item->{String name=item.getTitle().toString();InputConnection c=getCurrentInputConnection();if(name.equals("刪除一字")){if(c!=null)c.deleteSurroundingTextInCodePoints(1,0);}else if(name.equals("換行")){if(c!=null)c.commitText("\n",1);}else if(name.equals("取回上一筆")){recoverLast();}else if(name.equals("我的設定")){Intent i=new Intent(this,ManageActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}else setup();return true;});menu.show();},1f);
         editRow=new LinearLayout(this);root.addView(editRow);
         edit=button(editRow,"修改文字",v->{if(!pending||busy||protectedField)return;Draft.begin(lastText);Intent i=new Intent(this,EditActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);},2f);
         discard=button(editRow,"捨棄",v->{pending=false;lastText="";Draft.clear();preview.setText("");refresh();},1f);
@@ -96,19 +96,29 @@ public final class VoiceIme extends InputMethodService {
         try{recorder.stop();}catch(RuntimeException e){recorder.release();recorder=null;if(audio!=null)audio.delete();refresh();status.setText("錄音太短，請再說一次。");return;}
         recorder.release();recorder=null;
         if(audio==null){refresh();return;}
+        process(audio);
+    }
+    private void recoverLast() {
+        if(busy||recordingNow||protectedField)return;
+        if(pending){status.setText("請先插入或捨棄目前文字，再取回上一筆。");return;}
+        if(getCurrentInputEditorInfo()!=null&&getPackageName().equals(getCurrentInputEditorInfo().packageName))return;
+        process(null);
+    }
+    private void process(File audio) {
         final long expected=generation,start=SystemClock.elapsedRealtime();final AppConfig config=AppConfig.load(this);
         busy=true;refresh();
         worker.execute(()->{
             VoiceApi.Result result=null;String error=null;
-            try{result=VoiceApi.upload(config,audio);}catch(Exception e){error=VoiceApi.friendly(e);}finally{audio.delete();}
+            VoiceApi.Progress progress=message->main.post(()->{if(!destroyed&&busy&&AppConfig.load(this).key.equals(config.key))status.setText(message);});
+            try{result=audio==null?VoiceApi.recover(config,progress):VoiceApi.upload(config,audio,progress);}catch(Exception e){error=VoiceApi.friendly(e);}finally{if(audio!=null)audio.delete();}
             final VoiceApi.Result done=result;final String problem=error;
             main.post(()->{
                 if(destroyed)return;busy=false;
                 if(!AppConfig.load(this).key.equals(config.key)){refresh();status.setText("帳號已切換，上一筆結果已清除。");return;}
-                if(problem!=null){refresh();status.setText(problem+" 請重新錄音。");return;}
+                if(problem!=null){refresh();status.setText(problem+(config.accountMode&&audio!=null?" 若已送達，可從「更多 → 取回上一筆」查詢。":""));return;}
                 lastText=done.text;pending=!lastText.trim().isEmpty();preview.setText(lastText);refresh();
                 boolean inserted=false;
-                if(pending&&config.autoInsert&&generation==expected&&isInputViewShown()&&!protectedField)inserted=insertPending();
+                if(audio!=null&&pending&&config.autoInsert&&generation==expected&&isInputViewShown()&&!protectedField)inserted=insertPending();
                 String timing=String.format(Locale.TAIWAN,"%.1f 秒",(SystemClock.elapsedRealtime()-start)/1000.0);
                 if(!done.warning.isEmpty())status.setText("排版暫時失敗，已保留辨識原文。"+(inserted?"已輸入。":"按插入可使用。"));
                 else status.setText(lastText.trim().isEmpty()?"沒有辨識到語音，請再試一次。":(inserted?"已輸入　":"已整理，按插入　")+timing);

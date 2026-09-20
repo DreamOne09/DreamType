@@ -15,6 +15,9 @@ public class BetaApiCheck {
    long start=System.nanoTime();VoiceApi.Result result=VoiceApi.upload(config,new File(args[1]));
    if(result.text.trim().isEmpty()||!result.warning.isEmpty())throw new Exception("No successful formatted result");
    JSONObject me=VoiceApi.json(config,"GET","/v2/me",null);if(me.getInt("used_seconds")<=0)throw new Exception("Usage not charged");
+   VoiceApi.Result recovered=VoiceApi.recover(config,VoiceApi.QUIET);
+   if(!result.text.equals(recovered.text))throw new Exception("Recovered result mismatch");
+   if(me.getInt("used_seconds")!=VoiceApi.json(config,"GET","/v2/me",null).getInt("used_seconds"))throw new Exception("Recovery charged twice");
    System.out.println(new JSONObject().put("https_login",true).put("preferences",true).put("queued_upload",true).put("usage",true).put("total_seconds",(System.nanoTime()-start)/1e9).put("native_device_test",false));
   }finally{VoiceApi.json(config,"DELETE","/v2/me",new JSONObject().put("password",pass));}
  }

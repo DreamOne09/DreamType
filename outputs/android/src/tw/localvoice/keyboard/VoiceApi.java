@@ -7,6 +7,12 @@ import java.util.UUID;
 import org.json.JSONObject;
 
 final class VoiceApi {
+    interface Progress {void update(String message);}
+    static final Progress QUIET=message->{};
+    static final class ApiError extends IOException {
+        final int code;
+        ApiError(int code,String message){super(message);this.code=code;}
+    }
     static final class Result {
         final String text,warning;
         final double computerSeconds;
@@ -29,6 +35,10 @@ final class VoiceApi {
         } finally { c.disconnect(); }
     }
     static Result upload(AppConfig config,File audio) throws Exception {
+        return upload(config,audio,QUIET);
+    }
+    static Result upload(AppConfig config,File audio,Progress progress) throws Exception {
+        progress.update("正在上傳錄音…");
         HttpURLConnection c=connection(config,config.accountMode?"/v2/dictations":"/v1/audio/transcriptions");
         try {
             String boundary="LocalVoice"+UUID.randomUUID().toString().replace("-","");
@@ -55,24 +65,42 @@ final class VoiceApi {
             }
             error(c.getResponseCode());
             JSONObject result=new JSONObject(read(c.getInputStream()));
-            if(config.accountMode) {
-                String id=result.getString("id");long deadline=System.nanoTime()+180000000000L;
-                while(!"done".equals(result.optString("state"))) {
-                    String state=result.optString("state");
-                    if("failed".equals(state)||"expired".equals(state))throw new IOException(result.optString("message","處理未完成。"));
-                    if(System.nanoTime()>deadline)throw new IOException("等待超過三分鐘。工作可能仍在處理，請稍後再試；不要連續重送。");
-                    Thread.sleep(1000);
-                    result=json(config,"GET","/v2/dictations/"+id,null);
-                }
-            }
-            String warning=result.isNull("warning")?"":result.optString("warning","");
-            JSONObject timings=result.optJSONObject("timings");
-            return new Result(result.getString("text"),warning,timings==null?0:timings.optDouble("total_seconds",0));
+            return config.accountMode?awaitResult(config,result,progress):result(result);
         } finally {c.disconnect();}
+    }
+    static Result recover(AppConfig config,Progress progress) throws Exception {
+        if(!config.accountMode)throw new IOException("取回結果需要使用帳號登入。");
+        progress.update("正在尋找上一筆錄音…");
+        return awaitResult(config,json(config,"GET","/v2/me/latest-dictation",null),progress);
+    }
+    static boolean retryable(IOException error) {
+        return !(error instanceof ApiError)||((ApiError)error).code>=500;
+    }
+    private static Result awaitResult(AppConfig config,JSONObject body,Progress progress) throws Exception {
+        long deadline=System.nanoTime()+180000000000L;int failures=0;
+        while(true) {
+            String state=body.optString("state");
+            if("done".equals(state))return result(body);
+            if("failed".equals(state)||"expired".equals(state)||"none".equals(state))throw new IOException(body.optString("message","無法取回結果。"));
+            if(!"queued".equals(state)&&!"running".equals(state))throw new IOException("服務回應格式不正確。");
+            if(System.nanoTime()>deadline)throw new IOException("等候已超過三分鐘，可稍後從「更多 → 取回上一筆」查看。");
+            progress.update("queued".equals(state)?"正在排隊，服務有 "+body.optInt("queue_size",0)+" 段等待中…":"正在辨識與整理…");
+            Thread.sleep(1000);
+            try {body=json(config,"GET","/v2/dictations/"+body.getString("id"),null);failures=0;}
+            catch(IOException e){
+                if(!retryable(e)||++failures>3)throw e;
+                progress.update("網路暫時中斷，正在重新連接…");Thread.sleep(failures*1000L);
+            }
+        }
+    }
+    private static Result result(JSONObject body) throws Exception {
+        String warning=body.isNull("warning")?"":body.optString("warning","");JSONObject timings=body.optJSONObject("timings");
+        return new Result(body.getString("text"),warning,timings==null?0:timings.optDouble("total_seconds",0));
     }
     static JSONObject json(AppConfig config,String method,String path,JSONObject body) throws Exception {
         HttpURLConnection c=connection(config,path);
         try {
+            if(method.equals("GET")&&path.startsWith("/v2/"))c.setReadTimeout(15000);
             c.setRequestMethod(method);
             if(body!=null) {
                 byte[] bytes=body.toString().getBytes(StandardCharsets.UTF_8);
@@ -95,16 +123,16 @@ final class VoiceApi {
     }
     private static void error(int code) throws IOException {
         if(code>=200&&code<300)return;
-        if(code==400)throw new IOException("資料格式不正確，請檢查輸入內容。");
-        if(code==401)throw new IOException("帳號或密碼不正確、登入已失效，或私人金鑰不正確。請重新登入或配對。");
-        if(code==402)throw new IOException("本月試用額度已用完，請聯絡管理者。");
-        if(code==403)throw new IOException("密碼不正確或帳號已停用。");
-        if(code==404)throw new IOException("找不到資料，請確認服務已更新。");
-        if(code==409)throw new IOException("請求衝突，請重新整理後再試。");
-        if(code==429)throw new IOException("上一段還在處理，請稍後再說一次。");
-        if(code==413)throw new IOException("錄音太長，請分成較短的段落。");
-        if(code==502||code==503||code==530)throw new IOException("電腦暫時連不到，請確認電腦未睡眠、服務已啟動。");
-        throw new IOException("連線失敗（"+code+"），請檢查電腦網址。");
+        if(code==400)throw new ApiError(code,"資料格式不正確，請檢查輸入內容。");
+        if(code==401)throw new ApiError(code,"帳號或密碼不正確、登入已失效，或私人金鑰不正確。請重新登入或配對。");
+        if(code==402)throw new ApiError(code,"本月試用額度已用完，請聯絡管理者。");
+        if(code==403)throw new ApiError(code,"密碼不正確或帳號已停用。");
+        if(code==404)throw new ApiError(code,"找不到資料，請確認服務已更新。");
+        if(code==409)throw new ApiError(code,"請求衝突，請重新整理後再試。");
+        if(code==429)throw new ApiError(code,"上一段還在處理，請稍後再說一次。");
+        if(code==413)throw new ApiError(code,"錄音太長，請分成較短的段落。");
+        if(code==502||code==503||code==530)throw new ApiError(code,"電腦暫時連不到，請確認電腦未睡眠、服務已啟動。");
+        throw new ApiError(code,"連線失敗（"+code+"），請檢查電腦網址。");
     }
     static String friendly(Exception e) {
         if(e instanceof SocketTimeoutException)return "等待逾時，請確認電腦與網路，再試較短的錄音。";

@@ -39,6 +39,6 @@ with ThreadPoolExecutor(max_workers=3) as pool:
 
 cloud=ROOT/'cloudflared.exe'
 urllib.request.urlretrieve('https://github.com/cloudflare/cloudflared/releases/download/2026.9.1/cloudflared-windows-amd64.exe',cloud)
-apk=ROOT.parent/'outputs/android/DreamType-0.4.0.apk'
-urllib.request.urlretrieve('https://github.com/DreamOne09/DreamType/releases/download/v0.4.0/DreamType.apk',apk)
-if hashlib.sha256(apk.read_bytes()).hexdigest() != 'f83f19c6e9e585815ff4871d6b788b822423ca6f6502ae1b681f5a0b0a36d552':raise RuntimeError('APK checksum mismatch')
+apk=ROOT.parent/'outputs/android/DreamType-0.5.0.apk'
+urllib.request.urlretrieve('https://github.com/DreamOne09/DreamType/releases/download/v0.5.0/DreamType.apk',apk)
+if hashlib.sha256(apk.read_bytes()).hexdigest() != '2214b2562ec8593567d532f4f99e08e362d56427d0806f1b602606bbb19dec0f':raise RuntimeError('APK checksum mismatch')

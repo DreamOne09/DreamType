@@ -1,0 +1,10 @@
+{
+  "mobile_viewport": true,
+  "login": true,
+  "usage": true,
+  "logout": true,
+  "wrong_password_rejected": true,
+  "delete_account": true,
+  "browser_storage_empty": true,
+  "script_errors": []
+}

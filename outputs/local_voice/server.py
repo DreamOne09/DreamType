@@ -66,10 +66,10 @@ async def test_page():
 
 @app.get('/download/localvoice.apk')
 async def android_apk():
-    apk = Path(__file__).parent.parent / 'android/DreamType-0.4.0.apk'
+    apk = Path(__file__).parent.parent / 'android/DreamType-0.5.0.apk'
     if not apk.exists():
         raise HTTPException(404, 'Android package is not ready')
-    return FileResponse(apk, filename='DreamType-0.4.0.apk',
+    return FileResponse(apk, filename='DreamType-0.5.0.apk',
         media_type='application/vnd.android.package-archive',
         headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
 

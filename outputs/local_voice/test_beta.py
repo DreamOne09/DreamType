@@ -109,5 +109,25 @@ class BetaTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.upload(a,audio=b'x'*(2*1024*1024+1))).status_code,413)
         self.beta.decoder=lambda audio:121
         self.assertEqual((await self.upload(a)).status_code,413)
+    async def test_latest_recovery_is_private_and_does_not_charge_twice(self):
+        _,a=await self.account();_,b=await self.account('bob')
+        self.assertEqual((await self.client.get('/v2/me/latest-dictation')).status_code,401)
+        self.assertEqual((await self.client.get('/v2/me/latest-dictation',headers=a)).json()['state'],'none')
+        await self.upload(a);await asyncio.wait_for(self.beta.queue.join(),2)
+        for _ in range(2):
+            r=await self.client.get('/v2/me/latest-dictation',headers=a)
+            self.assertEqual(r.json()['text'],'整理完成')
+        self.assertEqual((await self.client.get('/v2/me/latest-dictation',headers=b)).json()['state'],'none')
+        self.assertEqual((await self.client.get('/v2/me',headers=a)).json()['used_seconds'],10)
+        self.assertEqual(len(self.provider.calls),1)
+        self.beta.results.clear()
+        self.assertEqual((await self.client.get('/v2/me/latest-dictation',headers=a)).json()['state'],'expired')
+    async def test_latest_running_can_be_recovered_after_lost_response(self):
+        _,a=await self.account();self.provider.gate.clear()
+        await self.upload(a)
+        r=await self.client.get('/v2/me/latest-dictation',headers=a)
+        self.assertIn(r.json()['state'],('queued','running'))
+        self.provider.gate.set();await asyncio.wait_for(self.beta.queue.join(),2)
+        self.assertEqual((await self.client.get('/v2/me/latest-dictation',headers=a)).json()['state'],'done')
 
 if __name__=='__main__':unittest.main()

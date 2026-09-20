@@ -124,13 +124,16 @@ def install_beta(app,work,provider,decoder):
             except StoreError as e:return JSONResponse({'detail':e.message},status_code=e.status)
             except ValueError:return JSONResponse({'detail':'無效請求'},status_code=400)
         response=await call_next(request)
-        if request.url.path.startswith(('/v2/','/admin')):
+        if request.url.path.startswith(('/v2/','/admin','/account')):
             response.headers['Cache-Control']='no-store'
             response.headers['X-Content-Type-Options']='nosniff'
             response.headers['Referrer-Policy']='no-referrer'
+            response.headers['Content-Security-Policy']="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'"
         return response
     @app.get('/admin')
     async def admin_page():return FileResponse(Path(__file__).with_name('admin.html'))
+    @app.get('/account')
+    async def account_page():return FileResponse(Path(__file__).with_name('account.html'))
     @app.post('/v2/login')
     async def login(request:Request):
         now=time.monotonic()
@@ -144,6 +147,10 @@ def install_beta(app,work,provider,decoder):
         beta.store.logout(request.headers.get('authorization','').removeprefix('Bearer '));return {'ok':True}
     @app.get('/v2/me')
     async def me(request:Request):return beta.store.me(beta.user(request)['id'])
+    @app.get('/v2/me/latest-dictation')
+    async def latest(request:Request):
+        uid=beta.user(request)['id'];jid=beta.store.latest(uid)
+        return beta.progress(uid,jid) if jid else {'state':'none','message':'還沒有錄音紀錄'}
     @app.post('/v2/me/preferences')
     @app.patch('/v2/me/preferences')
     async def prefs(request:Request):
