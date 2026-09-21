@@ -6,7 +6,11 @@
 
 [下載 Android APK](https://github.com/DreamOne09/DreamType/releases/latest/download/DreamType.apk) · [安裝步驟](docs/INSTALL.md) · [試用驗收與限制](docs/BETA_ACCEPTANCE.md)
 
-> 0.6.0 封閉試用版：已加入帳號、個人設定同步、排隊與管理介面。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
+> 0.7.0 封閉試用版：已加入帳號、個人設定同步、排隊與管理介面。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
+
+## 0.7.0：資料保護與維運
+
+加密结果可跨主機重啟取回；新版手機回報收件，未確認到期釋放額度。新增加密備份、每日備份／故障恢復排程、一次性密碼重設、管理操作紀錄及健康狀態。25 項後端測試通過；雲端備份、Pixel 9 實測與正式商店付款尚未完成。[操作與六項實際進度](docs/PRODUCTION_STATUS.md)。
 
 ## 0.6.0：兩輪修正
 

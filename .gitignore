@@ -9,3 +9,6 @@ __pycache__/
 .env*
 outputs/local_voice/手機設定.html
 outputs/local_voice/手機試用QR.png
+
+*.dtbackup
+*.sqlite3

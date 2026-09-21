@@ -50,6 +50,7 @@ class Beta:
         self.queue=asyncio.Queue(maxsize=8);self.results={};self.tasks=[];self.logins=deque()
         self.login_slots=asyncio.Semaphore(2)
     async def start(self):
+        self.store.cleanup()
         self.store.recover()
         self.tasks=[asyncio.create_task(self.worker()),asyncio.create_task(self.expire())]
     async def stop(self):
@@ -61,6 +62,7 @@ class Beta:
             await asyncio.sleep(30)
             now=time.time()
             self.results={k:v for k,v in self.results.items() if v['expires']>now}
+            self.store.cleanup()
     async def worker(self):
         while True:
             uid,jid,audio,prefs=await self.queue.get()
@@ -70,7 +72,7 @@ class Beta:
                 result=await self.provider.transcribe(audio,prefs)
                 if not self.store.me(uid)['enabled']:raise ValueError('disabled')
                 if not isinstance(result.get('text'),str):raise ValueError('Invalid response')
-                self.store.state(uid,jid,'done')
+                self.store.complete(uid,jid,result)
                 self.results[(uid,jid)]={'result':result,'expires':time.time()+900}
             except asyncio.CancelledError:
                 self.store.state(uid,jid,'failed');raise
@@ -83,9 +85,12 @@ class Beta:
     def admin_check(self,request):
         if not secrets.compare_digest(request.headers.get('authorization',''),'Bearer '+self.admin):raise StoreError(401,'需要管理者金鑰')
     def progress(self,uid,jid):
+        self.store.cleanup()
         row=self.store.job(uid,jid);result={'id':jid,'state':row['state'],'queue_size':self.queue.qsize()}
-        stored=self.results.get((uid,jid))
-        if stored and stored['expires']>time.time():result.update(stored['result'])
+        with self.store.db() as db:result['receipt_required']=bool(db.execute('SELECT 1 FROM receipts WHERE uid=? AND id=? AND confirmed=0',(uid,jid)).fetchone())
+        stored=self.store.result(uid,jid)
+        if self.store.job(uid,jid)['state']=='failed':result['state']='failed';row['state']='failed'
+        if stored:result.update(stored)
         elif row['state']=='done':result.update(state='expired',message='結果已過期或服務重啟；請勿自動重送錄音')
         if row['state']=='failed':result['message']='處理失敗或服務重啟，這次未扣額度。可重新錄音。'
         return result
@@ -113,7 +118,7 @@ def install_beta(app,work,provider,decoder):
                 if request.method in ('POST','PATCH','DELETE') and 'content-length' not in request.headers:return JSONResponse({'detail':'需要 Content-Length'},status_code=411)
                 if request.url.path.startswith('/v2/admin/'):
                     beta.admin_check(request)
-                elif request.url.path!='/v2/login':beta.user(request)
+                elif request.url.path not in ('/v2/login','/v2/password-reset'):beta.user(request)
                 if request.method in ('POST','PATCH','DELETE'):
                     chunks=[];received=0
                     async for chunk in request.stream():
@@ -145,6 +150,28 @@ def install_beta(app,work,provider,decoder):
     @app.post('/v2/logout')
     async def logout(request:Request):
         beta.store.logout(request.headers.get('authorization','').removeprefix('Bearer '));return {'ok':True}
+    @app.post('/v2/password-reset')
+    async def reset_password(request:Request):
+        now=time.monotonic()
+        while beta.logins and beta.logins[0]<now-60:beta.logins.popleft()
+        if len(beta.logins)>=20:raise StoreError(429,'請稍後再試')
+        beta.logins.append(now)
+        body=await object_body(request)
+        async with beta.login_slots:
+            await asyncio.to_thread(beta.store.reset_password,body.get('code'),body.get('new_password'))
+        return {'ok':True}
+    @app.post('/v2/admin/users/{uid}/password-reset')
+    async def issue_reset(uid:str):return {'code':beta.store.issue_reset(uid),'expires_in':900}
+    @app.get('/v2/admin/audit')
+    async def audit():
+        with beta.store.db() as db:return {'events':[dict(r) for r in db.execute('SELECT * FROM audit ORDER BY id DESC LIMIT 100')]}
+    @app.get('/v2/admin/metrics')
+    async def metrics():
+        with beta.store.db() as db:
+            counts={r[0]:r[1] for r in db.execute('SELECT state,COUNT(*) FROM jobs WHERE created>? GROUP BY state',(time.time()-86400,))}
+        try:maintenance=json.loads((work/'maintenance-status.json').read_text())
+        except (OSError,ValueError):maintenance={'errors':['maintenance_not_run']}
+        return {'queue_size':beta.queue.qsize(),'jobs_last_24h':counts,'worker_alive':bool(beta.tasks) and all(not t.done() for t in beta.tasks),'maintenance':maintenance}
     @app.get('/v2/me')
     async def me(request:Request):return beta.store.me(beta.user(request)['id'])
     @app.get('/v2/me/latest-dictation')
@@ -197,12 +224,16 @@ def install_beta(app,work,provider,decoder):
         if not 0<duration<=120:raise StoreError(413,'每段錄音最多兩分鐘')
         _,fresh=beta.store.reserve(uid,jid,digest,math.ceil(duration),request.headers.get('x-dreamtype-retry')=='1')
         if fresh:
+            if request.headers.get('x-dreamtype-receipt')=='1':beta.store.expect_receipt(uid,jid)
             try:beta.queue.put_nowait((uid,jid,audio,prefs))
             except asyncio.QueueFull:
                 beta.store.state(uid,jid,'failed');raise StoreError(429,'目前排隊已滿，未扣額度')
         return beta.progress(uid,jid)
     @app.get('/v2/dictations/{jid}')
     async def progress(jid:str,request:Request):return beta.progress(beta.user(request)['id'],jid)
+    @app.post('/v2/dictations/{jid}/receipt')
+    async def receipt(jid:str,request:Request):
+        beta.store.receipt(beta.user(request)['id'],jid);return {'ok':True}
     @app.get('/v2/admin/users')
     async def users():
         url=''
@@ -215,8 +246,9 @@ def install_beta(app,work,provider,decoder):
     async def create(request:Request):
         body=await object_body(request)
         uid=await asyncio.to_thread(beta.store.create,body.get('username',''),body.get('password',''),body.get('minutes',1200))
+        beta.store.audit('account_created',uid)
         return {'id':uid}
     @app.patch('/v2/admin/users/{uid}')
     async def update(uid:str,request:Request):
-        body=await object_body(request);beta.store.update(uid,body.get('enabled'),body.get('minutes'));return {'ok':True}
+        body=await object_body(request);beta.store.update(uid,body.get('enabled'),body.get('minutes'));beta.store.audit('account_updated',uid);return {'ok':True}
     return beta

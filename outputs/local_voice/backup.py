@@ -5,6 +5,8 @@ import secrets
 import sqlite3
 import tempfile
 import zipfile
+import io
+from private_crypto import key_file,encrypt,decrypt
 from contextlib import closing
 from datetime import datetime,timezone
 from pathlib import Path
@@ -17,20 +19,34 @@ def create(root):
     keys={'admin.key':work/'beta/admin.key','local-voice.key':work/'local-voice.key'}
     contents={name:p.read_bytes() for name,p in keys.items()}
     target=work/'backups';target.mkdir(exist_ok=True)
-    archive=target/('beta-'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+secrets.token_hex(3)+'.zip')
+    archive=target/('beta-'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+secrets.token_hex(3)+'.dtbackup')
     with tempfile.TemporaryDirectory(dir=target) as temp:
         copy=Path(temp)/'accounts.sqlite3'
         with closing(sqlite3.connect(database)) as source,closing(sqlite3.connect(copy)) as destination:source.backup(destination)
+        with closing(sqlite3.connect(copy)) as db,db:
+            tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            if 'receipts' in tables:
+                db.execute("UPDATE jobs SET state='failed' WHERE state='done' AND EXISTS (SELECT 1 FROM receipts r WHERE r.uid=jobs.uid AND r.id=jobs.id AND r.confirmed=0)")
+            for table in ('results','sessions','reset_codes','receipts'):
+                if table in tables:db.execute('DELETE FROM '+table)
+        with closing(sqlite3.connect(copy)) as db:db.execute('VACUUM')
         contents['accounts.sqlite3']=copy.read_bytes()
     contents['manifest.json']=json.dumps({'format':1,'contains_secrets':True,'audio_included':False,'transcripts_included':False}).encode()
-    with zipfile.ZipFile(archive,'x',zipfile.ZIP_DEFLATED) as package:
+    buffer=io.BytesIO()
+    with zipfile.ZipFile(buffer,'w',zipfile.ZIP_DEFLATED) as package:
         for name,data in contents.items():package.writestr(name,data)
+    archive.write_bytes(b'DTB1'+encrypt(key_file(work/'backup-recovery.key'),buffer.getvalue(),b'DreamType backup v1'))
     return archive
 
-def restore(root,archive):
+def restore(root,archive,recovery_key=None):
     work=root/'work';beta=work/'beta';key=work/'local-voice.key'
     if beta.exists() and any(beta.iterdir()):raise ValueError('Refusing to overwrite existing work/beta. Restore only to a new host directory before starting it.')
-    with zipfile.ZipFile(archive) as package:
+    if archive.stat().st_size>256*1024*1024:raise ValueError('Backup exceeds supported size.')
+    data=archive.read_bytes()
+    if data.startswith(b'DTB1'):
+        if recovery_key is None:raise ValueError('Encrypted backup requires the separately stored recovery key.')
+        data=decrypt(Path(recovery_key).read_bytes(),data[4:],b'DreamType backup v1')
+    with zipfile.ZipFile(io.BytesIO(data)) as package:
         if len(package.namelist())!=len(FILES) or set(package.namelist())!=FILES:raise ValueError('Unexpected backup contents.')
         if any(i.file_size>64*1024*1024 for i in package.infolist()):raise ValueError('Backup exceeds supported size.')
         contents={name:package.read(name) for name in FILES}
@@ -56,9 +72,9 @@ def restore(root,archive):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action',choices=['create','restore']);parser.add_argument('--archive',type=Path)
+    parser.add_argument('action',choices=['create','restore']);parser.add_argument('--archive',type=Path);parser.add_argument('--recovery-key',type=Path)
     args=parser.parse_args();root=Path(__file__).resolve().parents[2]
     if args.action=='restore' and not args.archive:parser.error('restore requires --archive')
-    result=create(root) if args.action=='create' else restore(root,args.archive)
+    result=create(root) if args.action=='create' else restore(root,args.archive,args.recovery_key)
     print(str(result))
     print('Private backup contains account data and host keys. Restored accounts must log in again.')

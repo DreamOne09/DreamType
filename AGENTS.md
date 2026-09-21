@@ -12,3 +12,5 @@ Latest hosting decision (2026-09-21): docs/HOME_SERVER.md supersedes hosted AI A
 0.5.0 adds read-only result recovery, a web account deletion page, and private SQLite backup/restore. See docs/RECOVERY.md. Recovery does not persist audio/text and cannot restore expired results or survive a host restart. Backups contain private keys and must remain outside Git. Never overwrite an existing account database during restore.
 
 0.6.0 adds a single encrypted, one-hour client recording retry buffer for account mode. See docs/TWO_ROUND_REVIEW.md for exact retention, logout and completed-but-expired limitations. Android Keystore/device behavior remains unverified. Explicit failed-job retry reuses the request ID; successful or active jobs are never rerun automatically.
+
+0.7.0 adds encrypted durable 15-minute results, opt-in client receipts and undelivered refunds, encrypted backups (recovery key stored separately), schema version 2, one-time admin-issued password reset, audit/health endpoints and Windows maintenance. See docs/PRODUCTION_STATUS.md. Do not claim cloud backups, native device tests or Play Billing are complete. Never commit .dtbackup or recovery keys.

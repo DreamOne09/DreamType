@@ -42,6 +42,24 @@ class BetaTests(unittest.IsolatedAsyncioTestCase):
         r=await self.client.patch('/v2/me/preferences',headers=a,json={'personal_prompt':'x'*2001})
         self.assertEqual(r.status_code,400)
         r=await self.client.post('/v2/login',json=[]);self.assertEqual(r.status_code,400)
+    async def test_receipt_is_account_scoped_and_idempotent(self):
+        uid,a=await self.account();_,b=await self.account('bob')
+        await self.upload({**a,'X-DreamType-Receipt':'1'});await asyncio.wait_for(self.beta.queue.join(),2)
+        path='/v2/dictations/request-1234567890/receipt'
+        self.assertTrue((await self.client.get('/v2/me/latest-dictation',headers=a)).json()['receipt_required'])
+        self.assertEqual((await self.client.post(path,headers=b,json={})).status_code,409)
+        for _ in range(2):self.assertEqual((await self.client.post(path,headers=a,json={})).status_code,200)
+        self.assertFalse((await self.client.get('/v2/me/latest-dictation',headers=a)).json()['receipt_required'])
+        self.assertEqual(self.beta.store.me(uid)['used_seconds'],10)
+    async def test_admin_reset_revokes_old_session(self):
+        uid,a=await self.account();path='/v2/admin/users/'+uid+'/password-reset'
+        self.assertEqual((await self.client.post(path,headers=a,json={})).status_code,401)
+        code=(await self.client.post(path,headers=self.admin,json={})).json()['code']
+        r=await self.client.post('/v2/password-reset',json={'code':code,'new_password':'changed-password-12345'})
+        self.assertEqual(r.status_code,200)
+        self.assertEqual((await self.client.get('/v2/me',headers=a)).status_code,401)
+        r=await self.client.get('/v2/admin/audit',headers=self.admin)
+        self.assertIn('password_reset_completed',[e['action'] for e in r.json()['events']])
     async def test_queue_idempotency_and_quota(self):
         _,a=await self.account(minutes=1);_,b=await self.account('bob')
         self.provider.gate.clear()
@@ -121,7 +139,7 @@ class BetaTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.get('/v2/me',headers=a)).json()['used_seconds'],10)
         self.assertEqual(len(self.provider.calls),1)
         self.beta.results.clear()
-        self.assertEqual((await self.client.get('/v2/me/latest-dictation',headers=a)).json()['state'],'expired')
+        self.assertEqual((await self.client.get('/v2/me/latest-dictation',headers=a)).json()['state'],'done')
     async def test_latest_running_can_be_recovered_after_lost_response(self):
         _,a=await self.account();self.provider.gate.clear()
         await self.upload(a)

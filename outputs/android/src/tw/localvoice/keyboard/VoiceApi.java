@@ -48,7 +48,7 @@ final class VoiceApi {
             if(config.accountMode&&retryFailed)c.setRequestProperty("X-DreamType-Retry","1");
             String boundary="LocalVoice"+UUID.randomUUID().toString().replace("-","");
             StringBuilder body=new StringBuilder();
-            if(config.accountMode)c.setRequestProperty("Idempotency-Key",requestId);
+            if(config.accountMode){c.setRequestProperty("Idempotency-Key",requestId);c.setRequestProperty("X-DreamType-Receipt","1");}
             else {
             part(body,boundary,"model","local-dictation");
             part(body,boundary,"language","zh");
@@ -83,7 +83,11 @@ final class VoiceApi {
         long deadline=System.nanoTime()+180000000000L;int failures=0;
         while(true) {
             String state=body.optString("state");
-            if("done".equals(state))return result(body);
+            if("done".equals(state)){
+                Result received=result(body);
+                if(body.optBoolean("receipt_required",false))json(config,"POST","/v2/dictations/"+body.getString("id")+"/receipt",new JSONObject());
+                return received;
+            }
             if("failed".equals(state)||"expired".equals(state)||"none".equals(state))throw new IOException(body.optString("message","無法取回結果。"));
             if(!"queued".equals(state)&&!"running".equals(state))throw new IOException("服務回應格式不正確。");
             if(System.nanoTime()>deadline)throw new IOException("等候已超過三分鐘，可稍後從「更多 → 取回上一筆」查看。");
