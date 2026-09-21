@@ -51,6 +51,15 @@ class BetaTests(unittest.IsolatedAsyncioTestCase):
         for _ in range(2):self.assertEqual((await self.client.post(path,headers=a,json={})).status_code,200)
         self.assertFalse((await self.client.get('/v2/me/latest-dictation',headers=a)).json()['receipt_required'])
         self.assertEqual(self.beta.store.me(uid)['used_seconds'],10)
+    async def test_worker_resumes_encrypted_pending_job_after_restart(self):
+        uid,a=await self.account();self.provider.gate.clear()
+        await self.upload({**a,'X-DreamType-Receipt':'1'})
+        await self.beta.stop()
+        self.assertEqual(self.beta.store.me(uid)['reserved_seconds'],10)
+        self.provider.gate.set();await self.beta.start();await asyncio.wait_for(self.beta.queue.join(),2)
+        result=(await self.client.get('/v2/me/latest-dictation',headers=a)).json()
+        self.assertEqual(result['state'],'done');self.assertTrue(result['receipt_required'])
+        self.assertEqual(self.beta.store.me(uid)['used_seconds'],10)
     async def test_admin_reset_revokes_old_session(self):
         uid,a=await self.account();path='/v2/admin/users/'+uid+'/password-reset'
         self.assertEqual((await self.client.post(path,headers=a,json={})).status_code,401)

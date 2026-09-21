@@ -6,6 +6,7 @@ import re
 import secrets
 import sqlite3
 import time
+import base64
 from private_crypto import key_file, encrypt, decrypt
 from datetime import datetime, timezone
 
@@ -24,7 +25,7 @@ class Store:
         self.payload_key=key_file(path.parent/'payload.key')
         with self.db() as db:
             version=db.execute('PRAGMA user_version').fetchone()[0]
-            if version>2:raise RuntimeError('Database is newer than this server; refusing to downgrade.')
+            if version>3:raise RuntimeError('Database is newer than this server; refusing to downgrade.')
             db.executescript('''
             CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL,
               salt TEXT NOT NULL, password TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1,
@@ -42,7 +43,9 @@ class Store:
               digest TEXT NOT NULL,expires REAL NOT NULL);
             CREATE TABLE IF NOT EXISTS receipts(uid TEXT NOT NULL,id TEXT NOT NULL,confirmed INTEGER NOT NULL DEFAULT 0,
               PRIMARY KEY(uid,id),FOREIGN KEY(uid,id) REFERENCES jobs(uid,id) ON DELETE CASCADE);
-            PRAGMA user_version=2;
+            CREATE TABLE IF NOT EXISTS pending_audio(uid TEXT NOT NULL,id TEXT NOT NULL,payload BLOB NOT NULL,
+              expires REAL NOT NULL,PRIMARY KEY(uid,id),FOREIGN KEY(uid,id) REFERENCES jobs(uid,id) ON DELETE CASCADE);
+            PRAGMA user_version=3;
             ''')
     @contextlib.contextmanager
     def db(self):
@@ -113,7 +116,24 @@ class Store:
         if not row:raise StoreError(404,'找不到這筆請求')
         return dict(row)
     def state(self,uid,jid,state):
-        with self.db() as db:db.execute('UPDATE jobs SET state=? WHERE uid=? AND id=?',(state,uid,jid))
+        with self.db() as db:
+            db.execute('UPDATE jobs SET state=? WHERE uid=? AND id=?',(state,uid,jid))
+            if state=='failed':db.execute('DELETE FROM pending_audio WHERE uid=? AND id=?',(uid,jid))
+    def save_pending(self,uid,jid,audio,prefs,receipt_required=False):
+        expires=time.time()+3600
+        payload=encrypt(self.payload_key,json.dumps({'audio':base64.b64encode(audio).decode(),'preferences':prefs}).encode(),f'audio/{uid}/{jid}/{expires}'.encode())
+        with self.db() as db:
+            db.execute('INSERT OR REPLACE INTO pending_audio VALUES(?,?,?,?)',(uid,jid,payload,expires))
+            if receipt_required:db.execute('INSERT OR IGNORE INTO receipts(uid,id) VALUES(?,?)',(uid,jid))
+    def pending(self):
+        with self.db() as db:rows=db.execute("SELECT a.* FROM pending_audio a JOIN jobs j ON j.uid=a.uid AND j.id=a.id WHERE j.state='queued' ORDER BY j.created").fetchall()
+        for row in rows:
+            uid,jid=row['uid'],row['id']
+            try:
+                if row['expires']<=time.time():raise ValueError('expired')
+                data=json.loads(decrypt(self.payload_key,row['payload'],f"audio/{uid}/{jid}/{row['expires']}".encode()))
+                yield uid,jid,base64.b64decode(data['audio']),data['preferences']
+            except Exception:self.state(uid,jid,'failed')
     def complete(self,uid,jid,result):
         expires=time.time()+900
         context=f'{uid}/{jid}/{expires}'.encode()
@@ -122,6 +142,7 @@ class Store:
             db.execute('INSERT OR REPLACE INTO results VALUES(?,?,?,?)',(uid,jid,payload,expires))
             if not db.execute("UPDATE jobs SET state='done' WHERE uid=? AND id=? AND state='running'",(uid,jid)).rowcount:
                 raise ValueError('Job is no longer running')
+            db.execute('DELETE FROM pending_audio WHERE uid=? AND id=?',(uid,jid))
     def result(self,uid,jid):
         with self.db() as db:row=db.execute('SELECT payload,expires FROM results WHERE uid=? AND id=?',(uid,jid)).fetchone()
         if not row or row['expires']<=time.time():return None
@@ -173,7 +194,8 @@ class Store:
         return row['id'] if row else None
     def recover(self):
         with self.db() as db:
-            db.execute("UPDATE jobs SET state='failed' WHERE state IN ('queued','running')")
+            db.execute("UPDATE jobs SET state=CASE WHEN EXISTS (SELECT 1 FROM pending_audio a WHERE a.uid=jobs.uid AND a.id=jobs.id AND a.expires>?) THEN 'queued' ELSE 'failed' END WHERE state IN ('queued','running')",(time.time(),))
+            db.execute('DELETE FROM pending_audio WHERE expires<=?',(time.time(),))
             db.execute('DELETE FROM jobs WHERE created<?',(time.time()-93*86400,))
     def users(self):
         with self.db() as db:ids=[r[0] for r in db.execute('SELECT id FROM users ORDER BY name')]

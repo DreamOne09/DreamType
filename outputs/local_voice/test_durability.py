@@ -4,6 +4,15 @@ from pathlib import Path
 from beta_store import Store,StoreError
 
 class DurabilityTests(unittest.TestCase):
+    def test_pending_audio_survives_restart_encrypted_and_preserves_preferences(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'accounts.sqlite3';store=Store(path);uid=store.create('alice','password-123456789')
+            store.reserve(uid,'pending','digest',10);store.save_pending(uid,'pending',b'private-audio-marker',{'vocabulary':'汐止'})
+            store.state(uid,'pending','running');restarted=Store(path);restarted.recover()
+            self.assertEqual(list(restarted.pending()),[(uid,'pending',b'private-audio-marker',{'vocabulary':'汐止'})])
+            self.assertNotIn(b'private-audio-marker',path.read_bytes())
+            restarted.state(uid,'pending','running');restarted.complete(uid,'pending',{'text':'done'})
+            with restarted.db() as db:self.assertEqual(db.execute('SELECT count(*) FROM pending_audio').fetchone()[0],0)
     def test_missing_receipt_refunds_and_confirmed_receipt_keeps_charge(self):
         with tempfile.TemporaryDirectory() as directory:
             store=Store(Path(directory)/'accounts.sqlite3');uid=store.create('alice','password-123456789')

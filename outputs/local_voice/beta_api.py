@@ -53,10 +53,12 @@ class Beta:
         self.store.cleanup()
         self.store.recover()
         self.tasks=[asyncio.create_task(self.worker()),asyncio.create_task(self.expire())]
+        for job in self.store.pending():await self.queue.put(job)
     async def stop(self):
         for task in self.tasks:task.cancel()
         await asyncio.gather(*self.tasks,return_exceptions=True)
         self.store.recover();self.results.clear()
+        self.queue=asyncio.Queue(maxsize=8)
     async def expire(self):
         while True:
             await asyncio.sleep(30)
@@ -75,7 +77,7 @@ class Beta:
                 self.store.complete(uid,jid,result)
                 self.results[(uid,jid)]={'result':result,'expires':time.time()+900}
             except asyncio.CancelledError:
-                self.store.state(uid,jid,'failed');raise
+                self.store.state(uid,jid,'queued');raise
             except Exception:
                 self.store.state(uid,jid,'failed')
             finally:self.queue.task_done()
@@ -224,7 +226,9 @@ def install_beta(app,work,provider,decoder):
         if not 0<duration<=120:raise StoreError(413,'每段錄音最多兩分鐘')
         _,fresh=beta.store.reserve(uid,jid,digest,math.ceil(duration),request.headers.get('x-dreamtype-retry')=='1')
         if fresh:
-            if request.headers.get('x-dreamtype-receipt')=='1':beta.store.expect_receipt(uid,jid)
+            try:beta.store.save_pending(uid,jid,audio,prefs,request.headers.get('x-dreamtype-receipt')=='1')
+            except Exception:
+                beta.store.state(uid,jid,'failed');raise StoreError(503,'暫時無法保存錄音，未扣額度')
             try:beta.queue.put_nowait((uid,jid,audio,prefs))
             except asyncio.QueueFull:
                 beta.store.state(uid,jid,'failed');raise StoreError(429,'目前排隊已滿，未扣額度')

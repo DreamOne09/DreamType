@@ -27,7 +27,7 @@ def create(root):
             tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             if 'receipts' in tables:
                 db.execute("UPDATE jobs SET state='failed' WHERE state='done' AND EXISTS (SELECT 1 FROM receipts r WHERE r.uid=jobs.uid AND r.id=jobs.id AND r.confirmed=0)")
-            for table in ('results','sessions','reset_codes','receipts'):
+            for table in ('results','sessions','reset_codes','receipts','pending_audio'):
                 if table in tables:db.execute('DELETE FROM '+table)
         with closing(sqlite3.connect(copy)) as db:db.execute('VACUUM')
         contents['accounts.sqlite3']=copy.read_bytes()
