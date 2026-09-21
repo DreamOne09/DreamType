@@ -77,14 +77,15 @@ class Store:
         return {'id':uid,'name':row['name'],'enabled':bool(row['enabled']),'plan':'closed-beta','month_utc':month,'limit_seconds':row['allowance'],'used_seconds':used,'reserved_seconds':reserved,'remaining_seconds':max(0,row['allowance']-used-reserved),'preferences':json.loads(row['preferences'])}
     def preferences(self,uid,values):
         with self.db() as db:db.execute('UPDATE users SET preferences=? WHERE id=?',(json.dumps(values,ensure_ascii=False),uid))
-    def reserve(self,uid,jid,digest,seconds):
+    def reserve(self,uid,jid,digest,seconds,retry_failed=False):
         month=datetime.now(timezone.utc).strftime('%Y-%m')
         with self.db() as db:
             db.execute('BEGIN IMMEDIATE')
             old=db.execute('SELECT * FROM jobs WHERE uid=? AND id=?',(uid,jid)).fetchone()
             if old:
                 if old['digest']!=digest:raise StoreError(409,'同一請求代碼不能用於不同录音或設定')
-                return dict(old),False
+                if retry_failed and old['state']=='failed':db.execute('DELETE FROM jobs WHERE uid=? AND id=?',(uid,jid))
+                else:return dict(old),False
             user=db.execute('SELECT * FROM users WHERE id=? AND enabled=1',(uid,)).fetchone()
             if not user:raise StoreError(403,'帳號已停用')
             if db.execute("SELECT 1 FROM jobs WHERE uid=? AND state IN ('queued','running')",(uid,)).fetchone():raise StoreError(429,'上一段還在處理，請稍候')

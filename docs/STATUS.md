@@ -1,3 +1,9 @@
+# 0.6.0：兩輪產品修正
+
+簡化首頁、常駐登入標籤，加入手機加密錄音暫存及手動安全重試。18 項後端測試、Java 加密與故障注入、真實 HTTPS 重送不重扣通過。Pixel 9 Keystore 與原生操作仍待實機驗收。詳見 [TWO_ROUND_REVIEW.md](TWO_ROUND_REVIEW.md)。
+
+下方為先前版本紀錄。
+
 # 0.5.0：斷線取回與主機備份
 
 新增查詢結果重試、取回上一筆、網頁帳號刪除與 SQLite 備份恢復。16 項後端測試、Java 故障注入、HTTPS 取回與手機尺寸網頁測試通過；APK 原簽章驗證通過。完整說明見 [RECOVERY.md](RECOVERY.md)。

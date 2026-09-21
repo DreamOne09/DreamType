@@ -23,6 +23,7 @@ public final class VoiceIme extends InputMethodService {
     private File recording;
     private long began,generation;
     private boolean recordingNow=false,busy=false,pending=false,protectedField=false;
+    private boolean retained=false;
     private volatile boolean destroyed=false;
     private String lastText="";
     private String sessionKey="";
@@ -42,10 +43,10 @@ public final class VoiceIme extends InputMethodService {
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(12),dp(12),dp(12),dp(12));root.setBackgroundColor(Ui.PAPER);
         status=new TextView(this);status.setTextSize(14);status.setTextColor(Ui.INK);status.setPadding(dp(5),dp(3),dp(5),dp(6));status.setMaxLines(3);root.addView(status);
         ScrollView scroll=new ScrollView(this);resultArea=scroll;preview=new TextView(this);preview.setTextSize(17);preview.setTextColor(Ui.INK);preview.setPadding(dp(8),dp(4),dp(8),dp(4));scroll.addView(preview);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(66)));
-        mic=new Button(this);mic.setAllCaps(false);mic.setTextSize(20);mic.setTextColor(Color.WHITE);Ui.button(mic,true);mic.setOnClickListener(v->{if(pending)insertPending();else if(recordingNow)finishRecording();else startRecording();});root.addView(mic,new LinearLayout.LayoutParams(-1,dp(64)));
+        mic=new Button(this);mic.setAllCaps(false);mic.setTextSize(20);mic.setTextColor(Color.WHITE);Ui.button(mic,true);mic.setOnClickListener(v->{if(pending)insertPending();else if(recordingNow)finishRecording();else if(retained)retryRecording();else startRecording();});root.addView(mic,new LinearLayout.LayoutParams(-1,dp(64)));
         LinearLayout row=new LinearLayout(this);root.addView(row);
         button(row,"換鍵盤",v->((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showInputMethodPicker(),1.15f);
-        button(row,"更多",v->{PopupMenu menu=new PopupMenu(this,v);String[] items={"刪除一字","換行","取回上一筆","我的設定","連線設定"};for(String item:items)menu.getMenu().add(item);menu.setOnMenuItemClickListener(item->{String name=item.getTitle().toString();InputConnection c=getCurrentInputConnection();if(name.equals("刪除一字")){if(c!=null)c.deleteSurroundingTextInCodePoints(1,0);}else if(name.equals("換行")){if(c!=null)c.commitText("\n",1);}else if(name.equals("取回上一筆")){recoverLast();}else if(name.equals("我的設定")){Intent i=new Intent(this,ManageActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}else setup();return true;});menu.show();},1f);
+        button(row,"更多",v->{PopupMenu menu=new PopupMenu(this,v);String[] items={"刪除一字","換行","取回上一筆","刪除保留錄音","我的設定","連線設定"};for(String item:items)menu.getMenu().add(item);menu.setOnMenuItemClickListener(item->{String name=item.getTitle().toString();InputConnection c=getCurrentInputConnection();if(name.equals("刪除一字")){if(c!=null)c.deleteSurroundingTextInCodePoints(1,0);}else if(name.equals("換行")){if(c!=null)c.commitText("\n",1);}else if(name.equals("取回上一筆")){recoverLast();}else if(name.equals("刪除保留錄音")){if(!busy&&!recordingNow){PendingAudio.clear(this);refresh();}}else if(name.equals("我的設定")){Intent i=new Intent(this,ManageActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}else setup();return true;});menu.show();},1f);
         editRow=new LinearLayout(this);root.addView(editRow);
         edit=button(editRow,"修改文字",v->{if(!pending||busy||protectedField)return;Draft.begin(lastText);Intent i=new Intent(this,EditActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);},2f);
         discard=button(editRow,"捨棄",v->{pending=false;lastText="";Draft.clear();preview.setText("");refresh();},1f);
@@ -63,7 +64,8 @@ public final class VoiceIme extends InputMethodService {
         if(mic==null)return;
         String active=AppConfig.load(this).key;
         if(!sessionKey.equals(active)){sessionKey=active;pending=false;lastText="";Draft.clear();preview.setText("");}
-        mic.setText(recordingNow?"停止並整理":busy?"正在整理…":pending?"插入文字":"開始說話");mic.setEnabled(!busy&&!protectedField);
+        retained=PendingAudio.exists(this,AppConfig.load(this));
+        mic.setText(recordingNow?"停止並整理":busy?"正在整理…":pending?"插入文字":retained?"重試上一段":"開始說話");mic.setEnabled(!busy&&!protectedField);
         if(editRow!=null)editRow.setVisibility(pending?View.VISIBLE:View.GONE);
         if(resultArea!=null)resultArea.setVisibility(pending?View.VISIBLE:View.GONE);
         if(discard!=null)discard.setEnabled(pending&&!busy&&!recordingNow);
@@ -74,11 +76,13 @@ public final class VoiceIme extends InputMethodService {
         else if(busy)status.setText("已送出，正在排隊或整理…");
         else if(!AppConfig.load(this).ready())status.setText("請從「更多」開啟連線設定。");
         else if(pending)status.setText("文字已整理好，可修改或插入。");
+        else if(retained)status.setText("有未完成錄音，可重試；不想保留可從「更多」刪除。");
         else status.setText("DreamType · 自然說，清楚寫。");
     }
     private void startRecording() {
         if(busy||protectedField)return;
         AppConfig config=AppConfig.load(this);
+        if(PendingAudio.exists(this,config)){refresh();return;}
         if(!config.ready()||checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){setup();return;}
         try {
             recording=File.createTempFile("voice-",".m4a",getCacheDir());
@@ -96,26 +100,33 @@ public final class VoiceIme extends InputMethodService {
         try{recorder.stop();}catch(RuntimeException e){recorder.release();recorder=null;if(audio!=null)audio.delete();refresh();status.setText("錄音太短，請再說一次。");return;}
         recorder.release();recorder=null;
         if(audio==null){refresh();return;}
-        process(audio);
+        process(audio,false);
     }
     private void recoverLast() {
         if(busy||recordingNow||protectedField)return;
         if(pending){status.setText("請先插入或捨棄目前文字，再取回上一筆。");return;}
         if(getCurrentInputEditorInfo()!=null&&getPackageName().equals(getCurrentInputEditorInfo().packageName))return;
-        process(null);
+        process(null,false);
     }
-    private void process(File audio) {
+    private void retryRecording(){if(!busy&&!recordingNow&&!protectedField&&!pending)process(null,true);}
+    private void process(File audio,boolean retry) {
         final long expected=generation,start=SystemClock.elapsedRealtime();final AppConfig config=AppConfig.load(this);
         busy=true;refresh();
         worker.execute(()->{
             VoiceApi.Result result=null;String error=null;
             VoiceApi.Progress progress=message->main.post(()->{if(!destroyed&&busy&&AppConfig.load(this).key.equals(config.key))status.setText(message);});
-            try{result=audio==null?VoiceApi.recover(config,progress):VoiceApi.upload(config,audio,progress);}catch(Exception e){error=VoiceApi.friendly(e);}finally{if(audio!=null)audio.delete();}
+            try{
+                if(config.accountMode&&(audio!=null||retry)){
+                    EncryptedRecording.Entry saved=retry?PendingAudio.read(this,config):PendingAudio.prepare(this,config,audio);
+                    result=VoiceApi.upload(config,saved.audio,saved.id,progress,retry);
+                }else result=audio==null?VoiceApi.recover(config,progress):VoiceApi.upload(config,audio,progress);
+                if(!result.id.isEmpty())PendingAudio.clearIfRequest(this,config,result.id);
+            }catch(Exception e){error=VoiceApi.friendly(e);}finally{if(audio!=null)audio.delete();}
             final VoiceApi.Result done=result;final String problem=error;
             main.post(()->{
                 if(destroyed)return;busy=false;
                 if(!AppConfig.load(this).key.equals(config.key)){refresh();status.setText("帳號已切換，上一筆結果已清除。");return;}
-                if(problem!=null){refresh();status.setText(problem+(config.accountMode&&audio!=null?" 若已送達，可從「更多 → 取回上一筆」查詢。":""));return;}
+                if(problem!=null){refresh();status.setText(problem+(retained?" 錄音已加密保留，可按重試或從「更多」刪除。":""));return;}
                 lastText=done.text;pending=!lastText.trim().isEmpty();preview.setText(lastText);refresh();
                 boolean inserted=false;
                 if(audio!=null&&pending&&config.autoInsert&&generation==expected&&isInputViewShown()&&!protectedField)inserted=insertPending();

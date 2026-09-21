@@ -28,17 +28,16 @@ public final class HomeActivity extends Activity {
   detail=text(p,"",15);detail.setTextColor(Ui.MUTED);
   action=button(p,"開始使用",true,v->next());
   button(p,"我的設定",false,v->startActivity(new Intent(this,ManageActivity.class)));
-  button(p,"我的帳號",false,v->startActivity(new Intent(this,AccountActivity.class)));
-  button(p,"私人電腦連線",false,v->startActivity(new Intent(this,SetupActivity.class)));
-  text(p,"手機連上網路，就能使用家中電腦的 AI。",14).setTextColor(Ui.MUTED);
+  button(p,"帳號與連線",false,v->{PopupMenu menu=new PopupMenu(this,v);menu.getMenu().add("我的帳號");menu.getMenu().add("進階：私人電腦連線");menu.setOnMenuItemClickListener(item->{startActivity(new Intent(this,item.getTitle().toString().equals("我的帳號")?AccountActivity.class:SetupActivity.class));return true;});menu.show();});
+  text(p,"只有按下錄音才會使用麥克風。文字由你確認後送出。",14).setTextColor(Ui.MUTED);
  }
  @Override protected void onResume(){super.onResume();refresh();}
  private void refresh(){
   action.setEnabled(true);
-  if(!AppConfig.load(this).ready()){step=0;state.setText("先登入試用帳號");detail.setText("輸入管理者提供的服務網址與帳號。");action.setText("登入開始使用");return;}
-  if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){step=1;state.setText("再允許麥克風");detail.setText("只有你按下錄音時才會使用。");action.setText("允許麥克風");return;}
+  if(!AppConfig.load(this).ready()){step=0;state.setText("第 1 步／共 3 步：登入");detail.setText("準備好管理者提供的服務網址與帳號，就能開始。");action.setText("登入開始使用");return;}
+  if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){step=1;state.setText("第 2 步／共 3 步：麥克風");detail.setText("只有你按下錄音時才會使用。");action.setText("允許麥克風");return;}
   boolean enabled=false;for(InputMethodInfo i:((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).getEnabledInputMethodList())if(getPackageName().equals(i.getPackageName()))enabled=true;
-  if(!enabled){step=2;state.setText("最後，啟用 DreamType 鍵盤");detail.setText("原本的 Gboard 可以保留。");action.setText("啟用鍵盤");return;}
+  if(!enabled){step=2;state.setText("第 3 步／共 3 步：啟用鍵盤");detail.setText("原本的 Gboard 可以保留。");action.setText("啟用鍵盤");return;}
   step=3;state.setText("設定完成");detail.setText("開啟記事本或聊天輸入框，切換至 DreamType。");action.setText("切換到 DreamType");
  }
  private void next(){

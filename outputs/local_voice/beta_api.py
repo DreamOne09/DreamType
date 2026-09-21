@@ -182,18 +182,20 @@ def install_beta(app,work,provider,decoder):
         if not audio or len(audio)>2*1024*1024:raise StoreError(413,'錄音需小於 2 MB')
         prefs=beta.store.me(uid)['preferences']
         # Personal settings are fetched from the authenticated account, never from another user ID.
-        digest=hashlib.sha256(audio+json.dumps(prefs,sort_keys=True).encode()).hexdigest()
+        # Retrying the same recording uses the original job's preference snapshot.
+        # Preference edits made while offline must not invalidate its request ID.
+        digest=hashlib.sha256(audio).hexdigest()
         try:
             old=beta.store.job(uid,jid)
             if old['digest']!=digest:raise StoreError(409,'請求代碼與錄音不符')
-            return beta.progress(uid,jid)
+            if not(old['state']=='failed' and request.headers.get('x-dreamtype-retry')=='1'):return beta.progress(uid,jid)
         except StoreError as error:
             if error.status!=404:raise
         if beta.queue.full():raise StoreError(429,'目前排隊已滿，請稍後再試')
         try:duration=await asyncio.to_thread(beta.decoder,audio)
         except Exception:raise StoreError(400,'無法讀取錄音')
         if not 0<duration<=120:raise StoreError(413,'每段錄音最多兩分鐘')
-        _,fresh=beta.store.reserve(uid,jid,digest,math.ceil(duration))
+        _,fresh=beta.store.reserve(uid,jid,digest,math.ceil(duration),request.headers.get('x-dreamtype-retry')=='1')
         if fresh:
             try:beta.queue.put_nowait((uid,jid,audio,prefs))
             except asyncio.QueueFull:

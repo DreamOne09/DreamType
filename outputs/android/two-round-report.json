@@ -1,0 +1,9 @@
+{
+  "version": "0.6.0",
+  "python_tests": 18,
+  "encrypted_storage_core": "passed on desktop JVM",
+  "http_fault_injection": "passed",
+  "https_same_recording_retry": "same text, no additional quota",
+  "android_keystore_device_test": "pending",
+  "pixel9_ui_test": "pending"
+}

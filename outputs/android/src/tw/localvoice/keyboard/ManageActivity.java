@@ -42,6 +42,7 @@ public final class ManageActivity extends Activity {
    });
   });Ui.button(save,true);
   text(p,"連線與更新",20);
+  text(p,"帳號模式：未完成錄音在手機加密保留一份，成功後刪除。超過一小時不可重試，下一次使用時清除過期檔案；登出亦清除。可在鍵盤「更多」手動刪除。",14);
   button(p,"測試電腦連線",v->{status.setText("正在測試…");v.setEnabled(false);worker.execute(()->{String result;try{VoiceApi.verify(AppConfig.load(this));result="電腦已連線。";}catch(Exception e){result=VoiceApi.friendly(e);}final String message=result;runOnUiThread(()->{if(!isDestroyed()){status.setText(message);v.setEnabled(true);}});});});
   button(p,config.accountMode?"帳號與本月用量":"修改電腦網址與金鑰",v->{startActivity(new Intent(this,config.accountMode?AccountActivity.class:SetupActivity.class));finish();});
   button(p,"檢查 App 更新",v->{status.setText("正在檢查 GitHub…");v.setEnabled(false);worker.execute(()->{String tag=null,problem=null;try{tag=UpdateCheck.latest();}catch(Exception e){problem="暫時無法檢查更新，請稍後再試。";}final String version=tag,error=problem;runOnUiThread(()->{if(isDestroyed())return;v.setEnabled(true);if(error!=null){status.setText(error);return;}try{String current=getPackageManager().getPackageInfo(getPackageName(),0).versionName;if(!UpdateCheck.newer(version,current)){status.setText("目前已是最新版本 "+current);return;}new AlertDialog.Builder(this).setTitle("有新版 "+version).setMessage("開啟 GitHub 下載 APK，安裝時選擇更新。已儲存設定會保留。").setPositiveButton("開啟下載",(d,w)->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://github.com/DreamOne09/DreamType/releases/latest")))).setNegativeButton("稍後",null).show();}catch(Exception e){status.setText("請到 GitHub Releases 查看更新。");}});});});

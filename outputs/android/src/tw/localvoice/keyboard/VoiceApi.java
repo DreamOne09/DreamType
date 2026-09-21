@@ -14,9 +14,9 @@ final class VoiceApi {
         ApiError(int code,String message){super(message);this.code=code;}
     }
     static final class Result {
-        final String text,warning;
+        final String text,warning,id;
         final double computerSeconds;
-        Result(String t,String w,double s){text=t;warning=w;computerSeconds=s;}
+        Result(String t,String w,double s,String id){text=t;warning=w;computerSeconds=s;this.id=id;}
     }
     private static HttpURLConnection connection(AppConfig config,String path) throws Exception {
         HttpURLConnection c=(HttpURLConnection)new URL(config.server+path).openConnection();
@@ -38,12 +38,17 @@ final class VoiceApi {
         return upload(config,audio,QUIET);
     }
     static Result upload(AppConfig config,File audio,Progress progress) throws Exception {
+        if(audio.length()>EncryptedRecording.MAX_BYTES)throw new IOException("錄音檔太大，請分成較短段落。");
+        return upload(config,java.nio.file.Files.readAllBytes(audio.toPath()),UUID.randomUUID().toString(),progress,false);
+    }
+    static Result upload(AppConfig config,byte[] audio,String requestId,Progress progress,boolean retryFailed) throws Exception {
         progress.update("正在上傳錄音…");
         HttpURLConnection c=connection(config,config.accountMode?"/v2/dictations":"/v1/audio/transcriptions");
         try {
+            if(config.accountMode&&retryFailed)c.setRequestProperty("X-DreamType-Retry","1");
             String boundary="LocalVoice"+UUID.randomUUID().toString().replace("-","");
             StringBuilder body=new StringBuilder();
-            if(config.accountMode)c.setRequestProperty("Idempotency-Key",UUID.randomUUID().toString());
+            if(config.accountMode)c.setRequestProperty("Idempotency-Key",requestId);
             else {
             part(body,boundary,"model","local-dictation");
             part(body,boundary,"language","zh");
@@ -57,11 +62,9 @@ final class VoiceApi {
             byte[] tail=("\r\n--"+boundary+"--\r\n").getBytes(StandardCharsets.UTF_8);
             c.setRequestMethod("POST");c.setDoOutput(true);
             c.setRequestProperty("Content-Type","multipart/form-data; boundary="+boundary);
-            c.setFixedLengthStreamingMode((long)head.length+audio.length()+tail.length);
-            try(OutputStream out=c.getOutputStream();InputStream in=new FileInputStream(audio)) {
-                out.write(head);byte[] bytes=new byte[16384];int count;
-                while((count=in.read(bytes))!=-1)out.write(bytes,0,count);
-                out.write(tail);
+            c.setFixedLengthStreamingMode((long)head.length+audio.length+tail.length);
+            try(OutputStream out=c.getOutputStream()) {
+                out.write(head);out.write(audio);out.write(tail);
             }
             error(c.getResponseCode());
             JSONObject result=new JSONObject(read(c.getInputStream()));
@@ -95,7 +98,7 @@ final class VoiceApi {
     }
     private static Result result(JSONObject body) throws Exception {
         String warning=body.isNull("warning")?"":body.optString("warning","");JSONObject timings=body.optJSONObject("timings");
-        return new Result(body.getString("text"),warning,timings==null?0:timings.optDouble("total_seconds",0));
+        return new Result(body.getString("text"),warning,timings==null?0:timings.optDouble("total_seconds",0),body.optString("id",""));
     }
     static JSONObject json(AppConfig config,String method,String path,JSONObject body) throws Exception {
         HttpURLConnection c=connection(config,path);

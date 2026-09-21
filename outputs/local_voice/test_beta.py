@@ -129,5 +129,23 @@ class BetaTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn(r.json()['state'],('queued','running'))
         self.provider.gate.set();await asyncio.wait_for(self.beta.queue.join(),2)
         self.assertEqual((await self.client.get('/v2/me/latest-dictation',headers=a)).json()['state'],'done')
+    async def test_retry_keeps_original_settings_and_success_charge(self):
+        _,a=await self.account()
+        await self.upload(a);await self.beta.queue.join()
+        await self.client.post('/v2/me/preferences',headers=a,json={'personal_prompt':'之後的錄音才用條列'})
+        r=await self.upload(a);self.assertEqual(r.status_code,202,r.text)
+        self.assertEqual(r.json()['state'],'done');self.assertEqual(len(self.provider.calls),1)
+        self.assertEqual((await self.client.get('/v2/me',headers=a)).json()['used_seconds'],10)
+    async def test_explicit_retry_failed_job_charges_once(self):
+        _,a=await self.account();original=self.provider.transcribe
+        async def fail(audio,prefs):raise ValueError('temporary failure')
+        self.provider.transcribe=fail
+        await self.upload(a);await self.beta.queue.join()
+        self.assertEqual((await self.upload(a)).json()['state'],'failed')
+        self.provider.transcribe=original
+        r=await self.upload({**a,'X-DreamType-Retry':'1'});self.assertEqual(r.status_code,202,r.text)
+        await self.beta.queue.join()
+        self.assertEqual((await self.client.get('/v2/me/latest-dictation',headers=a)).json()['state'],'done')
+        self.assertEqual((await self.client.get('/v2/me',headers=a)).json()['used_seconds'],10)
 
 if __name__=='__main__':unittest.main()

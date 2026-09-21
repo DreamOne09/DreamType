@@ -18,9 +18,10 @@ public final class AccountActivity extends Activity {
  private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
  private void text(String s,int size){TextView t=new TextView(this);t.setText(s);t.setTextColor(Ui.INK);t.setTextSize(size);t.setPadding(0,dp(12),0,dp(8));page.addView(t);}
  private EditText field(String hint,String value,boolean password){
+  text(hint,15);
   EditText e=new EditText(this);e.setText(value);e.setHint(hint);e.setTextSize(17);e.setSingleLine(true);
   e.setInputType(password?InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD:InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI);
-  e.setSaveEnabled(false);e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);page.addView(e,new LinearLayout.LayoutParams(-1,dp(60)));return e;
+  e.setContentDescription(hint);e.setSaveEnabled(false);e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);page.addView(e,new LinearLayout.LayoutParams(-1,dp(60)));return e;
  }
  private Button button(String label,boolean primary,View.OnClickListener click){Button b=new Button(this);b.setText(label);Ui.button(b,primary);b.setOnClickListener(v->{if(!busy)click.onClick(v);});LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(56));lp.setMargins(0,dp(8),0,dp(8));page.addView(b,lp);return b;}
  private interface Action {String run() throws Exception;}

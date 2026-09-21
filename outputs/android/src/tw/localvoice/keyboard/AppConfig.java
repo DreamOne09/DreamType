@@ -36,7 +36,7 @@ final class AppConfig {
             throw new Exception("請使用完整 HTTPS 電腦網址，不含額外路徑。");
         return s;
     }
-    private static SecretKey secret() throws Exception {
+    static synchronized SecretKey secret() throws Exception {
         KeyStore store=KeyStore.getInstance("AndroidKeyStore"); store.load(null);
         String alias="localvoice.connection";
         if(!store.containsAlias(alias)) {
@@ -76,5 +76,6 @@ final class AppConfig {
         c.getSharedPreferences("connection",Context.MODE_PRIVATE).edit().clear().putString("server",server).commit();
         c.getSharedPreferences("style",Context.MODE_PRIVATE).edit().clear().commit();
         Draft.clear();
+        PendingAudio.clear(c);
     }
 }
