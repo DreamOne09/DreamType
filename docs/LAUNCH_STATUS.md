@@ -14,6 +14,8 @@
 
 沒有付款接入前維持邀請免費試用；不以手機聲稱付款作為授權依據。沒有固定入口前，不宣稱「下載登入即用」已完成。
 
+手機與後端整合補充：Android 16 已透過 HTTP／ASGI bridge 接上隔離的正式帳號 API／SQLite，驗證實際錄音解碼、排隊、文字插入、一次用量計入、回執及錄音清除。登入使用真實 API，AI provider 為固定文字；仍缺登入表單、真實 AI、正式 HTTPS 部署與 Pixel 9 的整段驗收。詳見 [原生證據](ANDROID_NATIVE_CI.md)。
+
 下一個最有價值的外部證據是 Pixel 9 驗收，以及選定離機備份位置；可先用 [手機驗收步驟](PIXEL9_ACCEPTANCE.md)，不需要 USB。
 
 詳細證據：[中文品質](CHINESE_QUALITY.md)、[翻譯](TRANSLATION.md)、[容量](CAPACITY.md)、[恢復](RECOVERY.md)、[刪除還原](DELETION_RECOVERY.md)、[商店規劃](STORE_ROADMAP.md)。

@@ -1,0 +1,3 @@
+INSTRUMENTATION_RESULT: checks=external editor, real IME window, password disables voice, normal field restores voice, MediaRecorder upload, fixed Traditional Chinese response inserted
+INSTRUMENTATION_RESULT: ime=passed
+INSTRUMENTATION_CODE: -1

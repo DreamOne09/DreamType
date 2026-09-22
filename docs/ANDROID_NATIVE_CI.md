@@ -85,3 +85,21 @@ CI 主機的 loopback HTTP 測試服務只接受虛構 token，檢查收到非�
 0.9.4 已納入前述首頁系統列修正，另新增接收確認的有限重試：暫時性網路／5xx 錯誤最多三次，只重送可重複確認的 receipt；401 等不可重試錯誤立即停止，不重新送出音訊。新增 `ReceiptRecoveryTest` 的 HTTP 故障注入與其他五組 JVM 測試通過；本輪原生測試只驗證正常路徑，不宣稱已在原生 UI 注入斷線。
 
 [下載候選版](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.4-rc1)。versionCode 14、原 package／簽章，APK SHA-256 `39b8ed78a04043c28384854b6c8a0f4d62836b46a5ea43b0b8b772196b4dc46a`，與 GitHub 發布資產 digest 相符。
+
+## 真正帳號後端的隔離整合設計
+
+`check_native_ime.py --backend` 使用 `native_backend_fixture.py` 建立全新暫存目錄、正式 `install_beta` API、SQLite 與加密儲存。透過管理者 API 建立虛構帳號，再經登入 API 取得真實測試 session；只有這個臨時 token 交給 Android 測試設定。HTTP／ASGI bridge 原樣傳遞 Android 的授權、語言、請求識別碼與回執標頭，交由正式路由與 middleware 處理。
+
+Android MediaRecorder 產生的音訊由 PyAV 實際解碼，正式排隊 worker 使用固定繁中文字的 AI provider。完成後檢查只有一筆 done 工作、一次上傳與回執、資料庫 confirmed=1，且用量等於音訊解碼秒數向上取整，reserved_seconds=0。手機端也檢查插入與錄音清除。
+
+這不包含登入表單操作、真實 ASR／整理模型、HTTPS／Cloudflare 或實體手機；服務 transport 使用測試用 HTTP／ASGI bridge，不能證明正式伺服器程序與網路部署。CI 不讀取家中資料，帳號與資料庫測完刪除，只上傳統計結果與合成文字畫面。
+
+## Android 與正式帳號 API／SQLite 的實際結果
+
+[工作 35728103818（第 2 次執行）](https://github.com/DreamOne09/DreamType/actions/runs/35728103818/attempts/2)，來源 `6dab573`：三條原生流程通過，包含新加入的隔離正式後端。第一次執行在下載 Android Emulator 套件時發生 ZipFile 錯誤，沒有進入 App 測試；未改程式，重跑已結束的工作後通過。
+
+Android 錄音 28,320 bytes，PyAV 解碼 3.136 秒；資料庫只有一筆 done 工作，計入 4 秒、保留額度歸零，provider 呼叫一次、上傳及接收確認各一次。繁中文字成功插入獨立 App；手機保留錄音與暫存檔直接檢查均不存在。
+
+證據：[完整報告](evidence/android-36-backend/backend-ime-result.json)、[插入斷言](evidence/android-36-backend/backend-ime-instrumentation.txt)、[手機錄音清除](evidence/android-36-backend/backend-delivered.txt)、[已插入截圖](evidence/android-36-backend/ime-inserted.png)。已人工確認截圖外部輸入框中的繁中文字與「已插入」提示。
+
+這比固定 HTTP 回覆多驗證了正式帳號驗證、音訊解碼、FIFO worker、加密結果、SQLite 用量與回執整合；AI provider 仍是固定文字，因此沒有新增語音辨識品質或真實模型速度的證據。登入是測試端透過真實 API 完成，尚未測試手機登入表單。此次只有測試與文件變更，沒有發布新 APK。
