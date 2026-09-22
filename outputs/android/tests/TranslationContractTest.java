@@ -20,7 +20,7 @@ public class TranslationContractTest {
    AppConfig c=new AppConfig("http://127.0.0.1:"+server.getAddress().getPort(),"test",false,"","",true,true,"translate","ja","zh-TW");
    for(int i=0;i<3;i++){
     stage[0]=i;
-    try{VoiceApi.Result r=VoiceApi.upload(c,new byte[]{1},"request-123456789",VoiceApi.QUIET,false);if(i!=1||!r.targetLanguage.equals("ja"))throw new AssertionError("Wrong translation accepted");}
+    try{VoiceApi.Result r=VoiceApi.upload(c,new byte[]{1},"request-123456789",VoiceApi.QUIET,i==2);if(i!=1||!r.targetLanguage.equals("ja"))throw new AssertionError("Wrong translation accepted");}
     catch(IOException ex){if(i==1||!ex.getMessage().contains("0.8.0"))throw ex;}
    }
    if(receipts.get()!=1)throw new AssertionError("An invalid result was acknowledged");

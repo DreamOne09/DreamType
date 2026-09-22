@@ -5,17 +5,22 @@ import java.nio.file.*;
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 
-/** One bounded, authenticated recording. No Android dependency so storage failures can be tested. */
+/** One bounded, authenticated recording. No native Android calls, so storage failures can be tested on the JVM. */
 final class EncryptedRecording {
  static final int MAX_BYTES=2*1024*1024;
  static final long TTL=60*60*1000L;
  static final class Entry {
-  final String id;final byte[] audio;
-  Entry(String id,byte[] audio){this.id=id;this.audio=audio;}
+  final String id,mode,target,source;final byte[] audio;
+  Entry(String id,byte[] audio){this(id,audio,null,null,null);}
+  Entry(String id,byte[] audio,String mode,String target,String source){this.id=id;this.audio=audio;this.mode=mode;this.target=target;this.source=source;}
+  AppConfig requestConfig(AppConfig current)throws IOException{
+   if(mode==null)throw new IOException("這是舊版保留錄音，未記錄原本語言。請先從「更多」取回上一筆；若無結果，刪除保留錄音後重新錄製。");
+   return new AppConfig(current.server,current.key,current.autoInsert,current.personalPrompt,current.vocabulary,current.taiwanPlaces,current.accountMode,mode,target,source);
+  }
  }
  private static String[] header(DataInputStream in)throws Exception{
   String[] parts=in.readUTF().split("\\|",-1);
-  if(parts.length!=4||!parts[0].equals("DT1")||!parts[3].matches("[A-Za-z0-9_-]{16,80}"))throw new IOException("Invalid recording header");
+  if(parts.length!=4||!(parts[0].equals("DT1")||parts[0].equals("DT2"))||!parts[3].matches("[A-Za-z0-9_-]{16,80}"))throw new IOException("Invalid recording header");
   return parts;
  }
  static boolean available(File file,String owner,long now){
@@ -31,7 +36,20 @@ final class EncryptedRecording {
  }
  static void save(File file,SecretKey key,String owner,String id,byte[] audio,long now)throws Exception{
   if(audio.length==0||audio.length>MAX_BYTES||!id.matches("[A-Za-z0-9_-]{16,80}")||!owner.matches("[a-f0-9]{64}"))throw new IOException("Invalid recording");
-  String header="DT1|"+(now+TTL)+"|"+owner+"|"+id;
+  write(file,key,owner,id,audio,now,"DT1");
+ }
+ static void save(File file,SecretKey key,String owner,String id,byte[] audio,long now,AppConfig config)throws Exception{
+  if(audio.length==0||audio.length>MAX_BYTES||!id.matches("[A-Za-z0-9_-]{16,80}")||!owner.matches("[a-f0-9]{64}"))throw new IOException("Invalid recording");
+  if(!validMode(config.mode,config.targetLanguage,config.sourceLanguage))throw new IOException("Invalid recording language");
+  ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+  try(DataOutputStream payload=new DataOutputStream(bytes)){payload.writeUTF(config.mode);payload.writeUTF(config.targetLanguage);payload.writeUTF(config.sourceLanguage);payload.writeInt(audio.length);payload.write(audio);}
+  write(file,key,owner,id,bytes.toByteArray(),now,"DT2");
+ }
+ private static boolean validMode(String mode,String target,String source){
+  return ("organize".equals(mode)||"translate".equals(mode))&&java.util.Arrays.asList(AppConfig.LANGUAGE_CODES).contains(target)&&("auto".equals(source)||java.util.Arrays.asList(AppConfig.LANGUAGE_CODES).contains(source));
+ }
+ private static void write(File file,SecretKey key,String owner,String id,byte[] audio,long now,String version)throws Exception{
+  String header=version+"|"+(now+TTL)+"|"+owner+"|"+id;
   Cipher cipher=Cipher.getInstance("AES/GCM/NoPadding");cipher.init(Cipher.ENCRYPT_MODE,key);cipher.updateAAD(header.getBytes(StandardCharsets.UTF_8));
   byte[] encrypted=cipher.doFinal(audio),iv=cipher.getIV();File temporary=new File(file.getPath()+".tmp");
   try{
@@ -46,9 +64,15 @@ final class EncryptedRecording {
   try(DataInputStream in=new DataInputStream(new FileInputStream(file))){
    String[] h=header(in);int n=in.readInt();if(n!=12)throw new IOException("Invalid recording nonce");
    byte[] iv=new byte[n];in.readFully(iv);ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int count;
-   while((count=in.read(buffer))!=-1){out.write(buffer,0,count);if(out.size()>MAX_BYTES+16)throw new IOException("Recording too large");}
+   while((count=in.read(buffer))!=-1){out.write(buffer,0,count);if(out.size()>MAX_BYTES+1024)throw new IOException("Recording too large");}
    Cipher cipher=Cipher.getInstance("AES/GCM/NoPadding");cipher.init(Cipher.DECRYPT_MODE,key,new GCMParameterSpec(128,iv));cipher.updateAAD(String.join("|",h).getBytes(StandardCharsets.UTF_8));
-   return new Entry(h[3],cipher.doFinal(out.toByteArray()));
+   byte[] decoded=cipher.doFinal(out.toByteArray());
+   if(h[0].equals("DT1"))return new Entry(h[3],decoded);
+   try(DataInputStream payload=new DataInputStream(new ByteArrayInputStream(decoded))){
+    String mode=payload.readUTF(),target=payload.readUTF(),source=payload.readUTF();int length=payload.readInt();
+    if(!validMode(mode,target,source)||length<=0||length>MAX_BYTES||payload.available()!=length)throw new IOException("Invalid recording payload");
+    byte[] audio=new byte[length];payload.readFully(audio);return new Entry(h[3],audio,mode,target,source);
+   }
   }
  }
 }

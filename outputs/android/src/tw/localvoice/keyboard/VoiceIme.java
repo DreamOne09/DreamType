@@ -133,7 +133,7 @@ public final class VoiceIme extends InputMethodService {
             try{
                 if(config.accountMode&&(audio!=null||retry)){
                     EncryptedRecording.Entry saved=retry?PendingAudio.read(this,config):PendingAudio.prepare(this,config,audio);
-                    result=VoiceApi.upload(config,saved.audio,saved.id,progress,retry);
+                    result=VoiceApi.upload(saved.requestConfig(config),saved.audio,saved.id,progress,retry);
                 }else result=audio==null?VoiceApi.recover(config,progress):VoiceApi.upload(config,audio,progress);
                 if(!result.id.isEmpty())PendingAudio.clearIfRequest(this,config,result.id);
             }catch(Exception e){error=VoiceApi.friendly(e);}finally{if(audio!=null)audio.delete();}

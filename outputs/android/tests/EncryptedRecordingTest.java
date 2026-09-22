@@ -24,6 +24,17 @@ public class EncryptedRecordingTest {
    EncryptedRecording.save(file,key,owner,id,audio,now);
    if(EncryptedRecording.available(file,owner,now+EncryptedRecording.TTL)||file.exists())throw new AssertionError("Expired recording retained");
    try{EncryptedRecording.save(file,key,owner,id,new byte[EncryptedRecording.MAX_BYTES+1],now);throw new AssertionError("Oversized recording accepted");}catch(java.io.IOException expected){}
+   try{entry.requestConfig(new AppConfig("https://example.invalid","test",false));throw new AssertionError("Legacy recording silently used current language");}catch(java.io.IOException expected){}
+   AppConfig original=new AppConfig("https://example.invalid","test",false,"","",true,true,"translate","ja","zh-TW");
+   EncryptedRecording.save(file,key,owner,id,audio,now,original);
+   if(new String(Files.readAllBytes(file.toPath()),"ISO-8859-1").contains("translate"))throw new AssertionError("Mode stored outside encryption");
+   EncryptedRecording.Entry saved=EncryptedRecording.read(file,key,owner,now+1);
+   AppConfig changed=new AppConfig("https://example.invalid","test",false,"","",true,true,"translate","th","en");
+   AppConfig restored=saved.requestConfig(changed);
+   if(!restored.mode.equals("translate")||!restored.targetLanguage.equals("ja")||!restored.sourceLanguage.equals("zh-TW")||!Arrays.equals(saved.audio,audio)||!saved.id.equals(id))throw new AssertionError("Retry did not preserve original language and request");
+   byte[] changedBytes=Files.readAllBytes(file.toPath());changedBytes[changedBytes.length-1]^=1;Files.write(file.toPath(),changedBytes);
+   try{EncryptedRecording.read(file,key,owner,now);throw new AssertionError("DT2 tampering accepted");}catch(javax.crypto.AEADBadTagException expected){}
+   System.out.println("PASS: original retry languages, legacy retry rejection, encrypted metadata, DT2 tamper detection");
    System.out.println("PASS: encrypted round trip, tamper detection, request isolation, session isolation, expiry, size bound");
   }finally{file.delete();Files.deleteIfExists(directory.resolve("recording.bin.tmp"));Files.delete(directory);}
  }

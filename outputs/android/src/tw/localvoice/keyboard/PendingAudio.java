@@ -19,8 +19,8 @@ final class PendingAudio {
   if(!AppConfig.load(c).key.equals(config.key))throw new Exception("帳號已變更，錄音未送出。");
   if(exists(c,config))throw new Exception("上一段錄音仍保留中，請先重試或刪除。");
   String id=UUID.randomUUID().toString();byte[] data=Files.readAllBytes(audio.toPath());
-  EncryptedRecording.save(file(c),AppConfig.secret(),owner(config),id,data,System.currentTimeMillis());
-  return new EncryptedRecording.Entry(id,data);
+  EncryptedRecording.save(file(c),AppConfig.secret(),owner(config),id,data,System.currentTimeMillis(),config);
+  return new EncryptedRecording.Entry(id,data,config.mode,config.targetLanguage,config.sourceLanguage);
  }
  static synchronized EncryptedRecording.Entry read(Context c,AppConfig config)throws Exception{
   return EncryptedRecording.read(file(c),AppConfig.secret(),owner(config),System.currentTimeMillis());

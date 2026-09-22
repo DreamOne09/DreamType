@@ -70,7 +70,7 @@ final class VoiceApi {
             error(c.getResponseCode());
             JSONObject result=new JSONObject(read(c.getInputStream()));
             if(!config.accountMode&&config.mode.equals("translate"))requireTranslation(config,result);
-            return config.accountMode?awaitResult(config,result,progress,config.mode.equals("translate")&&!retryFailed):result(result);
+            return config.accountMode?awaitResult(config,result,progress,config.mode.equals("translate")):result(result);
         } finally {c.disconnect();}
     }
     static Result recover(AppConfig config,Progress progress) throws Exception {
