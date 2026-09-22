@@ -46,7 +46,7 @@ public final class ImeInstrumentation extends Instrumentation {
   screenshot("ime-preview");click("插入文字");
   final String[] value={""};deadline=SystemClock.uptimeMillis()+5000;
   do{runOnMainSync(()->value[0]=((EditText)activity.findViewById(101)).getText().toString());
-   if("明天下午四點半到板橋。".equals(value[0])){screenshot("ime-inserted");return;}
+   if("明天下午四點半到板橋。".equals(value[0])){waitForIdleSync();SystemClock.sleep(750);screenshot("ime-inserted");return;}
    SystemClock.sleep(100);
   }while(SystemClock.uptimeMillis()<deadline);
   throw new AssertionError("External editor did not receive exact Traditional Chinese response");
@@ -75,7 +75,7 @@ public final class ImeInstrumentation extends Instrumentation {
    check(activity,102,false,"ime-password");
    check(activity,101,true,"ime-normal-return");
    recordAndInsert(activity);
-   result.putString("ime","passed");result.putString("checks","external editor, real IME window, password disables voice, normal field restores voice");finish(Activity.RESULT_OK,result);
+   result.putString("ime","passed");result.putString("checks","external editor, real IME window, password disables voice, normal field restores voice, MediaRecorder upload, fixed Traditional Chinese response inserted");finish(Activity.RESULT_OK,result);
   }catch(Throwable error){try{screenshot("ime-failure");}catch(Exception ignored){}result.putString("ime","failed");result.putString("failure",error.toString());finish(Activity.RESULT_CANCELED,result);}
  }
 }
