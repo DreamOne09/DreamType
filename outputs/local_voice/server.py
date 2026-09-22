@@ -113,7 +113,12 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
             'temperature': 0.1, 'max_tokens': 2048, 'stream': False,
             'chat_template_kwargs': {'enable_thinking': False}})
         result.raise_for_status()
-        content = result.json()['choices'][0]['message']['content']
+        choice = result.json()['choices'][0]
+        # A partial edit must never replace the user's complete dictation.
+        # The audio route retains the recognized text with a visible warning.
+        if choice.get('finish_reason') != 'stop':
+            raise ValueError('Incomplete formatting result')
+        content = choice['message']['content']
         if not isinstance(content, str) or not content.strip():
             raise ValueError('Empty formatting result')
         return converter.convert(content.strip())
@@ -208,7 +213,10 @@ async def cleanup(request: Request):
         raise HTTPException(400, str(error))
     await acquire()
     try:
-        result = await format_text(text, *preferences)
+        try:
+            result = await format_text(text, *preferences)
+        except (httpx.HTTPError, ValueError, KeyError, IndexError):
+            raise HTTPException(503, 'Formatting unavailable; original text was not changed.')
         return {'id': 'local-' + secrets.token_hex(6), 'object': 'chat.completion',
             'created': int(time.time()), 'model': 'local-format',
             'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': result},

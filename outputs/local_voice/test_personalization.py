@@ -8,6 +8,37 @@ import server
 from personalization import formatting_prompt, speech_hint
 
 class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_incomplete_model_output_never_replaces_full_dictation(self):
+        original = '明天去汐止拿文件，如果下雨就改成星期五。不要取消預約。'
+        client_type = httpx.AsyncClient
+        for finish in ('length', 'content_filter', None):
+            def engine(request):
+                return httpx.Response(200, json={'choices': [{'finish_reason': finish,
+                    'message': {'content': '明天去汐止拿文件。'}}]})
+            def model_client(*args, **kwargs):
+                return client_type(transport=httpx.MockTransport(engine))
+            with self.subTest(finish=finish), patch.object(server.httpx, 'AsyncClient', model_client), \
+                    patch.object(server, 'decode_audio', lambda *a, **k: [0]*16000), \
+                    patch.object(server, 'recognize', lambda *a: (original, 'zh')):
+                response = await self.client.post('/v1/audio/transcriptions', headers=self.auth,
+                    files={'file': ('test.wav', b'fake')})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()['text'], original)
+                self.assertTrue(response.json()['warning'])
+                response = await self.client.post('/v1/chat/completions', headers=self.auth,
+                    json={'messages': [{'role': 'user', 'content': original}]})
+                self.assertEqual(response.status_code, 503)
+                self.assertNotIn('choices', response.json())
+
+    async def test_completed_model_output_is_accepted(self):
+        client_type = httpx.AsyncClient
+        def engine(request):
+            return httpx.Response(200, json={'choices': [{'finish_reason': 'stop',
+                'message': {'content': '不要取消預約。'}}]})
+        with patch.object(server.httpx, 'AsyncClient',
+                lambda **kwargs: client_type(transport=httpx.MockTransport(engine))):
+            self.assertEqual(await server.format_text('不要取消預約'), '不要取消預約。')
+
     async def test_translation_routes_target_and_never_falls_back_to_chinese(self):
         captured=[]
         async def formatter(text,*args):captured.append(args);return '明日の予約をキャンセルしないでください。'
