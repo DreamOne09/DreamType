@@ -46,19 +46,29 @@ def check_mic(enabled,label):
         time.sleep(0.25)
     raise AssertionError('IME microphone state incorrect: '+label)
 
-adb('install','-t','work/emulator-probe/fixture.apk')
-adb('shell','ime','enable','tw.localvoice.keyboard/.VoiceIme')
-adb('shell','ime','set','tw.localvoice.keyboard/.VoiceIme')
-adb('shell','settings','put','secure','show_ime_with_hard_keyboard','1')
-adb('shell','am','start','-W','-n','tw.dreamtype.fixture/.InputFixture')
-tap_field('一般文字')
-check_mic(True,'ime-normal')
-tap_field('密碼欄位')
-check_mic(False,'ime-password')
-tap_field('一般文字')
-check_mic(True,'ime-normal-return')
-report={'external_editor':True,'ime_visible':True,'password_voice_disabled':True,
-        'normal_field_reenabled':True,'microphone_recording_tested':False,'text_insertion_tested':False,
-        'pixel9_tested':False}
-Path('work/emulator-probe/ime-result.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
-print(json.dumps(report))
+try:
+    adb('install','-t','work/emulator-probe/fixture.apk')
+    adb('shell','ime','enable','tw.localvoice.keyboard/.VoiceIme')
+    adb('shell','ime','set','tw.localvoice.keyboard/.VoiceIme')
+    adb('shell','settings','put','secure','show_ime_with_hard_keyboard','1')
+    adb('shell','am','start','-W','-n','tw.dreamtype.fixture/.InputFixture')
+    tap_field('一般文字')
+    check_mic(True,'ime-normal')
+    tap_field('密碼欄位')
+    check_mic(False,'ime-password')
+    tap_field('一般文字')
+    check_mic(True,'ime-normal-return')
+    report={'external_editor':True,'ime_visible':True,'password_voice_disabled':True,
+            'normal_field_reenabled':True,'microphone_recording_tested':False,'text_insertion_tested':False,
+            'pixel9_tested':False}
+    Path('work/emulator-probe/ime-result.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
+    print(json.dumps(report))
+except Exception:
+    for name,command in (
+        ('ime-failure.png',('exec-out','screencap','-p')),
+        ('ime-state.txt',('shell','dumpsys','input_method')),
+        ('ime-log.txt',('shell','logcat','-d','-t','300')),
+        ('ime-failure.xml',('exec-out','cat','/sdcard/dreamtype-ui.xml'))):
+        try:(out/name).write_bytes(adb(*command))
+        except Exception:pass
+    raise
