@@ -19,6 +19,7 @@ public final class SmokeInstrumentation extends Instrumentation {
  }
  private Activity open(Class<?> page){Activity a=startActivitySync(new Intent(getTargetContext(),page).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();return a;}
  private void screenshot(String name)throws Exception{
+  getUiAutomation().waitForIdle(750,5000);
   Bitmap image=getUiAutomation().takeScreenshot();if(image==null)throw new AssertionError("Screenshot unavailable");
   try(FileOutputStream stream=new FileOutputStream(new File(getTargetContext().getExternalFilesDir(null),name+".png"))){image.compress(Bitmap.CompressFormat.PNG,100,stream);}finally{image.recycle();}
  }
@@ -43,13 +44,17 @@ public final class SmokeInstrumentation extends Instrumentation {
    EncryptedRecording.Entry entry=PendingAudio.prepare(context,config,audio);
    EncryptedRecording.Entry recovered=PendingAudio.read(context,config);
    if(!entry.id.equals(recovered.id)||!Arrays.equals(sample,recovered.audio)||!"ja".equals(recovered.target))throw new AssertionError("Keystore recording roundtrip failed");
-   PendingAudio.clear(context);audio.delete();AppConfig.clearSession(context);
-   if(PendingAudio.exists(context,config))throw new AssertionError("Logout did not clear pending audio");
+   File stored=new File(context.getNoBackupFilesDir(),"pending-recording.bin");
+   if(!stored.isFile())throw new AssertionError("Recording missing before logout");
+   audio.delete();AppConfig.clearSession(context);
+   // Inspect the file directly: available()/exists() can itself delete old files.
+   if(stored.exists()||new File(stored.getPath()+".tmp").exists())throw new AssertionError("Logout did not clear pending audio");
+   if(!AppConfig.load(context).key.isEmpty())throw new AssertionError("Logout did not clear credential");
    Activity privacy=open(PrivacyActivity.class);
    final boolean[] found={false};runOnMainSync(()->{found[0]=find(privacy.getWindow().getDecorView(),"資料與隱私")!=null;});
    if(!found[0])throw new AssertionError("Offline privacy screen missing");
    screenshot("privacy");
-   result.putString("dreamtype","passed");result.putString("checks","Chinese onboarding, login navigation, Android Keystore credentials and recording, offline privacy");
+   result.putString("dreamtype","passed");result.putString("checks","Chinese onboarding, login navigation, Android Keystore credentials and recording, logout deletion, offline privacy");
    finish(Activity.RESULT_OK,result);
   }catch(Throwable failure){result.putString("dreamtype","failed");result.putString("failure",failure.toString());finish(Activity.RESULT_CANCELED,result);}
  }
