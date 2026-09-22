@@ -103,3 +103,11 @@ Android 錄音 28,320 bytes，PyAV 解碼 3.136 秒；資料庫只有一筆 done
 證據：[完整報告](evidence/android-36-backend/backend-ime-result.json)、[插入斷言](evidence/android-36-backend/backend-ime-instrumentation.txt)、[手機錄音清除](evidence/android-36-backend/backend-delivered.txt)、[已插入截圖](evidence/android-36-backend/ime-inserted.png)。已人工確認截圖外部輸入框中的繁中文字與「已插入」提示。
 
 這比固定 HTTP 回覆多驗證了正式帳號驗證、音訊解碼、FIFO worker、加密結果、SQLite 用量與回執整合；AI provider 仍是固定文字，因此沒有新增語音辨識品質或真實模型速度的證據。登入是測試端透過真實 API 完成，尚未測試手機登入表單。此次只有測試與文件變更，沒有發布新 APK。
+
+## 修改頁重建與舊草稿隔離（0.9.6）
+
+[工作 35729978550](https://github.com/DreamOne09/DreamType/actions/runs/35729978550)，來源 `49f4171`：原生 Instrumentation 開啟修改頁、修改繁中文字並選取範圍，呼叫 Activity.recreate 後確認文字與選取位置保留；復原按鈕仍還原初始原文，完成後交回修改文字。另驗證舊頁不能覆蓋新一筆 Draft，登出清除後舊頁不能再存回內容。既有私人、合成帳號及正式後端隔離流程一併通過。
+
+[結果](evidence/android-36-editor/result.txt)、[重建後修改頁](evidence/android-36-editor/editor-recreated.png)。截圖人工確認繁中內容、指引與主要完成按鈕可見；此截图沒有展開 Gboard，因此不代表軟鍵盤彈出或橫向小螢幕版面已驗收。
+
+編輯暫存使用記憶體中的 non-configuration state，不寫入 Bundle／偏好設定；程序死亡仍可能遺失未完成修改。這不是永久草稿，也不是 Pixel 9 實際旋轉測試。0.9.6 候選來源 `b1ecd7a` 相較測試來源只更新 manifest 版號與建置報告，版本代碼 16、原簽章；發布資產雜湊已核對。
