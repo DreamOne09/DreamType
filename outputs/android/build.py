@@ -1,6 +1,6 @@
 """Build a small native IME with the official Android build tools, no Gradle required."""
 from pathlib import Path
-import os,subprocess,secrets,zipfile,json,hashlib
+import os,subprocess,secrets,zipfile,json,hashlib,tempfile
 import xml.etree.ElementTree as ET
 
 HERE=Path(__file__).resolve().parent
@@ -13,7 +13,9 @@ ANDROID=TOOLS/'platform/android-36/android.jar'
 manifest=ET.parse(HERE/'AndroidManifest.xml').getroot()
 ns='{http://schemas.android.com/apk/res/android}'
 version=manifest.get(ns+'versionName')
-OUT=WORK/'android-build'
+# Isolate each build so removed Java classes cannot leak into the APK.
+_build_temp=tempfile.TemporaryDirectory(prefix='android-apk-',dir=WORK)
+OUT=Path(_build_temp.name)
 for directory in [OUT,OUT/'generated',OUT/'classes',OUT/'dex']:directory.mkdir(parents=True,exist_ok=True)
 env=os.environ.copy();env['JAVA_HOME']=str(JDK)
 def run(*args):

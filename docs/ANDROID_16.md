@@ -1,6 +1,6 @@
 # Android 16／API 36 升級驗收
 
-0.9.0 候選版 versionCode 10，compile SDK 36／target SDK 36／min SDK 26。原 0.8.0 APK 與 GitHub Release 保留，尚未發布 0.9.0。
+0.9.0 候選版 versionCode 10，compile SDK 36／target SDK 36／min SDK 26。原 0.8.0 APK 與 GitHub Release 保留；0.9.0 已以 v0.9.0-rc1 發布預覽版。0.9.1（versionCode 11）延續相同 SDK 設定，加入主畫面簡化。
 
 ## 已完成
 
