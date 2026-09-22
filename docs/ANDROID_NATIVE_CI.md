@@ -63,3 +63,9 @@ CI 主機的 loopback HTTP 測試服務只接受虛構 token，檢查收到非�
 保存 [結果 JSON](evidence/android-36-record-insert/ime-result.json)、[Instrumentation 結果](evidence/android-36-record-insert/ime-instrumentation.txt)、[錄音中](evidence/android-36-record-insert/ime-recording.png)、[文字預覽](evidence/android-36-record-insert/ime-preview.png)、[已插入](evidence/android-36-record-insert/ime-inserted.png)。已人工確認最後圖片中的文字位於外部 App，鍵盤提示「已插入，可以繼續說話。」。
 
 測試過程補正了視窗焦點、密碼提示節點更新及插入後畫面重繪的等待；沒有放寬錄音上傳、密碼保護或文字內容條件。前一輪 `35723952005` 也通過內容斷言，但插入截圖早於畫面重繪，因此保存本輪完整證據。這次沒有發布新 APK，測試程式不編入正式版。
+
+## 帳號模式的測試設計
+
+`check_native_ime.py --account` 使用測試專用設定建立虛構的已登入狀態，並重跑原生錄音與外部文字框插入。合成服務檢查 UUID 請求識別碼、回執及語言標頭；依序回傳 queued、running、done，最後只允許一次收到文字的回執。插入完成後，以獨立 Instrumentation 直接檢查手機上的加密錄音檔及暫存檔已不存在，不先呼叫清除或可能順便清除的讀取方法。
+
+這驗證 Android 帳號模式與 HTTP 協定整合；沒有操作登入表單，也沒有連接真實後端／AI。成功回執代表手機已收到文字，不代表使用者已送出聊天訊息。私人模式與帳號模式報告分開保存，後者的結果檔名以 `account-` 開頭。

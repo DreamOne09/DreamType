@@ -61,6 +61,9 @@ out.mkdir(parents=True,exist_ok=True)
 def adb(*args):return subprocess.run(['adb',*args],check=True,capture_output=True,timeout=90).stdout
 try:
     adb('install','-t','work/emulator-probe/fixture.apk')
+    # Self-instrumentation restarts the target process. Detach the previous IME
+    # before reconfiguring, so the next case binds a fresh service instance.
+    adb('shell','ime','reset')
     configured=adb('shell','am','instrument','-w','-e','configure_voice','true','-e','account_voice',str(account).lower(),'tw.localvoice.keyboard/.SmokeInstrumentation').decode('utf-8')
     if 'INSTRUMENTATION_RESULT: dreamtype=passed' not in configured:
         raise AssertionError(configured)
