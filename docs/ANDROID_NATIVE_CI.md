@@ -55,3 +55,11 @@
 後續探測會透過真實 IME 按鈕開始錄音、停止、等待文字預覽，再按「插入文字」，核對獨立測試 App 的 EditText 完整內容。使用 Android MediaRecorder；跑在模擬器上，聲音可能是靜音，不評分語音辨識品質。
 
 CI 主機的 loopback HTTP 測試服務只接受虛構 token，檢查收到非空 MP4 錄音欄位，再回傳固定的「明天下午四點半到板橋。」。報告只記錄上傳次數與位元組數，不保存音訊。暫時測試 APK 才允許此 HTTP 連線；正式 manifest 與 HTTPS 限制不變，也不連接家中伺服器。這條路徑驗證私人模式的操作與傳輸，不取代帳號模式排隊、結果回執或真實 AI 品質測試。
+
+## 錄音與插入的實際結果
+
+[工作 35724421500](https://github.com/DreamOne09/DreamType/actions/runs/35724421500)，來源 `56d9835`，Android 16 模擬器通過：點擊開始說話、MediaRecorder 錄音、停止、HTTP 上傳、顯示固定繁中回覆、按插入，獨立 App 的 EditText 內容與預期逐字一致。只收到一次上傳，MP4 欄位 27,808 bytes。這是操作與傳輸證據，不是音質、辨識準確率或端到端 AI 延遲測量；畫面中的處理秒數來自合成回覆流程。
+
+保存 [結果 JSON](evidence/android-36-record-insert/ime-result.json)、[Instrumentation 結果](evidence/android-36-record-insert/ime-instrumentation.txt)、[錄音中](evidence/android-36-record-insert/ime-recording.png)、[文字預覽](evidence/android-36-record-insert/ime-preview.png)、[已插入](evidence/android-36-record-insert/ime-inserted.png)。已人工確認最後圖片中的文字位於外部 App，鍵盤提示「已插入，可以繼續說話。」。
+
+測試過程補正了視窗焦點、密碼提示節點更新及插入後畫面重繪的等待；沒有放寬錄音上傳、密碼保護或文字內容條件。前一輪 `35723952005` 也通過內容斷言，但插入截圖早於畫面重繪，因此保存本輪完整證據。這次沒有發布新 APK，測試程式不編入正式版。

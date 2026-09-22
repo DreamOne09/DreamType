@@ -32,4 +32,4 @@ Android 通常不允許直接以較低版號覆蓋，候選版不是一鍵可降
 
 ## GitHub 模擬器已補部分證據
 
-2026-09-22 已在 GitHub 的 Android 16 模擬器實際驗證首頁登入導向、Android Keystore 憑證及合成錄音讀寫、離線隱私頁，見 [原生模擬器驗證](ANDROID_NATIVE_CI.md)。本機韌體限制沒有被變更；遠端模擬器不等於 Pixel 9，也尚未驗證輸入法錄音／插入及 Surfshark。
+2026-09-22 已在 GitHub 的 Android 16 模擬器實際驗證首頁登入導向、Android Keystore 憑證及合成錄音讀寫、登出清除、離線隱私頁、密碼欄位保護，以及私人模式錄音上傳／固定繁中回覆插入獨立測試 App，見 [原生模擬器驗證](ANDROID_NATIVE_CI.md)。本機韌體限制沒有被變更；遠端模擬器不等於 Pixel 9，也未驗證真實語音品質、帳號模式完整 UI 流程及 Surfshark。
