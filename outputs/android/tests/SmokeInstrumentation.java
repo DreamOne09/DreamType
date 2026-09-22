@@ -19,6 +19,8 @@ public final class SmokeInstrumentation extends Instrumentation {
  }
  private Activity open(Class<?> page){Activity a=startActivitySync(new Intent(getTargetContext(),page).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();return a;}
  private void screenshot(String name)throws Exception{
+  // System bar transitions do not necessarily post accessibility idle events.
+  android.os.SystemClock.sleep(2000);
   getUiAutomation().waitForIdle(750,5000);
   Bitmap image=getUiAutomation().takeScreenshot();if(image==null)throw new AssertionError("Screenshot unavailable");
   try(FileOutputStream stream=new FileOutputStream(new File(getTargetContext().getExternalFilesDir(null),name+".png"))){image.compress(Bitmap.CompressFormat.PNG,100,stream);}finally{image.recycle();}
