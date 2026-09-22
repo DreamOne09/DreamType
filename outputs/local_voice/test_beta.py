@@ -15,6 +15,16 @@ class Provider:
         return {'text':'整理完成','timings':{'total_seconds':0.1}}
 
 class BetaTests(unittest.IsolatedAsyncioTestCase):
+    async def test_admin_metrics_report_missing_or_malformed_maintenance(self):
+        self.assertEqual((await self.client.get('/v2/admin/metrics')).status_code,401)
+        for data in ('[]', '{"checked_at": 1, "ready": true, "errors": []}'):
+            (Path(self.temp.name)/'maintenance-status.json').write_text(data)
+            response=await self.client.get('/v2/admin/metrics',headers=self.admin)
+            self.assertEqual(response.status_code,200)
+            checks={c['code']:c for c in response.json()['operations']['checks']}
+            self.assertEqual(checks['engine']['state'],'attention')
+            self.assertEqual(checks['offsite']['state'],'unverified')
+
     async def test_translation_choice_snapshot_and_retry(self):
         _,a=await self.account();self.provider.gate.clear()
         header={**a,'X-DreamType-Mode':'translate','X-DreamType-Target':'th','X-DreamType-Source':'zh-TW'}

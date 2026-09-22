@@ -174,7 +174,9 @@ def install_beta(app,work,provider,decoder):
             counts={r[0]:r[1] for r in db.execute('SELECT state,COUNT(*) FROM jobs WHERE created>? GROUP BY state',(time.time()-86400,))}
         try:maintenance=json.loads((work/'maintenance-status.json').read_text())
         except (OSError,ValueError):maintenance={'errors':['maintenance_not_run']}
-        return {'queue_size':beta.queue.qsize(),'jobs_last_24h':counts,'worker_alive':bool(beta.tasks) and all(not t.done() for t in beta.tasks),'maintenance':maintenance}
+        from operations import summarize
+        return {'queue_size':beta.queue.qsize(),'jobs_last_24h':counts,'worker_alive':bool(beta.tasks) and all(not t.done() for t in beta.tasks),'maintenance':maintenance,
+                'operations':summarize(maintenance,(work/'backup-config.json').is_file())}
     @app.get('/v2/me')
     async def me(request:Request):return beta.store.me(beta.user(request)['id'])
     @app.get('/v2/me/latest-dictation')
