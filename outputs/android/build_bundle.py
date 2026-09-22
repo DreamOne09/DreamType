@@ -36,7 +36,7 @@ def main():
         if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
             raise ValueError('Tool checksum mismatch: ' + name)
     jdk = next((TOOLS/'jdk').glob('jdk-*'))
-    sdk = TOOLS/'platform/android-35/android.jar'
+    sdk = TOOLS/'platform/android-36/android.jar'
     build = TOOLS/'build-tools/android-15'
     keystore = ROOT/'work/localvoice-signing.p12'
     password = ROOT/'work/localvoice-signing.password'
@@ -92,11 +92,11 @@ def main():
         apk_output.write_bytes((temp/'universal.apk').read_bytes())
     report = {'aab':output.name,'aab_sha256':hashlib.sha256(output.read_bytes()).hexdigest(),
         'test_apk':apk_output.name,'test_apk_sha256':hashlib.sha256(apk_output.read_bytes()).hexdigest(),
-        'package':manifest.get('package'),'version':version,'version_code':int(manifest.get(ns+'versionCode')),
+        'package':manifest.get('package'),'version':version,'version_code':int(manifest.get(ns+'versionCode')),'target_sdk':int(manifest.find('uses-sdk').get(ns+'targetSdkVersion')),'compile_sdk':36,
         'bundletool_validation':True,'signed':True,'apk_signature_verified':True,'distribution_channel':'play',
         'native_device_test':False,'play_upload_test':False,'store_ready':False,
         'remaining':['Play Console and signing enrollment','Play listing update link verification','Billing and purchase verification',
-                     'Target SDK policy review','Native device tests and store disclosures'],
+                     'Android 16 native behavior verification','Native device tests and store disclosures'],
         'tool_sha256':{name:pin[1] for name,pin in PINS.items()}}
     (HERE/'bundle-report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     print(json.dumps(report))

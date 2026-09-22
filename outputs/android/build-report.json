@@ -1,11 +1,12 @@
 {
-  "file": "DreamType-0.8.0.apk",
+  "file": "DreamType-0.9.0.apk",
   "bytes": 54045,
-  "sha256": "5151c0d999c31f5acca78f5a3895f0c8eb3c5317aa13716ee5849685d0569938",
+  "sha256": "a70d17cd6891be618541f0a81a323ffe79cb667b728ffb04295a2f302ce1bd83",
   "package": "tw.localvoice.keyboard",
-  "version": "0.8.0",
+  "version": "0.9.0",
+  "versionCode": 10,
   "minSdk": 26,
-  "targetSdk": 35,
+  "targetSdk": 36,
   "secrets_embedded": false,
   "native_device_test": "Pending Pixel 9 installation"
 }

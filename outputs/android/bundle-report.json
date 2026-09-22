@@ -1,11 +1,13 @@
 {
-  "aab": "DreamType-0.8.0-experimental.aab",
-  "aab_sha256": "baf0ad46912c312a65998b6af0109184dd468d089236e8d1f05e23983b7939cd",
-  "test_apk": "DreamType-0.8.0-bundle-test.apk",
-  "test_apk_sha256": "4deb06879340bce5dd806a2dd437fa66434229121fc26979dbef33b6c5179331",
+  "aab": "DreamType-0.9.0-experimental.aab",
+  "aab_sha256": "2cdff0037702834d3c698916dd1165ab2150842aea186781c28d83ee64e5c239",
+  "test_apk": "DreamType-0.9.0-bundle-test.apk",
+  "test_apk_sha256": "8ce5bd6bd19bed975433959b8f4a76e3deee259a84d60f43a4189800a43ab160",
   "package": "tw.localvoice.keyboard",
-  "version": "0.8.0",
-  "version_code": 9,
+  "version": "0.9.0",
+  "version_code": 10,
+  "target_sdk": 36,
+  "compile_sdk": 36,
   "bundletool_validation": true,
   "signed": true,
   "apk_signature_verified": true,
@@ -17,7 +19,7 @@
     "Play Console and signing enrollment",
     "Play listing update link verification",
     "Billing and purchase verification",
-    "Target SDK policy review",
+    "Android 16 native behavior verification",
     "Native device tests and store disclosures"
   ],
   "tool_sha256": {
