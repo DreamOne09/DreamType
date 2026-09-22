@@ -21,6 +21,8 @@ jobs:
       - name: Install build tools
         run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;35.0.0"'
       - run: python scripts/build_emulator_probe.py
+      - name: Install isolated backend test dependencies
+        run: pip install fastapi==0.141.1 httpx==0.28.1 python-multipart==0.0.32 cryptography==50.0.1 av==18.1.0
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
@@ -38,6 +40,7 @@ jobs:
             adb exec-out screencap -p > work/emulator-probe/screenshots/launcher-home.png
             python scripts/check_native_ime.py
             python scripts/check_native_ime.py --account
+            python scripts/check_native_ime.py --backend
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -49,4 +52,7 @@ jobs:
             work/emulator-probe/account-ime-result.json
             work/emulator-probe/account-ime-instrumentation.txt
             work/emulator-probe/account-delivered.txt
+            work/emulator-probe/backend-ime-result.json
+            work/emulator-probe/backend-ime-instrumentation.txt
+            work/emulator-probe/backend-delivered.txt
             work/emulator-probe/screenshots

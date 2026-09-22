@@ -9,8 +9,9 @@ from email.policy import default
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
 
-account='--account' in sys.argv
-prefix='account-' if account else ''
+backend='--backend' in sys.argv
+account='--account' in sys.argv or backend
+prefix='backend-' if backend else 'account-' if account else ''
 uploads=[]
 job={'id':None,'polls':0,'receipts':0}
 class SyntheticResponse(BaseHTTPRequestHandler):
@@ -53,10 +54,14 @@ class SyntheticResponse(BaseHTTPRequestHandler):
         if account:self.reply({'id':job['id'],'state':'queued','queue_size':1})
         else:self.reply({'text':'明天下午四點半到板橋。','warning':None,'mode':'organize','target_language':'zh-TW'})
 
-server=ThreadingHTTPServer(('127.0.0.1',18765),SyntheticResponse)
+fixture=None
+if backend:
+    from native_backend_fixture import BackendFixture
+    fixture=BackendFixture()
+server=fixture.server if fixture else ThreadingHTTPServer(('127.0.0.1',18765),SyntheticResponse)
 Thread(target=server.serve_forever,daemon=True).start()
 
-out=Path('work/emulator-probe/screenshots')/('account' if account else 'private')
+out=Path('work/emulator-probe/screenshots')/('backend' if backend else 'account' if account else 'private')
 out.mkdir(parents=True,exist_ok=True)
 def adb(*args):return subprocess.run(['adb',*args],check=True,capture_output=True,timeout=90).stdout
 try:
@@ -64,7 +69,7 @@ try:
     # Self-instrumentation restarts the target process. Detach the previous IME
     # before reconfiguring, so the next case binds a fresh service instance.
     adb('shell','ime','reset')
-    configured=adb('shell','am','instrument','-w','-e','configure_voice','true','-e','account_voice',str(account).lower(),'tw.localvoice.keyboard/.SmokeInstrumentation').decode('utf-8')
+    configured=adb('shell','am','instrument','-w','-e','configure_voice','true','-e','account_voice',str(account).lower(),'-e','voice_token',fixture.token if fixture else 'synthetic-emulator-token','tw.localvoice.keyboard/.SmokeInstrumentation').decode('utf-8')
     if 'INSTRUMENTATION_RESULT: dreamtype=passed' not in configured:
         raise AssertionError(configured)
     adb('shell','pm','grant','tw.localvoice.keyboard','android.permission.RECORD_AUDIO')
@@ -76,9 +81,10 @@ try:
     adb('pull','/sdcard/Android/data/tw.dreamtype.fixture/files',str(out/'ime'))
     if 'INSTRUMENTATION_RESULT: ime=passed' not in result or 'INSTRUMENTATION_CODE: -1' not in result:
         raise AssertionError(result)
-    if len(uploads)!=1:raise AssertionError('Expected exactly one valid audio upload')
+    backend_report=fixture.verify() if fixture else {}
+    if not backend and len(uploads)!=1:raise AssertionError('Expected exactly one valid audio upload')
     if account:
-        if job['polls']!=2 or job['receipts']!=1:raise AssertionError('Expected running/done polling and exactly one receipt')
+        if not backend and (job['polls']!=2 or job['receipts']!=1):raise AssertionError('Expected running/done polling and exactly one receipt')
         delivered=adb('shell','am','instrument','-w','-e','verify_delivered','true','tw.localvoice.keyboard/.SmokeInstrumentation').decode('utf-8')
         Path('work/emulator-probe/'+prefix+'delivered.txt').write_text(delivered,encoding='utf-8')
         if 'INSTRUMENTATION_RESULT: delivered=passed' not in delivered or 'INSTRUMENTATION_CODE: -1' not in delivered:
@@ -90,7 +96,10 @@ try:
             'speech_recognition_tested':False,'uploaded_audio_bytes':uploads,
             'mode':'account' if account else 'private','queue_polling_tested':account,
             'receipts':job['receipts'],'delivered_recording_cleanup_tested':account,
-            'login_ui_tested':False,'real_backend_tested':False}
+            'login_ui_tested':False,'real_backend_tested':backend}
+    if backend:
+        report.update(backend_report)
+        report['response_source']='production beta API and SQLite through HTTP/ASGI bridge; synthetic AI provider'
     Path('work/emulator-probe/'+prefix+'ime-result.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     print(json.dumps(report))
 except Exception:
@@ -103,3 +112,4 @@ except Exception:
     raise
 finally:
     server.shutdown();server.server_close()
+    if fixture:fixture.close()
