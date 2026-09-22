@@ -36,10 +36,12 @@ jobs:
             adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n tw.localvoice.keyboard/.HomeActivity
             sleep 3
             adb exec-out screencap -p > work/emulator-probe/screenshots/launcher-home.png
+            python scripts/check_native_ime.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: native-probe-evidence
           path: |
             work/emulator-probe/result.txt
+            work/emulator-probe/ime-result.json
             work/emulator-probe/screenshots

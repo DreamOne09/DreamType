@@ -32,3 +32,16 @@ with zipfile.ZipFile(out/'unsigned.apk','a',zipfile.ZIP_DEFLATED) as archive:
 run(build/'zipalign','-f','4',out/'unsigned.apk',out/'aligned.apk')
 run('keytool','-genkeypair','-keystore',out/'test.p12','-storepass','android','-keypass','android','-alias','test','-keyalg','RSA','-validity','2','-dname','CN=Disposable Emulator Test')
 run(build/'apksigner','sign','--ks',out/'test.p12','--ks-pass','pass:android','--out',out/'probe.apk',out/'aligned.apk')
+
+# A separate package is necessary: DreamType intentionally disables voice inside its own editor.
+fixture=out/'fixture'
+for name in ('classes','dex'):(fixture/name).mkdir(parents=True,exist_ok=True)
+(fixture/'AndroidManifest.xml').write_text("""<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="tw.dreamtype.fixture"><uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36"/><application android:label="DreamType Test Editor" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:testOnly="true"><activity android:name=".InputFixture" android:exported="true"/></application></manifest>""",encoding='utf-8')
+run(build/'aapt2','link','-o',fixture/'unsigned.apk','-I',android,'--manifest',fixture/'AndroidManifest.xml')
+run('javac','--release','8','-encoding','UTF-8','-cp',android,'-d',fixture/'classes',source/'tests/InputFixture.java')
+run('jar','cf',fixture/'classes.jar','-C',fixture/'classes','.')
+run('java','-cp',build/'lib/d8.jar','com.android.tools.r8.D8','--lib',android,'--min-api','26','--output',fixture/'dex',fixture/'classes.jar')
+with zipfile.ZipFile(fixture/'unsigned.apk','a',zipfile.ZIP_DEFLATED) as archive:
+ for dex in (fixture/'dex').glob('*.dex'):archive.write(dex,dex.name)
+run(build/'zipalign','-f','4',fixture/'unsigned.apk',fixture/'aligned.apk')
+run(build/'apksigner','sign','--ks',out/'test.p12','--ks-pass','pass:android','--out',out/'fixture.apk',fixture/'aligned.apk')
