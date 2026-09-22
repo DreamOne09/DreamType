@@ -106,7 +106,8 @@ except Exception:
     for name,command in (
         ('ime-failure.png',('exec-out','screencap','-p')),
         ('ime-state.txt',('shell','dumpsys','input_method')),
-        ('ime-log.txt',('shell','logcat','-d','-t','300'))):
+        ('ime-log.txt',('shell','logcat','-d','-t','300')),
+        ('ime-crash.txt',('shell','logcat','-b','crash','-d'))):
         try:(out/name).write_bytes(adb(*command))
         except Exception:pass
     raise

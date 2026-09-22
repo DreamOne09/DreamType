@@ -39,15 +39,19 @@ public final class ImeInstrumentation extends Instrumentation {
  }
  private android.graphics.Rect bounds(String label){AccessibilityNodeInfo node=find(label);if(node==null)throw new AssertionError("Missing "+label);android.graphics.Rect r=new android.graphics.Rect();node.getBoundsInScreen(r);return r;}
  private void touch(long down,int action,float x,float y){android.view.MotionEvent e=android.view.MotionEvent.obtain(down,SystemClock.uptimeMillis(),action,x,y,0);e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);getUiAutomation().injectInputEvent(e,true);e.recycle();}
+ private String editorText(Activity activity){final String[] value={""};runOnMainSync(()->value[0]=((EditText)activity.findViewById(101)).getText().toString());return value[0];}
+ private void setEditor(Activity activity,String text,int start,int end){runOnMainSync(()->{EditText f=activity.findViewById(101);f.setText(text);f.setSelection(start,end);});waitForIdleSync();SystemClock.sleep(750);}
  private void interactionChecks(Activity activity)throws Exception{
-  runOnMainSync(()->{EditText f=activity.findViewById(101);f.setText("台灣測試");f.setSelection(2,4);});
+  setEditor(activity,"台灣測試",2,4);
   click("退格刪除");SystemClock.sleep(300);
-  runOnMainSync(()->{EditText f=activity.findViewById(101);if(!"台灣".equals(f.getText().toString()))throw new AssertionError("Backspace did not delete selection");f.setText("台灣😀");f.setSelection(f.length());});
+  if(!"台灣".equals(editorText(activity)))throw new AssertionError("Backspace did not delete selection: "+editorText(activity));
+  setEditor(activity,"台灣😀",4,4);
   click("退格刪除");SystemClock.sleep(300);
-  runOnMainSync(()->{EditText f=activity.findViewById(101);if(!"台灣".equals(f.getText().toString()))throw new AssertionError("Backspace split emoji");f.setText("一二三四五六七八九十");f.setSelection(f.length());});
+  if(!"台灣".equals(editorText(activity)))throw new AssertionError("Backspace split emoji: "+editorText(activity));
+  setEditor(activity,"一二三四五六七八九十",10,10);
   android.graphics.Rect del=bounds("退格刪除");long down=SystemClock.uptimeMillis();touch(down,0,del.centerX(),del.centerY());SystemClock.sleep(700);touch(down,1,del.centerX(),del.centerY());SystemClock.sleep(200);
-  runOnMainSync(()->{EditText f=activity.findViewById(101);if(f.length()>=9||f.length()==0)throw new AssertionError("Hold backspace failed");f.setText("");});
-  waitForIdleSync();SystemClock.sleep(750);
+  int remaining=editorText(activity).length();if(remaining>=9||remaining==0)throw new AssertionError("Hold backspace failed: "+remaining);
+  setEditor(activity,"",0,0);
   android.graphics.Rect mic=bounds("開始說話");if(Math.abs(mic.width()-mic.height())>3)throw new AssertionError("Speak button not circular");
   down=SystemClock.uptimeMillis();touch(down,0,mic.centerX(),mic.centerY());
   long menuDeadline=SystemClock.uptimeMillis()+5000;while(find("翻譯成英文")==null&&SystemClock.uptimeMillis()<menuDeadline)SystemClock.sleep(100);
