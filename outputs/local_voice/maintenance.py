@@ -29,6 +29,8 @@ def run(root=ROOT):
     try:state=json.loads(state_path.read_text())
     except (OSError,ValueError):state={}
     now=time.time();state['checked_at']=now;state['errors']=[]
+    try:state['disk_free_bytes']=shutil.disk_usage(work).free
+    except OSError:state['disk_free_bytes']=None
     try:
         ready=httpx.get('http://127.0.0.1:19870/health',timeout=10).json().get('status')=='ready'
     except Exception:ready=False

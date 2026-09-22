@@ -30,6 +30,13 @@ def summarize(maintenance, sync_configured=False, now=None):
         '最近 36 小時內有成功備份紀錄', '超過 36 小時未成功備份或尚無紀錄，請檢查備份工作')
     add('deletions', '刪除紀錄', recent('last_deletion_export', 900),
         '最近 15 分鐘內有成功匯出紀錄', '刪除紀錄未更新，還原前務必取得最新紀錄')
+    free=state.get('disk_free_bytes')
+    valid_space=type(free) is int and free>=0 and fresh
+    storage_ok=valid_space and free>=5*1024**3
+    storage_detail=('可用空間約 %.1f GB；低於 5 GB，請釋放空間或規劃搬移資料，避免錄音與備份寫入失敗' % (free/1024**3)
+                    if valid_space else '尚無近期磁碟空間紀錄，請檢查主機')
+    add('storage','主機儲存空間',storage_ok,
+        '可用空間至少 5 GB，仍需留意模型與備份成長',storage_detail)
     copied = sync_configured and recent('last_backup_copy', 129600) and recent('last_deletion_copy', 900)
     checks.append({'code': 'offsite', 'title': '異機備援', 'state': 'unverified',
         'detail': ('已複製至同步資料夾；雲端上傳與異機還原仍需驗證' if copied else

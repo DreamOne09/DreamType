@@ -18,7 +18,7 @@ class OperationsTests(unittest.TestCase):
 
     def test_sync_copy_is_never_cloud_verification(self):
         state={key:100 for key in ('checked_at','last_backup','last_deletion_export','last_backup_copy','last_deletion_copy')}
-        state.update(ready=True,tunnel_ready=True,errors=[])
+        state.update(ready=True,tunnel_ready=True,errors=[],disk_free_bytes=10*1024**3)
         report=summarize(state,True,now=110)
         self.assertEqual(self.states(report)['offsite'],'unverified')
         self.assertTrue(report['needs_attention'])
@@ -32,5 +32,12 @@ class OperationsTests(unittest.TestCase):
         self.assertEqual(self.states(report)['backup'],'attention')
         self.assertIn('備份建立或複製失敗',report['errors'])
         self.assertEqual(len(report['errors']),2)
+
+    def test_disk_capacity_is_reported_without_treating_old_values_as_current(self):
+        for value in (None,True,-1,3*1024**3):
+            report=summarize({'checked_at':100,'disk_free_bytes':value},now=110)
+            self.assertEqual(self.states(report)['storage'],'attention')
+        self.assertEqual(self.states(summarize({'checked_at':100,'disk_free_bytes':6*1024**3},now=110))['storage'],'ok')
+        self.assertEqual(self.states(summarize({'checked_at':100,'disk_free_bytes':6*1024**3},now=2000))['storage'],'attention')
 
 if __name__=='__main__':unittest.main()
