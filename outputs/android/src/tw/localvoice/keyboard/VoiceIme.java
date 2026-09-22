@@ -61,7 +61,7 @@ public final class VoiceIme extends InputMethodService {
         for(int i=0;i<=AppConfig.LANGUAGE_NAMES.length;i++){
             if(i%3==0){row=new LinearLayout(this);panel.addView(row);}
             final int choice=i;
-            Button b=button(row,i==0?"台灣繁中":AppConfig.LANGUAGE_NAMES[i-1],v->selectLanguage(choice,true),1);
+            Button b=button(row,i==0?"原文整理":i==1?"繁中翻譯":AppConfig.LANGUAGE_NAMES[i-1],v->selectLanguage(choice,true),1);
             b.setContentDescription(i==0?"整理成台灣繁中":"翻譯成"+AppConfig.LANGUAGE_NAMES[i-1]);languageChoices.add(b);
         }
         int width=Math.min(getResources().getDisplayMetrics().widthPixels-dp(24),dp(360));

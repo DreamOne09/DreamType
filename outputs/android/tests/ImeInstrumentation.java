@@ -29,7 +29,10 @@ public final class ImeInstrumentation extends Instrumentation {
   long deadline=SystemClock.uptimeMillis()+20000;
   while(SystemClock.uptimeMillis()<deadline){
    AccessibilityNodeInfo node=find(label);
-   if(node!=null&&node.isEnabled()&&node.performAction(AccessibilityNodeInfo.ACTION_CLICK))return;
+   if(node!=null&&node.isEnabled()){
+    android.graphics.Rect r=new android.graphics.Rect();node.getBoundsInScreen(r);
+    if(!r.isEmpty()){long down=SystemClock.uptimeMillis();touch(down,0,r.centerX(),r.centerY());touch(down,1,r.centerX(),r.centerY());return;}
+   }
    SystemClock.sleep(100);
   }
   throw new AssertionError("Cannot click: "+label);
