@@ -15,6 +15,31 @@ class Provider:
         return {'text':'整理完成','timings':{'total_seconds':0.1}}
 
 class BetaTests(unittest.IsolatedAsyncioTestCase):
+    async def test_full_queue_rejects_without_reserving_and_accepts_later(self):
+        first,a=await self.account();second,b=await self.account('bob');third,c=await self.account('charlie')
+        # Keep the production worker, but use one waiting slot to reach capacity quickly.
+        await self.beta.stop()
+        self.beta.queue=asyncio.Queue(maxsize=1)
+        self.provider.gate.clear()
+        await self.beta.start()
+        self.assertEqual((await self.upload(a)).status_code,202)
+        async def wait_for_provider():
+            while not self.provider.calls:await asyncio.sleep(0.01)
+        await asyncio.wait_for(wait_for_provider(),2)
+        self.assertEqual((await self.upload(b)).status_code,202)
+        rejected=await self.upload(c)
+        self.assertEqual(rejected.status_code,429)
+        me=self.beta.store.me(third)
+        self.assertEqual(me['used_seconds'],0)
+        self.assertEqual(me['reserved_seconds'],0)
+        self.provider.gate.set()
+        await asyncio.wait_for(self.beta.queue.join(),2)
+        self.assertEqual((await self.upload(c)).status_code,202)
+        await asyncio.wait_for(self.beta.queue.join(),2)
+        self.assertEqual(self.beta.progress(third,'request-1234567890')['state'],'done')
+        self.assertEqual(self.beta.store.me(third)['used_seconds'],10)
+        self.assertEqual(len(self.provider.calls),3)
+
     async def test_worker_health_detects_either_background_task_stopping(self):
         self.assertTrue(self.beta.workers_ready())
         for index in (0,1):
