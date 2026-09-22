@@ -107,8 +107,14 @@ final class VoiceApi {
         }
     }
     private static Result result(JSONObject body) throws Exception {
+        Object raw=body.opt("text");
+        if(!(raw instanceof String))throw new IOException("沒有收到有效文字，請重試或取回上一筆。");
+        String text=(String)raw;
+        boolean visible=false;
+        for(int i=0;i<text.length();){int cp=text.codePointAt(i);i+=Character.charCount(cp);if(!Character.isWhitespace(cp)&&!Character.isSpaceChar(cp)){visible=true;break;}}
+        if(!visible)throw new IOException("沒有收到有效文字，請重試或取回上一筆。");
         String warning=body.isNull("warning")?"":body.optString("warning","");JSONObject timings=body.optJSONObject("timings");
-        return new Result(body.getString("text"),warning,timings==null?0:timings.optDouble("total_seconds",0),body.optString("id",""),body.optString("mode","organize"),body.optString("target_language","zh-TW"));
+        return new Result(text,warning,timings==null?0:timings.optDouble("total_seconds",0),body.optString("id",""),body.optString("mode","organize"),body.optString("target_language","zh-TW"));
     }
     static JSONObject json(AppConfig config,String method,String path,JSONObject body) throws Exception {
         HttpURLConnection c=connection(config,path);
