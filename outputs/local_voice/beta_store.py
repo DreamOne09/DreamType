@@ -178,9 +178,10 @@ class Store:
     def audit(self,action,uid=None):
         with self.db() as db:db.execute('INSERT INTO audit(created,action,uid) VALUES(?,?,?)',(time.time(),action,uid))
     def issue_reset(self,uid):
-        self.me(uid)
         code=secrets.token_urlsafe(32)
         with self.db() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if not db.execute('SELECT 1 FROM users WHERE id=?',(uid,)).fetchone():raise StoreError(404,'帳號不存在')
             db.execute('INSERT OR REPLACE INTO reset_codes VALUES(?,?,?)',(uid,hashlib.sha256(code.encode()).hexdigest(),time.time()+900))
             db.execute('INSERT INTO audit(created,action,uid) VALUES(?,?,?)',(time.time(),'password_reset_issued',uid))
         return code
@@ -217,13 +218,18 @@ class Store:
         with self.db() as db:
             row=db.execute('SELECT * FROM users WHERE id=?',(uid,)).fetchone()
             if not row or not isinstance(password,str) or len(password)>128 or not secrets.compare_digest(password_hash(password,row['salt']),row['password']):raise StoreError(403,'密碼不正確')
+            # A conditional write rechecks the verified credential after any
+            # concurrent reset/disable. The tombstone and cascades commit together.
+            if not db.execute('DELETE FROM users WHERE id=? AND salt=? AND password=? AND enabled=1',
+                              (uid,row['salt'],row['password'])).rowcount:raise StoreError(403,'密碼或帳號狀態已變更，請重新登入')
             db.execute('INSERT INTO deletions(uid,deleted_at) VALUES(?,?)',(uid,time.time()))
-            db.execute('DELETE FROM users WHERE id=?',(uid,))
     def change_password(self,uid,current,new):
         if not isinstance(new,str) or not 12<=len(new)<=128:raise StoreError(400,'新密碼需為 12–128 個字元')
         with self.db() as db:
             row=db.execute('SELECT * FROM users WHERE id=?',(uid,)).fetchone()
             if not row or not isinstance(current,str) or len(current)>128 or not secrets.compare_digest(password_hash(current,row['salt']),row['password']):raise StoreError(403,'目前密碼不正確')
             salt=secrets.token_hex(16);encoded=password_hash(new,salt)
-            db.execute('UPDATE users SET salt=?,password=? WHERE id=?',(salt,encoded,uid))
+            if not db.execute('UPDATE users SET salt=?,password=? WHERE id=? AND salt=? AND password=? AND enabled=1',
+                              (salt,encoded,uid,row['salt'],row['password'])).rowcount:raise StoreError(403,'密碼或帳號狀態已變更，請重新登入')
             db.execute('DELETE FROM sessions WHERE uid=?',(uid,))
+            db.execute('DELETE FROM reset_codes WHERE uid=?',(uid,))
