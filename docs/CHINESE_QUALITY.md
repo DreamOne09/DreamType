@@ -59,3 +59,13 @@ OpenCC 改用 s2tw，僅轉換繁體與台灣字形，不再用缺乏上下文�
 重跑：`python scripts/check_chinese_quality.py --runtime-root <服務根目錄> --cases tests/quality/taiwan-long-context.json --output <報告路徑>`。`--cases` 可指定其他人工編寫的案例集；預設仍跑原本的 19 件基礎案例。請勿將真實個人錄音或私人訊息直接加入公開 repo。
 
 這些證據仍不能支持「中文品質已優於 Typeless」；需要台灣使用者的真實口述，以及同批音訊、同樣情境的比較。
+
+## 無語音時不產生文字（2026-09-22）
+
+新增 `scripts/check_no_speech.py`，對實際 ASR 服務送出三段各四秒、16 kHz 單聲道的合成音訊：數位靜音、固定亂數低振幅雜訊、60 Hz 低頻音。三者皆回傳空字串，未出現模型憑空補出的字幕。另使用既有短語音作正向對照，取得非空辨識結果，避免把全數拒絕誤當通過。
+
+報告在 `tests/quality/no-speech-report.json`。對照音訊與文字不寫進公開報告，只保存是否非空及字數；本輪不改 VAD 或模型參數。
+
+重跑：`python scripts/check_no_speech.py --runtime-root <服務根目錄> --speech-control <已知有語音的測試檔.m4a> --output <報告.json>`。這會讀取本機服務金鑰並送到 localhost，不使用手機麥克風或外部語音 API。
+
+通過只代表這三個簡單非語音訊號被排除，不涵蓋街道、人群、音樂、電視人聲或真實手機底噪，也不能證明安靜說話時不會漏字。

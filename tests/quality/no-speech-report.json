@@ -1,0 +1,33 @@
+{
+  "speech_control": {
+    "nonempty": true,
+    "characters": 13,
+    "content_saved": false
+  },
+  "synthetic_audio_only": false,
+  "native_device_test": false,
+  "real_background_noise_test": false,
+  "results": [
+    {
+      "kind": "silence",
+      "duration_seconds": 4,
+      "text": "",
+      "empty": true,
+      "processing_seconds": 0.046
+    },
+    {
+      "kind": "quiet_noise",
+      "duration_seconds": 4,
+      "text": "",
+      "empty": true,
+      "processing_seconds": 0.07
+    },
+    {
+      "kind": "hum_60hz",
+      "duration_seconds": 4,
+      "text": "",
+      "empty": true,
+      "processing_seconds": 0.06
+    }
+  ]
+}
