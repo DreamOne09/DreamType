@@ -11,6 +11,6 @@ final class Ui {
   GradientDrawable shape=new GradientDrawable();shape.setColor(primary?INK:Color.WHITE);shape.setCornerRadius(16*d);if(!primary)shape.setStroke((int)d,LINE);
   b.setBackgroundTintList(null);b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22777777),shape,null));
   b.setTextColor(new ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{}},new int[]{Color.rgb(140,140,145),primary?Color.WHITE:INK}));
-  b.setElevation(0);b.setAllCaps(false);b.setMinimumHeight((int)(48*d));
+  b.setStateListAnimator(null);b.setElevation(0);b.setAllCaps(false);b.setMinimumHeight((int)(48*d));
  }
 }

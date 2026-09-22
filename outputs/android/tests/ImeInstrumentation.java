@@ -44,8 +44,10 @@ public final class ImeInstrumentation extends Instrumentation {
   runOnMainSync(()->{EditText f=activity.findViewById(101);if(!"台灣".equals(f.getText().toString()))throw new AssertionError("Backspace split emoji");f.setText("一二三四五六七八九十");f.setSelection(f.length());});
   android.graphics.Rect del=bounds("退格刪除");long down=SystemClock.uptimeMillis();touch(down,0,del.centerX(),del.centerY());SystemClock.sleep(700);touch(down,1,del.centerX(),del.centerY());SystemClock.sleep(200);
   runOnMainSync(()->{EditText f=activity.findViewById(101);if(f.length()>=9||f.length()==0)throw new AssertionError("Hold backspace failed");f.setText("");});
+  waitForIdleSync();SystemClock.sleep(750);
   android.graphics.Rect mic=bounds("開始說話");if(Math.abs(mic.width()-mic.height())>3)throw new AssertionError("Speak button not circular");
-  down=SystemClock.uptimeMillis();touch(down,0,mic.centerX(),mic.centerY());SystemClock.sleep(800);
+  down=SystemClock.uptimeMillis();touch(down,0,mic.centerX(),mic.centerY());
+  long menuDeadline=SystemClock.uptimeMillis()+5000;while(find("翻譯成英文")==null&&SystemClock.uptimeMillis()<menuDeadline)SystemClock.sleep(100);
   android.graphics.Rect english=bounds("翻譯成英文");screenshot("ime-translation-menu");
   touch(down,2,english.centerX(),english.centerY());SystemClock.sleep(200);touch(down,1,english.centerX(),english.centerY());SystemClock.sleep(500);
   if(find("停止並翻譯")==null)throw new AssertionError("Slide selection did not start translated recording");
