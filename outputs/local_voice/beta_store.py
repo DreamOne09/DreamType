@@ -75,6 +75,13 @@ class Store:
         if not row or not row['enabled'] or not secrets.compare_digest(encoded,row['password']):raise StoreError(401,'帳號或密碼不正確')
         token=secrets.token_urlsafe(32);expires=time.time()+7*86400
         with self.db() as db:
+            # Password hashing intentionally happens outside the write lock.
+            # Recheck under the same transaction that issues the session so a
+            # concurrent reset/disable/delete cannot revive an old credential.
+            db.execute('BEGIN IMMEDIATE')
+            current=db.execute('SELECT salt,password,enabled FROM users WHERE id=?',(row['id'],)).fetchone()
+            if not current or not current['enabled'] or current['salt']!=row['salt'] or current['password']!=row['password']:
+                raise StoreError(401,'帳號或密碼不正確')
             db.execute('DELETE FROM sessions WHERE expires<?',(time.time(),))
             db.execute('INSERT INTO sessions VALUES(?,?,?)',(hashlib.sha256(token.encode()).hexdigest(),row['id'],expires))
         return {'token':token,'expires_at':expires,'user':{'id':row['id'],'name':row['name']}}
