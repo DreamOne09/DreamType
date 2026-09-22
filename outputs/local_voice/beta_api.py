@@ -116,7 +116,7 @@ def install_beta(app,work,provider,decoder):
             finally:await beta.stop()
     app.router.lifespan_context=lifespan
     @app.exception_handler(StoreError)
-    async def store_error(request,error):return JSONResponse({'detail':error.message},status_code=error.status)
+    async def store_error(request,error):return JSONResponse({'detail':error.message,'error_code':error.code},status_code=error.status)
     @app.middleware('http')
     async def beta_guard(request,call_next):
         if request.url.path.startswith('/v2/'):
@@ -136,7 +136,7 @@ def install_beta(app,work,provider,decoder):
                         if received>cap:return JSONResponse({'detail':'請求太大'},status_code=413)
                         chunks.append(chunk)
                     request._body=b''.join(chunks)
-            except StoreError as e:return JSONResponse({'detail':e.message},status_code=e.status)
+            except StoreError as e:return JSONResponse({'detail':e.message,'error_code':e.code},status_code=e.status)
             except ValueError:return JSONResponse({'detail':'無效請求'},status_code=400)
         response=await call_next(request)
         if request.url.path.startswith(('/v2/','/admin','/account')):
@@ -153,7 +153,7 @@ def install_beta(app,work,provider,decoder):
     async def login(request:Request):
         now=time.monotonic()
         while beta.logins and beta.logins[0]<now-60:beta.logins.popleft()
-        if len(beta.logins)>=20:raise StoreError(429,'登入嘗試太頻繁，請一分鐘後重試')
+        if len(beta.logins)>=20:raise StoreError(429,'登入嘗試太頻繁，請一分鐘後重試','auth_rate_limit')
         beta.logins.append(now)
         body=await object_body(request)
         async with beta.login_slots:return await asyncio.to_thread(beta.store.login,body.get('username',''),body.get('password',''))
@@ -237,7 +237,7 @@ def install_beta(app,work,provider,decoder):
             if not(old['state']=='failed' and request.headers.get('x-dreamtype-retry')=='1'):return beta.progress(uid,jid)
         except StoreError as error:
             if error.status!=404:raise
-        if beta.queue.full():raise StoreError(429,'目前排隊已滿，請稍後再試')
+        if beta.queue.full():raise StoreError(429,'目前排隊已滿，請稍後再試','queue_full')
         try:duration=await asyncio.to_thread(beta.decoder,audio)
         except Exception:raise StoreError(400,'無法讀取錄音')
         if not 0<duration<=120:raise StoreError(413,'每段錄音最多兩分鐘')
@@ -248,7 +248,7 @@ def install_beta(app,work,provider,decoder):
                 beta.store.state(uid,jid,'failed');raise StoreError(503,'暫時無法保存錄音，未扣額度')
             try:beta.queue.put_nowait((uid,jid,audio,prefs))
             except asyncio.QueueFull:
-                beta.store.state(uid,jid,'failed');raise StoreError(429,'目前排隊已滿，未扣額度')
+                beta.store.state(uid,jid,'failed');raise StoreError(429,'目前排隊已滿，未扣額度','queue_full')
         return beta.progress(uid,jid)
     @app.get('/v2/dictations/{jid}')
     async def progress(jid:str,request:Request):return beta.progress(beta.user(request)['id'],jid)

@@ -29,7 +29,7 @@ final class VoiceApi {
         if(config.accountMode){json(config,"GET","/v2/me",null);return;}
         HttpURLConnection c=connection(config,"/v1/models");
         try {
-            error(c.getResponseCode());
+            error(c);
             JSONObject body=new JSONObject(read(c.getInputStream()));
             if(!body.has("data"))throw new IOException("電腦回應格式不正確。");
         } finally { c.disconnect(); }
@@ -67,7 +67,7 @@ final class VoiceApi {
             try(OutputStream out=c.getOutputStream()) {
                 out.write(head);out.write(audio);out.write(tail);
             }
-            error(c.getResponseCode());
+            error(c);
             JSONObject result=new JSONObject(read(c.getInputStream()));
             if(!config.accountMode&&config.mode.equals("translate"))requireTranslation(config,result);
             return config.accountMode?awaitResult(config,result,progress,config.mode.equals("translate")):result(result);
@@ -126,7 +126,7 @@ final class VoiceApi {
                 c.setDoOutput(true);c.setRequestProperty("Content-Type","application/json");c.setFixedLengthStreamingMode(bytes.length);
                 try(OutputStream out=c.getOutputStream()){out.write(bytes);}
             }
-            error(c.getResponseCode());return new JSONObject(read(c.getInputStream()));
+            error(c);return new JSONObject(read(c.getInputStream()));
         } finally {c.disconnect();}
     }
     private static void part(StringBuilder b,String boundary,String name,String value) {
@@ -140,6 +140,19 @@ final class VoiceApi {
             return out.toString("UTF-8");
         }
     }
+    private static void error(HttpURLConnection connection) throws Exception {
+        int code=connection.getResponseCode();
+        if(code==409||code==429){
+            String reason="";
+            try {reason=new JSONObject(read(connection.getErrorStream())).optString("error_code","");}catch(Exception ignored){}
+            // Show our own known messages, never arbitrary proxy/server response text.
+            if(code==409&&reason.equals("result_unconfirmed"))throw new ApiError(code,"上一筆文字還沒取回，請到「更多 → 取回上一筆」確認，再繼續錄音。");
+            if(code==429&&reason.equals("queue_full"))throw new ApiError(code,"目前使用的人較多，請稍後重試這段錄音；這次未扣額度。");
+            if(code==429&&reason.equals("job_in_progress"))throw new ApiError(code,"上一段仍在處理，請稍後從「更多 → 取回上一筆」查看。");
+            if(code==429&&reason.equals("auth_rate_limit"))throw new ApiError(code,"登入嘗試太頻繁，請一分鐘後再試。");
+        }
+        error(code);
+    }
     private static void error(int code) throws IOException {
         if(code>=200&&code<300)return;
         if(code==400)throw new ApiError(code,"資料格式不正確，請檢查輸入內容。");
@@ -148,7 +161,7 @@ final class VoiceApi {
         if(code==403)throw new ApiError(code,"密碼不正確或帳號已停用。");
         if(code==404)throw new ApiError(code,"找不到資料，請確認服務已更新。");
         if(code==409)throw new ApiError(code,"請求衝突，請重新整理後再試。");
-        if(code==429)throw new ApiError(code,"上一段還在處理，請稍後再說一次。");
+        if(code==429)throw new ApiError(code,"服務忙碌或請求太頻繁，請稍後重試。");
         if(code==413)throw new ApiError(code,"錄音太長，請分成較短的段落。");
         if(code==502||code==503||code==530)throw new ApiError(code,"電腦暫時連不到，請確認電腦未睡眠、服務已啟動。");
         throw new ApiError(code,"連線失敗（"+code+"），請檢查電腦網址。");

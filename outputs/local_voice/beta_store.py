@@ -11,8 +11,8 @@ from private_crypto import key_file, encrypt, decrypt
 from datetime import datetime, timezone
 
 class StoreError(Exception):
-    def __init__(self, status, message):
-        self.status, self.message = status, message
+    def __init__(self, status, message, code=None):
+        self.status, self.message, self.code = status, message, code
         super().__init__(message)
 
 def password_hash(password, salt):
@@ -113,8 +113,8 @@ class Store:
                 else:return dict(old),False
             user=db.execute('SELECT * FROM users WHERE id=? AND enabled=1',(uid,)).fetchone()
             if not user:raise StoreError(403,'帳號已停用')
-            if db.execute("SELECT 1 FROM jobs WHERE uid=? AND state IN ('queued','running')",(uid,)).fetchone():raise StoreError(429,'上一段還在處理，請稍候')
-            if db.execute("SELECT 1 FROM receipts r JOIN jobs j ON j.uid=r.uid AND j.id=r.id WHERE r.uid=? AND r.confirmed=0 AND j.state='done'",(uid,)).fetchone():raise StoreError(409,'請先取回上一筆結果，或等候結果過期後釋放額度')
+            if db.execute("SELECT 1 FROM jobs WHERE uid=? AND state IN ('queued','running')",(uid,)).fetchone():raise StoreError(429,'上一段還在處理，請稍候','job_in_progress')
+            if db.execute("SELECT 1 FROM receipts r JOIN jobs j ON j.uid=r.uid AND j.id=r.id WHERE r.uid=? AND r.confirmed=0 AND j.state='done'",(uid,)).fetchone():raise StoreError(409,'請先取回上一筆結果，或等候結果過期後釋放額度','result_unconfirmed')
             used=db.execute("SELECT COALESCE(SUM(seconds),0) FROM jobs WHERE uid=? AND month=? AND state IN ('queued','running','done')",(uid,month)).fetchone()[0]
             if used+seconds>user['allowance']:raise StoreError(402,'本月試用額度已用完')
             db.execute('INSERT INTO jobs VALUES(?,?,?,?,?,?,?)',(uid,jid,digest,month,seconds,'queued',time.time()))

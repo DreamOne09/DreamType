@@ -29,6 +29,7 @@ class BetaTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.upload(b)).status_code,202)
         rejected=await self.upload(c)
         self.assertEqual(rejected.status_code,429)
+        self.assertEqual(rejected.json()['error_code'],'queue_full')
         me=self.beta.store.me(third)
         self.assertEqual(me['used_seconds'],0)
         self.assertEqual(me['reserved_seconds'],0)
@@ -39,6 +40,19 @@ class BetaTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.beta.progress(third,'request-1234567890')['state'],'done')
         self.assertEqual(self.beta.store.me(third)['used_seconds'],10)
         self.assertEqual(len(self.provider.calls),3)
+
+    async def test_busy_and_unconfirmed_result_have_distinct_recovery_codes(self):
+        _,auth=await self.account()
+        self.provider.gate.clear()
+        await self.upload({**auth,'X-DreamType-Receipt':'1'})
+        busy=await self.upload(auth,jid='another-request-123456')
+        self.assertEqual(busy.status_code,429)
+        self.assertEqual(busy.json()['error_code'],'job_in_progress')
+        self.provider.gate.set()
+        await asyncio.wait_for(self.beta.queue.join(),2)
+        unconfirmed=await self.upload(auth,jid='another-request-123456')
+        self.assertEqual(unconfirmed.status_code,409)
+        self.assertEqual(unconfirmed.json()['error_code'],'result_unconfirmed')
 
     async def test_worker_health_detects_either_background_task_stopping(self):
         self.assertTrue(self.beta.workers_ready())
