@@ -4,11 +4,25 @@ import shutil
 import subprocess
 import sys
 import time
+import secrets
 from pathlib import Path
 import httpx
 from backup import create,export_deletions
 
 ROOT=Path(__file__).resolve().parents[2]
+
+def copy_encrypted(source,target):
+    """Publish a complete encrypted file without truncating the previous copy."""
+    if source.suffix not in ('.dtbackup','.dtledger') or not target.is_dir():
+        raise ValueError('Expected encrypted backup and existing sync directory')
+    destination=target/source.name
+    if source.resolve()==destination.resolve():return
+    temporary=target/(source.name+'.'+secrets.token_hex(8)+'.uploading')
+    try:
+        shutil.copy2(source,temporary)
+        temporary.replace(destination)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 def run(root=ROOT):
     work=root/'work';state_path=work/'maintenance-status.json'
@@ -36,6 +50,19 @@ def run(root=ROOT):
             subprocess.run([sys.executable,str(root/'outputs/local_voice/control.py'),'tunnel'],check=True,timeout=45,capture_output=True)
             state['last_tunnel_restart']=now;state['phone_url_may_have_changed']=True
         except Exception:state['errors'].append('tunnel_restart_failed')
+    # Create the snapshot first: create() also refreshes the local ledger.
+    if now-state.get('last_backup',0)>86400:
+        try:
+            archive=create(root)
+            state['last_backup']=now;state['backup_file']=archive.name
+            config=work/'backup-config.json'
+            if config.exists():
+                target=Path(json.loads(config.read_text())['sync_directory'])
+                copy_encrypted(archive,target)
+                state['last_backup_copy']=now
+        except Exception:
+            state['errors'].append('backup_or_copy_failed')
+            state['last_backup']=0
     # Refresh separately from daily backups, so an older archive can be safely
     # reconciled with later account deletions. A local copy is not cloud proof.
     try:
@@ -45,24 +72,10 @@ def run(root=ROOT):
         if config.exists():
             target=Path(json.loads(config.read_text())['sync_directory'])
             if not target.is_dir():raise ValueError('Backup destination must already exist')
-            shutil.copy2(ledger,target/ledger.name)
+            copy_encrypted(ledger,target)
             state['last_deletion_copy']=now
     except Exception:
         state['errors'].append('deletion_export_or_copy_failed')
-    if now-state.get('last_backup',0)>86400:
-        try:
-            archive=create(root)
-            state['last_backup']=now;state['backup_file']=archive.name
-            # Optional local sync folder. No cloud credentials or recovery keys are copied.
-            config=work/'backup-config.json'
-            if config.exists():
-                target=Path(json.loads(config.read_text())['sync_directory'])
-                if not target.is_dir():raise ValueError('Backup destination must already exist')
-                shutil.copy2(archive,target/archive.name)
-                state['last_backup_copy']=now
-        except Exception:
-            state['errors'].append('backup_or_copy_failed')
-            state['last_backup']=0  # Retry at the next maintenance pass.
     temporary=state_path.with_suffix('.tmp')
     temporary.write_text(json.dumps(state,indent=2),encoding='utf-8');temporary.replace(state_path)
     return state

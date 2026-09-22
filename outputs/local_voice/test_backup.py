@@ -6,6 +6,19 @@ from beta_store import Store,StoreError
 from backup import create,restore,export_deletions
 
 class BackupTests(unittest.TestCase):
+    def test_restore_rejects_ledger_exported_before_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)/'source';work=root/'work';Store(work/'beta/accounts.sqlite3')
+            (work/'beta/admin.key').write_text('a'*43);(work/'local-voice.key').write_text('b'*43)
+            old=export_deletions(root).read_bytes()
+            archive=create(root)
+            ledger=work/'backups/old.dtledger';ledger.write_bytes(old)
+            target=Path(directory)/'target'
+            with self.assertRaisesRegex(ValueError,'predates'):
+                restore(target,archive,work/'backup-recovery.key',ledger)
+            self.assertFalse(target.exists())
+            restore(target,archive,work/'backup-recovery.key')
+
     def test_old_backup_does_not_resurrect_deleted_account(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)/'source';work=root/'work';store=Store(work/'beta/accounts.sqlite3')

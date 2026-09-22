@@ -18,11 +18,11 @@ FILES={'accounts.sqlite3','admin.key','local-voice.key','manifest.json'}
 
 def export_deletions(root):
     """Export an encrypted, separate deletion ledger for reconciling old backups."""
-    work=root/'work'
+    work=root/'work';exported_at=time.time()
     database=(work/'beta/accounts.sqlite3').resolve().as_uri()+'?mode=ro'
     with closing(sqlite3.connect(database,uri=True)) as db:
         rows=db.execute('SELECT uid,deleted_at FROM deletions ORDER BY uid').fetchall()
-    payload={'format':1,'exported_at':time.time(),
+    payload={'format':1,'exported_at':exported_at,
         'host':hashlib.sha256((work/'local-voice.key').read_bytes().strip()).hexdigest(),
         'deletions':rows}
     target=work/'backups/latest-deletions.dtledger';target.parent.mkdir(exist_ok=True)
@@ -35,7 +35,7 @@ def export_deletions(root):
         temporary.unlink(missing_ok=True)
     return target
 
-def read_deletions(ledger,recovery_key,host_key):
+def read_deletions(ledger,recovery_key,host_key,minimum_time=0):
     if ledger.stat().st_size>16*1024*1024:raise ValueError('Deletion ledger is too large.')
     data=ledger.read_bytes()
     if not data.startswith(b'DTD1'):raise ValueError('Invalid deletion ledger.')
@@ -43,6 +43,9 @@ def read_deletions(ledger,recovery_key,host_key):
     payload=json.loads(decrypt(Path(recovery_key).read_bytes(),data[4:],b'DreamType deletions v1'))
     if payload.get('format')!=1 or payload.get('host')!=hashlib.sha256(host_key.strip()).hexdigest():
         raise ValueError('Deletion ledger belongs to another host or has an unsupported format.')
+    exported_at=payload.get('exported_at')
+    if type(exported_at) not in (int,float) or not minimum_time<=exported_at<=time.time()+300:
+        raise ValueError('Deletion ledger predates this backup or has an invalid export time; obtain a newer ledger.')
     rows=payload.get('deletions')
     if not isinstance(rows,list) or any(not isinstance(row,list) or len(row)!=2 or
         not isinstance(row[0],str) or not re.fullmatch('[0-9a-f]{32}',row[0]) or
@@ -68,7 +71,7 @@ def create(root):
                 if table in tables:db.execute('DELETE FROM '+table)
         with closing(sqlite3.connect(copy)) as db:db.execute('VACUUM')
         contents['accounts.sqlite3']=copy.read_bytes()
-    contents['manifest.json']=json.dumps({'format':1,'contains_secrets':True,'audio_included':False,'transcripts_included':False}).encode()
+    contents['manifest.json']=json.dumps({'format':1,'snapshot_completed_at':time.time(),'contains_secrets':True,'audio_included':False,'transcripts_included':False}).encode()
     buffer=io.BytesIO()
     with zipfile.ZipFile(buffer,'w',zipfile.ZIP_DEFLATED) as package:
         for name,data in contents.items():package.writestr(name,data)
@@ -88,14 +91,17 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None):
         if len(package.namelist())!=len(FILES) or set(package.namelist())!=FILES:raise ValueError('Unexpected backup contents.')
         if any(i.file_size>64*1024*1024 for i in package.infolist()):raise ValueError('Backup exceeds supported size.')
         contents={name:package.read(name) for name in FILES}
-    if json.loads(contents['manifest.json']).get('format')!=1:raise ValueError('Unsupported backup format.')
+    manifest=json.loads(contents['manifest.json'])
+    if manifest.get('format')!=1:raise ValueError('Unsupported backup format.')
+    snapshot_time=manifest.get('snapshot_completed_at',0)
+    if type(snapshot_time) not in (int,float) or not 0<=snapshot_time<=time.time()+300:raise ValueError('Invalid backup timestamp.')
     for name in ('admin.key','local-voice.key'):
         value=contents[name].strip()
         if not 32<=len(value)<=128 or not all(c in b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_' for c in value):raise ValueError('Invalid key format.')
     if key.exists() and key.read_bytes().strip()!=contents['local-voice.key'].strip():raise ValueError('Existing host key differs; refusing to replace it.')
     ledger=Path(deletion_ledger) if deletion_ledger else archive.parent/'latest-deletions.dtledger'
     if not ledger.is_file():raise ValueError('Restore requires the latest deletion ledger; export it on the source host and supply --deletion-ledger.')
-    deletions=read_deletions(ledger,recovery_key,contents['local-voice.key'])
+    deletions=read_deletions(ledger,recovery_key,contents['local-voice.key'],snapshot_time)
     work.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(dir=work) as temp:
         path=Path(temp)/'accounts.sqlite3';path.write_bytes(contents['accounts.sqlite3'])

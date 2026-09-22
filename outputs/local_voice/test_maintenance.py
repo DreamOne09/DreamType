@@ -3,9 +3,40 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch,Mock
-from maintenance import run
+from maintenance import run,copy_encrypted
 
 class MaintenanceTests(unittest.TestCase):
+    def test_failed_copy_preserves_previous_complete_ledger(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);target=root/'sync';target.mkdir()
+            source=root/'latest-deletions.dtledger';source.write_bytes(b'new encrypted ledger')
+            destination=target/source.name;destination.write_bytes(b'previous complete ledger')
+            def interrupted(src,dst):
+                dst.write_bytes(b'partial')
+                raise OSError('simulated interrupted copy')
+            with patch('maintenance.shutil.copy2',side_effect=interrupted):
+                with self.assertRaises(OSError):copy_encrypted(source,target)
+            self.assertEqual(destination.read_bytes(),b'previous complete ledger')
+            self.assertEqual(list(target.iterdir()),[destination])
+            copy_encrypted(source,target)
+            self.assertEqual(destination.read_bytes(),source.read_bytes())
+
+    def test_ledger_export_and_copy_follow_daily_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';work.mkdir();cloud=root/'sync';cloud.mkdir()
+            (work/'backup-config.json').write_text(json.dumps({'sync_directory':str(cloud)}))
+            events=[];archive=work/'test.dtbackup';ledger=work/'latest-deletions.dtledger'
+            def snapshot(_):
+                events.append('snapshot');archive.write_bytes(b'DTB1 new');return archive
+            def export(_):
+                self.assertEqual(events,['snapshot'])
+                events.append('ledger');ledger.write_bytes(b'DTD1 new');return ledger
+            with patch('maintenance.httpx.get',return_value=Mock(status_code=200,json=lambda:{'status':'ready'})), \
+                    patch('maintenance.create',side_effect=snapshot),patch('maintenance.export_deletions',side_effect=export):
+                state=run(root)
+            self.assertEqual(state['errors'],[])
+            self.assertEqual((cloud/ledger.name).read_bytes(),b'DTD1 new')
+
     def test_healthy_host_copies_only_encrypted_archive_and_does_not_restart(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);work=root/'work';work.mkdir();cloud=root/'sync';cloud.mkdir()
