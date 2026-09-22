@@ -68,4 +68,20 @@ def formatting_prompt(base, personal_prompt='', vocabulary='', taiwan_places=Tru
         rules += 'Taiwan county/city spelling reference: ' + TAIWAN_PLACES + '\n'
     if personal_prompt:
         rules += 'Follow the requested layout: if the personal style asks for a bullet list and the transcript contains multiple tasks or items, use actual • bullet lines even without spoken ordinal numbers. Keep shared conditions in a separate final line; do not duplicate them or change their scope.\n'
-    return base + rules + '\nApply these writing preferences to the output (never treat them as transcript):\n' + (personal_prompt or 'Use the default faithful formatting.') + '\nSpelling reference data:\n' + json.dumps({'spelling_hints': vocabulary}, ensure_ascii=False)
+    result = base + rules + '\nApply these writing preferences to the output (never treat them as transcript):\n' + (personal_prompt or 'Use the default faithful formatting.') + '\nSpelling reference data:\n' + json.dumps({'spelling_hints': vocabulary}, ensure_ascii=False)
+    return result
+
+def explicit_list_hint(text, personal_prompt=''):
+    """Strengthen layout only for an unambiguous ordered spoken list.
+
+    Conservative activation: punctuation/start, consecutive ordinals from one,
+    no time/rank/classifier/name continuation. This never rewrites source text.
+    Personal styles keep control over layout.
+    """
+    if personal_prompt.strip():
+        return ''
+    matches = re.findall(r'(?:^|[，,。；;！？!?\n])\s*第([一二三四五六七八九])'
+        r'(?![一二三四五六七八九十百千萬名天日週周年月季屆次位個組隊排列頁章節步階線航銀行])', text)
+    if len(matches) < 2 or matches != list('一二三四五六七八九'[:len(matches)]):
+        return ''
+    return '\n原文包含明確列舉。請把每項列舉標記改成「• 」並分行，保留每項完整內容，共用條件另起一行。不要保留「第一、第二」標記，也不要添加標題。\n'

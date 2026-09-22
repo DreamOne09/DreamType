@@ -1,6 +1,7 @@
 """Run synthetic text cases against the owner's local gateway; not an ASR test."""
 import argparse
 import json
+import re
 import time
 from pathlib import Path
 
@@ -27,13 +28,26 @@ def main():
                 row['output'] = response.json()['choices'][0]['message']['content']
             else:
                 row['output'] = None
+            output = row['output'] or ''
+            failures = []
+            for literal in case.get('required', []):
+                if literal not in output:
+                    failures.append('missing: ' + literal)
+            for literal in case.get('forbidden', []):
+                if literal in output:
+                    failures.append('unexpected: ' + literal)
+            if 'bullet_count' in case and len(re.findall(r'^\s*• ', output, re.MULTILINE)) != case['bullet_count']:
+                failures.append('bullet count')
+            if 'last_line' in case and output.splitlines()[-1:] != [case['last_line']]:
+                failures.append('shared condition line')
+            row['explicit_check_failures'] = failures
             rows.append(row)
-            print(case['id'], response.status_code, flush=True)
+            print(case['id'], response.status_code, failures, flush=True)
     report = {'synthetic_text_only': True, 'speech_recognition_tested': False,
         'automatic_semantic_score': None, 'requires_review': True, 'results': rows}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
-    return 0 if all(row['status'] == 200 for row in rows) else 1
+    return 0 if all(row['status'] == 200 and not row['explicit_check_failures'] for row in rows) else 1
 
 
 if __name__ == '__main__':

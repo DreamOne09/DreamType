@@ -23,7 +23,7 @@ from fastapi.responses import PlainTextResponse, FileResponse
 from faster_whisper import WhisperModel
 from faster_whisper.audio import decode_audio
 from opencc import OpenCC
-from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_identifiers, restore_identifiers
+from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint
 from translation import validate_translation, translate_text
 from beta_api import install_beta, LocalProvider, audio_duration
 
@@ -106,6 +106,7 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
         return converter.convert(translated) if target_language=='zh-TW' else translated
     protected, identifiers, marker_prefix = protect_identifiers(text, personal_prompt, vocabulary)
     instructions = formatting_prompt(PROMPT, personal_prompt, vocabulary, taiwan_places)
+    instructions += explicit_list_hint(text, personal_prompt)
     if identifiers:
         instructions += '\nProtected identifiers appear as ' + marker_prefix + '0END etc. Copy each marker exactly once, unchanged and in the same order and context. Do not translate, expand, omit, or explain markers.\n'
     async with httpx.AsyncClient(timeout=90) as client:

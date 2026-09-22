@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 import httpx
 import server
-from personalization import formatting_prompt, speech_hint, validate_identifiers, protect_identifiers, restore_identifiers
+from personalization import formatting_prompt, speech_hint, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint
 
 class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
     async def test_identifiers_are_hidden_from_model_and_restored_before_return(self):
@@ -129,6 +129,19 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('汐止',seen[0]);self.assertNotIn('臺北市',seen[0])
 
 class PromptTests(unittest.TestCase):
+    def test_spoken_lists_exclude_names_ranks_dates_and_personal_styles(self):
+        for text in ('第一買牛奶，第二拿藥，第三繳電費。',
+                     '我的安排。第一、買牛奶。第二、拿藥。如果下雨就延期。'):
+            self.assertIn('• ', explicit_list_hint(text))
+            self.assertEqual(explicit_list_hint(text, '用完整段落，不要條列'), '')
+        for text in ('第一銀行今天有開，第二天再去郵局，第三天才去台中。',
+                     '第一名是陳怡君，第二名是林奕辰。',
+                     '第一天去台北，第二天去台中。',
+                     '第一百名領獎，第二百名不用。',
+                     '第一買牛奶，第三拿藥。', '第二買牛奶，第三拿藥。',
+                     '那是我的第一選擇，第二選擇還沒決定。'):
+            self.assertEqual(explicit_list_hint(text), '', text)
+
     def test_identifier_markers_require_exact_order_and_count(self):
         original = '寄到 hi@example.com，電話 0912-003-456，訂單 AB-007。'
         protected, values, prefix = protect_identifiers(original)
