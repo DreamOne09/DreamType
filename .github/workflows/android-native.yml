@@ -37,6 +37,7 @@ jobs:
             sleep 3
             adb exec-out screencap -p > work/emulator-probe/screenshots/launcher-home.png
             python scripts/check_native_ime.py
+            python scripts/check_native_ime.py --account
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -45,4 +46,7 @@ jobs:
             work/emulator-probe/result.txt
             work/emulator-probe/ime-result.json
             work/emulator-probe/ime-instrumentation.txt
+            work/emulator-probe/account-ime-result.json
+            work/emulator-probe/account-ime-instrumentation.txt
+            work/emulator-probe/account-delivered.txt
             work/emulator-probe/screenshots

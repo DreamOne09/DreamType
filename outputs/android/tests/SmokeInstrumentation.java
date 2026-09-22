@@ -11,8 +11,8 @@ import java.util.Arrays;
 
 /** Included only in the disposable emulator APK, never in a release build. */
 public final class SmokeInstrumentation extends Instrumentation {
- private boolean configureVoice;
- @Override public void onCreate(Bundle args){super.onCreate(args);configureVoice=args!=null&&"true".equals(args.getString("configure_voice"));start();}
+ private boolean configureVoice,accountVoice,verifyDelivered;
+ @Override public void onCreate(Bundle args){super.onCreate(args);configureVoice=args!=null&&"true".equals(args.getString("configure_voice"));accountVoice=args!=null&&"true".equals(args.getString("account_voice"));verifyDelivered=args!=null&&"true".equals(args.getString("verify_delivered"));start();}
  private TextView find(View v,String text){
   if(v instanceof TextView&&text.equals(((TextView)v).getText().toString()))return (TextView)v;
   if(v instanceof ViewGroup){ViewGroup group=(ViewGroup)v;for(int i=0;i<group.getChildCount();i++){TextView result=find(group.getChildAt(i),text);if(result!=null)return result;}}
@@ -29,7 +29,14 @@ public final class SmokeInstrumentation extends Instrumentation {
  @Override public void onStart(){
   Bundle result=new Bundle();
   try{
-   Context context=getTargetContext();AppConfig.clearSession(context);
+   Context context=getTargetContext();
+   if(verifyDelivered){
+    if(!AppConfig.load(context).accountMode)throw new AssertionError("Account mode was not used");
+    if(new File(context.getNoBackupFilesDir(),"pending-recording.bin").exists())throw new AssertionError("Delivered recording still retained");
+    if(new File(context.getNoBackupFilesDir(),"pending-recording.bin.tmp").exists())throw new AssertionError("Temporary recording still retained");
+    result.putString("delivered","passed");finish(Activity.RESULT_OK,result);return;
+   }
+   AppConfig.clearSession(context);
    Activity home=open(HomeActivity.class);
    final TextView[] login={null};runOnMainSync(()->{login[0]=find(home.getWindow().getDecorView(),"登入開始使用");});
    if(!(login[0] instanceof Button))throw new AssertionError("Traditional Chinese onboarding button missing");
@@ -61,7 +68,7 @@ public final class SmokeInstrumentation extends Instrumentation {
    final boolean[] found={false};runOnMainSync(()->{found[0]=find(privacy.getWindow().getDecorView(),"資料與隱私")!=null;});
    if(!found[0])throw new AssertionError("Offline privacy screen missing");
    screenshot("privacy");
-   if(configureVoice)new AppConfig("http://10.0.2.2:18765","synthetic-emulator-token",false).save(context);
+   if(configureVoice)new AppConfig("http://10.0.2.2:18765","synthetic-emulator-token",false,"","",true,accountVoice).save(context);
    result.putString("dreamtype","passed");result.putString("checks","Chinese onboarding, login navigation, Android Keystore credentials and recording, logout deletion, offline privacy");
    finish(Activity.RESULT_OK,result);
   }catch(Throwable failure){result.putString("dreamtype","failed");result.putString("failure",failure.toString());finish(Activity.RESULT_CANCELED,result);}
