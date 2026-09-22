@@ -5,9 +5,25 @@ import unittest
 from unittest.mock import patch
 import httpx
 import server
-from personalization import formatting_prompt, speech_hint, validate_identifiers
+from personalization import formatting_prompt, speech_hint, validate_identifiers, protect_identifiers, restore_identifiers
 
 class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_identifiers_are_hidden_from_model_and_restored_before_return(self):
+        import json
+        original = '訂單 AB-007，電話 0912-003-456，網址 example.com.tw。'
+        client_type = httpx.AsyncClient
+        def engine(request):
+            body = json.loads(request.content)
+            transcript = body['messages'][-1]['content']
+            self.assertNotIn('0912-003-456', transcript)
+            self.assertNotIn('AB-007', transcript)
+            self.assertIn('DTKEEP1END', transcript)
+            return httpx.Response(200, json={'choices': [{'finish_reason': 'stop',
+                'message': {'content': transcript.replace('，', '。')}}]})
+        with patch.object(server.httpx, 'AsyncClient',
+                lambda **kwargs: client_type(transport=httpx.MockTransport(engine))):
+            self.assertEqual(await server.format_text(original), original.replace('，', '。'))
+
     async def test_changed_phone_returns_complete_audio_transcript_with_warning(self):
         original = '電話 0912-003-456，請明天聯絡。'
         client_type = httpx.AsyncClient
@@ -113,6 +129,26 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('汐止',seen[0]);self.assertNotIn('臺北市',seen[0])
 
 class PromptTests(unittest.TestCase):
+    def test_identifier_markers_require_exact_order_and_count(self):
+        original = '寄到 hi@example.com，電話 0912-003-456，訂單 AB-007。'
+        protected, values, prefix = protect_identifiers(original)
+        self.assertEqual(restore_identifiers(protected, values, prefix), original)
+        for damaged in (protected.replace('DTKEEP1END', ''),
+                        protected + ' DTKEEP0END',
+                        protected.replace('DTKEEP1END', 'DTKEEP99END'),
+                        protected.replace('DTKEEP0END', 'TEMP').replace('DTKEEP1END', 'DTKEEP0END').replace('TEMP', 'DTKEEP1END'),
+                        protected.replace('DTKEEP1END', 'DTKEEP 1END')):
+            with self.assertRaises(ValueError):
+                restore_identifiers(damaged, values, prefix)
+        text = '請保留 DTKEEP0END 與 AB-007。'
+        protected, values, prefix = protect_identifiers(text, 'DTKEEPX')
+        self.assertEqual(prefix, 'DTKEEPXX')
+        self.assertEqual(restore_identifiers(protected, values, prefix), text)
+        duplicate = 'AB-007 和 AB-007'
+        protected, values, prefix = protect_identifiers(duplicate)
+        self.assertEqual(len(values), 2)
+        self.assertEqual(restore_identifiers(protected, values, prefix), duplicate)
+
     def test_literal_identifiers_cannot_be_changed_or_lost(self):
         original = '訂單 AB-007，電話 0912-003-456，網址 example.com.tw，信箱 hi@example.com。'
         validate_identifiers(original, original.replace('，', '。'))

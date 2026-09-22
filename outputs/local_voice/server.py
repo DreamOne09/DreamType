@@ -23,7 +23,7 @@ from fastapi.responses import PlainTextResponse, FileResponse
 from faster_whisper import WhisperModel
 from faster_whisper.audio import decode_audio
 from opencc import OpenCC
-from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers
+from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_identifiers, restore_identifiers
 from translation import validate_translation, translate_text
 from beta_api import install_beta, LocalProvider, audio_duration
 
@@ -104,12 +104,16 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
     if mode=='translate':
         translated=await translate_text(text,target_language,API_KEY,source_language)
         return converter.convert(translated) if target_language=='zh-TW' else translated
+    protected, identifiers, marker_prefix = protect_identifiers(text, personal_prompt, vocabulary)
+    instructions = formatting_prompt(PROMPT, personal_prompt, vocabulary, taiwan_places)
+    if identifiers:
+        instructions += '\nProtected identifiers appear as ' + marker_prefix + '0END etc. Copy each marker exactly once, unchanged and in the same order and context. Do not translate, expand, omit, or explain markers.\n'
     async with httpx.AsyncClient(timeout=90) as client:
         result = await client.post('http://127.0.0.1:19871/v1/chat/completions',
             headers={'Authorization': 'Bearer ' + API_KEY}, json={
             'model': 'local-format', 'messages': [
-                {'role': 'system', 'content': formatting_prompt(PROMPT, personal_prompt, vocabulary, taiwan_places)},
-                {'role': 'user', 'content': text}],
+                {'role': 'system', 'content': instructions},
+                {'role': 'user', 'content': protected}],
             'temperature': 0.1, 'max_tokens': 2048, 'stream': False,
             'chat_template_kwargs': {'enable_thinking': False}})
         result.raise_for_status()
@@ -121,7 +125,7 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
         content = choice['message']['content']
         if not isinstance(content, str) or not content.strip():
             raise ValueError('Empty formatting result')
-        edited = converter.convert(content.strip())
+        edited = restore_identifiers(converter.convert(content.strip()), identifiers, marker_prefix)
         validate_identifiers(text, edited)
         return edited
 

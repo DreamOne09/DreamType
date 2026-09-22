@@ -18,6 +18,28 @@ def validate_identifiers(original, edited):
     if Counter(IDENTIFIER.findall(original)) != Counter(IDENTIFIER.findall(edited)):
         raise ValueError('Formatting changed a literal identifier')
 
+def protect_identifiers(text, *references):
+    """Keep literal identifiers out of generation; mapping lives for one request."""
+    prefix = 'DTKEEP'
+    while any(prefix in value for value in (text, *references)):
+        prefix += 'X'
+    values = {}
+    def replace(match):
+        marker = f'{prefix}{len(values)}END'
+        values[marker] = match.group(0)
+        return marker
+    return IDENTIFIER.sub(replace, text), values, prefix
+
+def restore_identifiers(edited, values, prefix):
+    if not values:
+        return edited
+    # Require each occurrence exactly once, in original order. Do not guess
+    # when the model drops, duplicates, edits or moves a protected value.
+    markers = re.findall(re.escape(prefix) + r'\d+END', edited)
+    if markers != list(values) or edited.count(prefix) != len(values):
+        raise ValueError('Formatting changed identifier markers')
+    return re.sub(re.escape(prefix) + r'\d+END', lambda m: values[m.group(0)], edited)
+
 # County/city names checked against Chunghwa Post's county list.
 # https://www.post.gov.tw/post/internet/Download/index.jsp?ID=220306
 TAIWAN_PLACES = '臺北市、新北市、桃園市、臺中市、臺南市、高雄市、基隆市、新竹市、新竹縣、苗栗縣、彰化縣、南投縣、雲林縣、嘉義市、嘉義縣、屏東縣、宜蘭縣、花蓮縣、臺東縣、澎湖縣、金門縣、連江縣'
