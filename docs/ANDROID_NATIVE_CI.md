@@ -14,7 +14,7 @@
 
 `scripts/build_emulator_probe.py` 只為暫時 CI 環境建立含測試 instrumentation 的 testOnly APK，使用一次性測試簽章，不讀取維護者簽章或金鑰。正式 `outputs/android/build.py` 不會編入 tests 目錄。CI 不上傳測試 APK、簽章、錄音或 token；只保留測試文字結果與合成環境的截圖。
 
-這不是 Pixel 9，也不驗證 Google Play、Surfshark 行動網路、真實麥克風、不同 App 的輸入法插入、TalkBack 或原正式 APK 升級。不能用模擬器通過取代這些驗收。
+這不是 Pixel 9，也不驗證 Google Play、Surfshark 行動網路、實體麥克風品質、各種第三方 App 相容性、TalkBack 或原正式 APK 升級。不能用模擬器通過取代這些驗收。
 
 啟動：`gh workflow run android-native.yml --ref main`。執行前確認 main 為要驗證的來源。流程只有手動觸發，不會每次提交都啟動模擬器。
 
@@ -49,3 +49,9 @@
 前兩次嘗試使用舊的 shell UI dump，只列出輸入 App 的節點，漏掉已出現在截圖及系統狀態中的 IME 視窗，造成測試誤報。改成 fixture 內的 UiAutomation，啟用 `FLAG_RETRIEVE_INTERACTIVE_WINDOWS` 並走訪所有視窗；保持相同啟用／停用條件，沒有放寬判定。
 
 測試 App、Instrumentation、測試簽章都不進正式 APK。此次以測試 App 的 requestFocus／showSoftInput 切換輸入框，未錄音、未連 AI、未插入辨識結果，不能當成完整語音流程通過。Pixel 9、Surfshark 與其他輸入類型仍待驗證。
+
+## 錄音、HTTP 上傳與插入測試設計
+
+後續探測會透過真實 IME 按鈕開始錄音、停止、等待文字預覽，再按「插入文字」，核對獨立測試 App 的 EditText 完整內容。使用 Android MediaRecorder；跑在模擬器上，聲音可能是靜音，不評分語音辨識品質。
+
+CI 主機的 loopback HTTP 測試服務只接受虛構 token，檢查收到非空 MP4 錄音欄位，再回傳固定的「明天下午四點半到板橋。」。報告只記錄上傳次數與位元組數，不保存音訊。暫時測試 APK 才允許此 HTTP 連線；正式 manifest 與 HTTPS 限制不變，也不連接家中伺服器。這條路徑驗證私人模式的操作與傳輸，不取代帳號模式排隊、結果回執或真實 AI 品質測試。

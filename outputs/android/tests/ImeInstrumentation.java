@@ -56,8 +56,7 @@ public final class ImeInstrumentation extends Instrumentation {
   long deadline=SystemClock.uptimeMillis()+15000;
   while(SystemClock.uptimeMillis()<deadline){
    AccessibilityNodeInfo mic=find("開始說話");
-   if(mic!=null&&mic.isEnabled()==enabled){
-    if(!enabled&&find("密碼欄位不使用語音，請切回原本鍵盤。")==null)throw new AssertionError("Password guidance missing");
+   if(mic!=null&&mic.isEnabled()==enabled&&(enabled||find("密碼欄位不使用語音，請切回原本鍵盤。")!=null)){
     screenshot(name);return;
    }
    SystemClock.sleep(100);
