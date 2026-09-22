@@ -67,6 +67,7 @@ public final class SetupActivity extends Activity {
         } catch(Exception e){status.setText("無法讀取配對連結，請手動填入網址與金鑰。");}
     }
     private void saveAndTest() {
+        final AppConfig expected=AppConfig.load(this);
         final AppConfig config;
         try {
             String token=key.getText().toString().trim();if(token.isEmpty()||token.length()>512)throw new Exception("請填入專用金鑰。");
@@ -75,7 +76,7 @@ public final class SetupActivity extends Activity {
         save.setEnabled(false);status.setText("正在連接你的電腦…");
         worker.execute(()->{
             String message;
-            try {VoiceApi.verify(config);if(AppConfig.load(this).accountMode)AppConfig.clearSession(this);config.save(this);message="已儲存，電腦連線成功。返回首頁繼續設定。";}
+            try {VoiceApi.verify(config);AppConfig.saveConnection(this,expected,config);message="已儲存，電腦連線成功。返回首頁繼續設定。";}
             catch(Exception e){message=VoiceApi.friendly(e);}
             final String result=message;
             runOnUiThread(()->{if(!isFinishing()&&!isDestroyed()){status.setText(result);save.setEnabled(true);}});

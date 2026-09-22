@@ -38,14 +38,14 @@ public final class AccountActivity extends Activity {
   if(current.ready()&&current.accountMode){
    text("封閉試用中 · 尚未收費",17);text("錄音由管理者的電腦處理。你的手機只需要網路。",15);page.addView(status);
    button("查看本月用量",true,v->task(()->{JSONObject me=VoiceApi.json(current,"GET","/v2/me",null);return "帳號："+me.getString("name")+"\n已用 "+Math.ceil(me.getDouble("used_seconds")/60)+" 分鐘／"+(me.getInt("limit_seconds")/60)+" 分鐘\n尚可使用約 "+(me.getInt("remaining_seconds")/60)+" 分鐘\n額度每月依 UTC 重算。";},false));
-   button("同步我的偏好",false,v->task(()->{JSONObject me=VoiceApi.json(current,"GET","/v2/me",null);AppConfig.saveStyle(this,me.getJSONObject("preferences"));return "已取回帳號的提示詞與常用詞。";},false));
+   button("同步我的偏好",false,v->task(()->{JSONObject me=VoiceApi.json(current,"GET","/v2/me",null);AppConfig.savePreferences(this,current,me.getJSONObject("preferences"),null);return "已取回帳號的提示詞與常用詞。";},false));
    button("修改密碼",false,v->{LinearLayout fields=new LinearLayout(this);fields.setOrientation(1);EditText oldPass=new EditText(this),newPass=new EditText(this);oldPass.setHint("目前密碼");newPass.setHint("新密碼（至少 12 字元）");for(EditText e:new EditText[]{oldPass,newPass}){e.setInputType(129);e.setSaveEnabled(false);e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);fields.addView(e);}
-    new AlertDialog.Builder(this).setTitle("修改密碼").setMessage("完成後，所有裝置都需要重新登入。").setView(fields).setPositiveButton("儲存",(d,w)->{final String oldValue=oldPass.getText().toString(),newValue=newPass.getText().toString();oldPass.setText("");newPass.setText("");task(()->{VoiceApi.json(current,"POST","/v2/me/password",new JSONObject().put("current_password",oldValue).put("new_password",newValue));AppConfig.clearSession(this);return "密碼已更新，請重新登入。";},true);}).setNegativeButton("取消",null).show();});
-   button("登出",false,v->task(()->{VoiceApi.json(current,"POST","/v2/logout",new JSONObject());AppConfig.clearSession(this);return "已登出，手機上的帳號設定已清除。";},true));
+    new AlertDialog.Builder(this).setTitle("修改密碼").setMessage("完成後，所有裝置都需要重新登入。").setView(fields).setPositiveButton("儲存",(d,w)->{final String oldValue=oldPass.getText().toString(),newValue=newPass.getText().toString();oldPass.setText("");newPass.setText("");task(()->{VoiceApi.json(current,"POST","/v2/me/password",new JSONObject().put("current_password",oldValue).put("new_password",newValue));AppConfig.clearSessionIfCurrent(this,current);return "密碼已更新，請重新登入。";},true);}).setNegativeButton("取消",null).show();});
+   button("登出",false,v->task(()->{VoiceApi.json(current,"POST","/v2/logout",new JSONObject());AppConfig.clearSessionIfCurrent(this,current);return "已登出，手機上的帳號設定已清除。";},true));
    button("移除手機登入資料",false,v->new AlertDialog.Builder(this).setTitle("清除這支手機的登入？").setMessage("連不到服務時可使用。只清除手機資料，不會撤銷其他裝置的登入，也不會刪除帳號。")
      .setPositiveButton("清除",(d,w)->{AppConfig.clearSession(this);show();}).setNegativeButton("取消",null).show());
    button("刪除我的帳號",false,v->{EditText password=new EditText(this);password.setHint("再次輸入密碼");password.setInputType(129);password.setSaveEnabled(false);password.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
-    new AlertDialog.Builder(this).setTitle("永久刪除帳號？").setMessage("線上帳號、所有登入、個人偏好與用量紀錄將刪除。歷史備份不會立即改寫，主機保留帳號 ID 與刪除時間供還原核對。詳見「資料與隱私」。").setView(password).setPositiveButton("永久刪除",(d,w)->{final String pass=password.getText().toString();password.setText("");task(()->{VoiceApi.json(current,"DELETE","/v2/me",new JSONObject().put("password",pass));AppConfig.clearSession(this);return "帳號已刪除。";},true);}).setNegativeButton("取消",null).show();});
+    new AlertDialog.Builder(this).setTitle("永久刪除帳號？").setMessage("線上帳號、所有登入、個人偏好與用量紀錄將刪除。歷史備份不會立即改寫，主機保留帳號 ID 與刪除時間供還原核對。詳見「資料與隱私」。").setView(password).setPositiveButton("永久刪除",(d,w)->{final String pass=password.getText().toString();password.setText("");task(()->{VoiceApi.json(current,"DELETE","/v2/me",new JSONObject().put("password",pass));AppConfig.clearSessionIfCurrent(this,current);return "帳號已刪除。";},true);}).setNegativeButton("取消",null).show();});
   }else{
    text("輸入管理者提供的網址與試用帳號。",16);
    EditText server=field("服務網址（https://…）",current.server,false);
@@ -56,7 +56,7 @@ public final class AccountActivity extends Activity {
      JSONObject session=VoiceApi.json(new AppConfig(normalized,"",false),"POST","/v2/login",new JSONObject().put("username",name).put("password",pass));
      AppConfig config=new AppConfig(normalized,session.getString("token"),false,"","",true,true);
      JSONObject me=VoiceApi.json(config,"GET","/v2/me",null);
-     AppConfig.clearSession(this);config.save(this);AppConfig.saveStyle(this,me.getJSONObject("preferences"));return "登入成功。回到首頁，繼續啟用鍵盤。";
+     AppConfig.replaceSession(this,current,config,me.getJSONObject("preferences"));return "登入成功。回到首頁，繼續啟用鍵盤。";
     },true);
    });
    text("目前由管理者建立帳號，不開放自行註冊。登入有效七天，到期後重新登入。",14);

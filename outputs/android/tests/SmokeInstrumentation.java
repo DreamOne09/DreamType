@@ -20,6 +20,30 @@ public final class SmokeInstrumentation extends Instrumentation {
   return null;
  }
  private Activity open(Class<?> page){Activity a=startActivitySync(new Intent(getTargetContext(),page).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();return a;}
+ private interface LateAction {void run()throws Exception;}
+ private void rejected(LateAction action)throws Exception {
+  try{action.run();throw new AssertionError("Stale session write accepted");}catch(java.io.IOException expected){}
+ }
+ private void sessionChecks(Context context)throws Exception {
+  AppConfig first=new AppConfig("https://first.invalid","synthetic-first",false,"","",true,true);
+  AppConfig second=new AppConfig("https://second.invalid","synthetic-second",false,"","",true,true);
+  org.json.JSONObject oldPrefs=new org.json.JSONObject().put("personal_prompt","舊帳號偏好");
+  org.json.JSONObject newPrefs=new org.json.JSONObject().put("personal_prompt","新帳號偏好");
+  first.save(context);AppConfig.replaceSession(context,first,second,newPrefs);
+  rejected(()->AppConfig.savePreferences(context,first,oldPrefs,true));
+  rejected(()->AppConfig.clearSessionIfCurrent(context,first));
+  rejected(()->AppConfig.replaceSession(context,first,first,oldPrefs));
+  rejected(()->AppConfig.saveConnection(context,first,first));
+  AppConfig current=AppConfig.load(context);
+  if(!current.key.equals(second.key)||!current.personalPrompt.equals("新帳號偏好")||current.autoInsert)throw new AssertionError("New account changed by stale reply");
+  AppConfig differentHost=new AppConfig("https://other.invalid",second.key,false,"","",true,true);
+  rejected(()->AppConfig.savePreferences(context,differentHost,oldPrefs,true));
+  AppConfig.savePreferences(context,second,new org.json.JSONObject().put("personal_prompt","目前帳號偏好"),true);
+  current=AppConfig.load(context);
+  if(!current.autoInsert||!current.personalPrompt.equals("目前帳號偏好"))throw new AssertionError("Current account preference write failed");
+  AppConfig.clearSessionIfCurrent(context,second);
+  if(!AppConfig.load(context).key.isEmpty())throw new AssertionError("Current account logout failed");
+ }
  private EditText input(View view){
   if(view instanceof EditText)return (EditText)view;
   if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++){EditText found=input(((ViewGroup)view).getChildAt(i));if(found!=null)return found;}
@@ -99,6 +123,7 @@ public final class SmokeInstrumentation extends Instrumentation {
    if(!found[0])throw new AssertionError("Offline privacy screen missing");
    screenshot("privacy");
    editorChecks(context);
+   sessionChecks(context);result.putString("session_isolation","passed");
    if(configureVoice)new AppConfig("http://10.0.2.2:18765",voiceToken,false,"","",true,accountVoice).save(context);
    result.putString("dreamtype","passed");result.putString("checks","Chinese onboarding, login navigation, Android Keystore credentials and recording, logout deletion, offline privacy");
    finish(Activity.RESULT_OK,result);

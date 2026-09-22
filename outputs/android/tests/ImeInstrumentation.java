@@ -13,7 +13,7 @@ public final class ImeInstrumentation extends Instrumentation {
  @Override public void onCreate(Bundle args){super.onCreate(args);start();}
  private AccessibilityNodeInfo find(AccessibilityNodeInfo node,String text){
   if(node==null)return null;
-  if(text.contentEquals(node.getText()==null?"":node.getText()))return node;
+  if(text.contentEquals(node.getText()==null?"":node.getText())||text.contentEquals(node.getContentDescription()==null?"":node.getContentDescription()))return node;
   for(int i=0;i<node.getChildCount();i++){AccessibilityNodeInfo found=find(node.getChild(i),text);if(found!=null)return found;}
   return null;
  }
@@ -33,6 +33,24 @@ public final class ImeInstrumentation extends Instrumentation {
    SystemClock.sleep(100);
   }
   throw new AssertionError("Cannot click: "+label);
+ }
+ private android.graphics.Rect bounds(String label){AccessibilityNodeInfo node=find(label);if(node==null)throw new AssertionError("Missing "+label);android.graphics.Rect r=new android.graphics.Rect();node.getBoundsInScreen(r);return r;}
+ private void touch(long down,int action,float x,float y){android.view.MotionEvent e=android.view.MotionEvent.obtain(down,SystemClock.uptimeMillis(),action,x,y,0);e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);getUiAutomation().injectInputEvent(e,true);e.recycle();}
+ private void interactionChecks(Activity activity)throws Exception{
+  runOnMainSync(()->{EditText f=activity.findViewById(101);f.setText("台灣測試");f.setSelection(2,4);});
+  click("退格刪除");SystemClock.sleep(300);
+  runOnMainSync(()->{EditText f=activity.findViewById(101);if(!"台灣".equals(f.getText().toString()))throw new AssertionError("Backspace did not delete selection");f.setText("台灣😀");f.setSelection(f.length());});
+  click("退格刪除");SystemClock.sleep(300);
+  runOnMainSync(()->{EditText f=activity.findViewById(101);if(!"台灣".equals(f.getText().toString()))throw new AssertionError("Backspace split emoji");f.setText("一二三四五六七八九十");f.setSelection(f.length());});
+  android.graphics.Rect del=bounds("退格刪除");long down=SystemClock.uptimeMillis();touch(down,0,del.centerX(),del.centerY());SystemClock.sleep(700);touch(down,1,del.centerX(),del.centerY());SystemClock.sleep(200);
+  runOnMainSync(()->{EditText f=activity.findViewById(101);if(f.length()>=9||f.length()==0)throw new AssertionError("Hold backspace failed");f.setText("");});
+  android.graphics.Rect mic=bounds("開始說話");if(Math.abs(mic.width()-mic.height())>3)throw new AssertionError("Speak button not circular");
+  down=SystemClock.uptimeMillis();touch(down,0,mic.centerX(),mic.centerY());SystemClock.sleep(800);
+  android.graphics.Rect english=bounds("翻譯成英文");screenshot("ime-translation-menu");
+  touch(down,2,english.centerX(),english.centerY());SystemClock.sleep(200);touch(down,1,english.centerX(),english.centerY());SystemClock.sleep(500);
+  if(find("停止並翻譯")==null)throw new AssertionError("Slide selection did not start translated recording");
+  check(activity,102,false,"ime-translation-cancel");check(activity,101,true,"ime-translation-return");
+  click("翻譯 → 英文 ▾");click("整理成台灣繁中");
  }
  private void recordAndInsert(Activity activity)throws Exception{
   click("開始說話");
@@ -74,8 +92,9 @@ public final class ImeInstrumentation extends Instrumentation {
    check(activity,101,true,"ime-normal");
    check(activity,102,false,"ime-password");
    check(activity,101,true,"ime-normal-return");
+   interactionChecks(activity);
    recordAndInsert(activity);
-   result.putString("ime","passed");result.putString("checks","external editor, real IME window, password disables voice, normal field restores voice, MediaRecorder upload, fixed Traditional Chinese response inserted");finish(Activity.RESULT_OK,result);
+   result.putString("ime","passed");result.putString("checks","circle, selection and emoji backspace, hold delete, long press slide translation, external editor, real IME window, password disables voice, normal field restores voice, MediaRecorder upload, fixed Traditional Chinese response inserted");finish(Activity.RESULT_OK,result);
   }catch(Throwable error){try{screenshot("ime-failure");}catch(Exception ignored){}result.putString("ime","failed");result.putString("failure",error.toString());finish(Activity.RESULT_CANCELED,result);}
  }
 }

@@ -31,6 +31,69 @@ public final class VoiceIme extends InputMethodService {
     private Button mic,edit,discard,modeButton;
     private LinearLayout editRow;
     private ScrollView resultArea;
+    private PopupWindow languagePanel;
+    private final java.util.ArrayList<Button> languageChoices=new java.util.ArrayList<>();
+    private int hoveredLanguage=-1;
+    private boolean languageGesture=false,deleteHeld=false;
+    private float touchX,touchY;
+    private final Runnable holdLanguage=()->{if(canChooseLanguage()){languageGesture=true;showLanguages();mic.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);}};
+    private final Runnable repeatDelete=new Runnable(){public void run(){if(deleteHeld){backspace();main.postDelayed(this,90);}}};
+    private boolean canChooseLanguage(){return !busy&&!recordingNow&&!pending&&!retained&&!protectedField&&mic!=null&&mic.isEnabled();}
+    private void backspace(){
+        InputConnection c=getCurrentInputConnection();if(c==null)return;
+        // Let the editor handle selections and composed characters like a hardware Backspace.
+        c.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_DEL));
+        c.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP,KeyEvent.KEYCODE_DEL));
+    }
+    private void closeLanguages(){if(languagePanel!=null){languagePanel.dismiss();languagePanel=null;}languageChoices.clear();hoveredLanguage=-1;}
+    private void selectLanguage(int index,boolean record){
+        if(!canChooseLanguage()){closeLanguages();return;}
+        AppConfig config=AppConfig.load(this);
+        getSharedPreferences("style",MODE_PRIVATE).edit().putString("mode",index==0?"organize":"translate")
+            .putString("target_language",index==0?config.targetLanguage:AppConfig.LANGUAGE_CODES[index-1]).commit();
+        closeLanguages();refresh();if(record)startRecording();
+    }
+    private void showLanguages(){
+        if(!canChooseLanguage())return;closeLanguages();
+        LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(dp(8),dp(8),dp(8),dp(8));panel.setBackgroundColor(Ui.PAPER);
+        TextView title=new TextView(this);title.setText("往上滑選語言，放開開始說話");title.setTextColor(Ui.MUTED);title.setTextSize(14);title.setGravity(Gravity.CENTER);panel.addView(title,new LinearLayout.LayoutParams(-1,dp(32)));
+        LinearLayout row=null;
+        for(int i=0;i<=AppConfig.LANGUAGE_NAMES.length;i++){
+            if(i%3==0){row=new LinearLayout(this);panel.addView(row);}
+            final int choice=i;
+            Button b=button(row,i==0?"台灣繁中":AppConfig.LANGUAGE_NAMES[i-1],v->selectLanguage(choice,true),1);
+            b.setContentDescription(i==0?"整理成台灣繁中":"翻譯成"+AppConfig.LANGUAGE_NAMES[i-1]);languageChoices.add(b);
+        }
+        int width=Math.min(getResources().getDisplayMetrics().widthPixels-dp(24),dp(360));
+        int height=dp(48+56*((languageChoices.size()+2)/3));
+        languagePanel=new PopupWindow(panel,width,height,false);languagePanel.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Ui.PAPER));languagePanel.setElevation(dp(12));languagePanel.setOutsideTouchable(true);
+        languagePanel.showAsDropDown(mic,(mic.getWidth()-width)/2,-mic.getHeight()-height-dp(8));
+    }
+    private void trackLanguage(float x,float y){
+        hoveredLanguage=-1;
+        for(int i=0;i<languageChoices.size();i++){
+            Button b=languageChoices.get(i);int[] pos=new int[2];b.getLocationOnScreen(pos);
+            boolean hit=x>=pos[0]&&x<pos[0]+b.getWidth()&&y>=pos[1]&&y<pos[1]+b.getHeight();
+            Ui.button(b,hit);if(hit)hoveredLanguage=i;
+        }
+    }
+    private boolean micTouch(View view,android.view.MotionEvent event){
+        switch(event.getActionMasked()){
+            case MotionEvent.ACTION_DOWN:
+                touchX=event.getRawX();touchY=event.getRawY();languageGesture=false;view.setPressed(true);
+                if(canChooseLanguage())main.postDelayed(holdLanguage,ViewConfiguration.getLongPressTimeout());return true;
+            case MotionEvent.ACTION_MOVE:
+                if(languageGesture)trackLanguage(event.getRawX(),event.getRawY());
+                else if(Math.abs(event.getRawX()-touchX)>dp(24)||Math.abs(event.getRawY()-touchY)>dp(24)){main.removeCallbacks(holdLanguage);view.setPressed(false);}return true;
+            case MotionEvent.ACTION_UP:
+                main.removeCallbacks(holdLanguage);boolean click=view.isPressed();view.setPressed(false);
+                if(languageGesture){int selected=hoveredLanguage;languageGesture=false;if(selected>=0)selectLanguage(selected,true);}
+                else if(click)view.performClick();return true;
+            case MotionEvent.ACTION_CANCEL:
+                main.removeCallbacks(holdLanguage);view.setPressed(false);languageGesture=false;closeLanguages();return true;
+            default:return true;
+        }
+    }
     private final Runnable tick=new Runnable(){public void run(){if(!recordingNow)return;long seconds=(SystemClock.elapsedRealtime()-began)/1000;status.setText("正在錄音　"+seconds+" 秒");if(seconds>=118){finishRecording();return;}main.postDelayed(this,500);}};
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
     private void setup(){Intent i=new Intent(this,HomeActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}
@@ -43,11 +106,25 @@ public final class VoiceIme extends InputMethodService {
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(12),dp(12),dp(12),dp(12));root.setBackgroundColor(Ui.PAPER);
         LinearLayout modes=new LinearLayout(this);root.addView(modes);
         modeButton=button(modes,"整理 · 台灣繁中 ▾",v->chooseMode(v),1f);
-        status=new TextView(this);status.setTextSize(14);status.setTextColor(Ui.INK);status.setPadding(dp(5),dp(3),dp(5),dp(6));status.setMaxLines(3);root.addView(status);
+        status=new TextView(this);status.setTextSize(14);status.setTextColor(Ui.INK);status.setPadding(dp(5),dp(3),dp(5),dp(6));status.setMaxLines(3);status.setGravity(Gravity.CENTER);root.addView(status);
         ScrollView scroll=new ScrollView(this);resultArea=scroll;preview=new TextView(this);preview.setTextSize(17);preview.setTextColor(Ui.INK);preview.setPadding(dp(8),dp(4),dp(8),dp(4));scroll.addView(preview);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(66)));
-        mic=new Button(this);mic.setAllCaps(false);mic.setTextSize(20);mic.setTextColor(Color.WHITE);Ui.button(mic,true);mic.setOnClickListener(v->{if(pending)insertPending();else if(recordingNow)finishRecording();else if(retained)retryRecording();else startRecording();});root.addView(mic,new LinearLayout.LayoutParams(-1,dp(64)));
+        LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER_VERTICAL);root.addView(controls);
+        Button switcher=button(controls,"換鍵盤",v->((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showInputMethodPicker(),1f);
+        mic=new Button(this);mic.setAllCaps(false);mic.setTextSize(22);mic.setTextColor(Color.WHITE);Ui.button(mic,true);
+        android.graphics.drawable.GradientDrawable circle=new android.graphics.drawable.GradientDrawable();circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);circle.setColor(Ui.INK);
+        mic.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x55777777),circle,null));
+        mic.setOnClickListener(v->{closeLanguages();if(pending)insertPending();else if(recordingNow)finishRecording();else if(retained)retryRecording();else startRecording();});
+        mic.setOnTouchListener(this::micTouch);mic.setOnLongClickListener(v->{if(!canChooseLanguage())return false;showLanguages();return true;});
+        LinearLayout.LayoutParams circleLayout=new LinearLayout.LayoutParams(dp(112),dp(112));circleLayout.setMargins(dp(16),dp(8),dp(16),dp(8));controls.addView(mic,circleLayout);
+        Button delete=button(controls,"⌫",v->backspace(),1f);delete.setTextSize(26);delete.setContentDescription("退格刪除");
+        delete.setOnTouchListener((v,e)->{switch(e.getActionMasked()){
+            case MotionEvent.ACTION_DOWN:deleteHeld=true;v.setPressed(true);backspace();main.postDelayed(repeatDelete,400);return true;
+            case MotionEvent.ACTION_MOVE:if(e.getX()<0||e.getY()<0||e.getX()>v.getWidth()||e.getY()>v.getHeight()){deleteHeld=false;main.removeCallbacks(repeatDelete);v.setPressed(false);}return true;
+            case MotionEvent.ACTION_UP:case MotionEvent.ACTION_CANCEL:deleteHeld=false;main.removeCallbacks(repeatDelete);v.setPressed(false);return true;
+            default:return true;}});
+        TextView hint=new TextView(this);hint.setText("點一下說話 · 長按往上滑翻譯");hint.setTextSize(13);hint.setTextColor(Ui.MUTED);hint.setGravity(Gravity.CENTER);root.addView(hint);
         LinearLayout row=new LinearLayout(this);root.addView(row);
-        button(row,"換鍵盤",v->((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showInputMethodPicker(),1.15f);
+        button(row,"換行",v->{InputConnection c=getCurrentInputConnection();if(c!=null)c.commitText("\n",1);},1f);
         button(row,"更多",v->{PopupMenu menu=new PopupMenu(this,v);String[] items={"刪除一字","換行","取回上一筆","刪除保留錄音","我的設定","連線設定"};for(String item:items)menu.getMenu().add(item);menu.setOnMenuItemClickListener(item->{String name=item.getTitle().toString();InputConnection c=getCurrentInputConnection();if(name.equals("刪除一字")){if(c!=null)c.deleteSurroundingTextInCodePoints(1,0);}else if(name.equals("換行")){if(c!=null)c.commitText("\n",1);}else if(name.equals("取回上一筆")){recoverLast();}else if(name.equals("刪除保留錄音")){if(!busy&&!recordingNow){PendingAudio.clear(this);refresh();}}else if(name.equals("我的設定")){Intent i=new Intent(this,ManageActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}else setup();return true;});menu.show();},1f);
         editRow=new LinearLayout(this);root.addView(editRow);
         edit=button(editRow,"修改文字",v->{if(!pending||busy||protectedField)return;Draft.begin(lastText);Intent i=new Intent(this,EditActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);},2f);
@@ -69,7 +146,7 @@ public final class VoiceIme extends InputMethodService {
         retained=PendingAudio.exists(this,AppConfig.load(this));
         AppConfig chosen=AppConfig.load(this);boolean translating=chosen.mode.equals("translate");
         modeButton.setText(chosen.modeLabel()+" ▾");modeButton.setEnabled(!busy&&!recordingNow&&!pending&&!retained);
-        mic.setText(recordingNow?(translating?"停止並翻譯":"停止並整理"):busy?(translating?"正在翻譯…":"正在整理…"):pending?"插入文字":retained?"重試上一段":"開始說話");mic.setEnabled(!busy&&!protectedField);
+        mic.setContentDescription(recordingNow?(translating?"停止並翻譯":"停止並整理"):busy?(translating?"正在翻譯…":"正在整理…"):pending?"插入文字":retained?"重試上一段":"開始說話");mic.setText(recordingNow?"停止":busy?"處理中":pending?"插入":retained?"重試":"說話");mic.setEnabled(!busy&&!protectedField);
         if(editRow!=null)editRow.setVisibility(pending?View.VISIBLE:View.GONE);
         if(resultArea!=null)resultArea.setVisibility(pending?View.VISIBLE:View.GONE);
         if(discard!=null)discard.setEnabled(pending&&!busy&&!recordingNow);
@@ -155,6 +232,6 @@ public final class VoiceIme extends InputMethodService {
         if(!pending||protectedField)return false;InputConnection c=getCurrentInputConnection();if(c==null)return false;
         if(c.commitText(lastText,1)){pending=false;Draft.clear();refresh();status.setText("已插入，可以繼續說話。");return true;}return false;
     }
-    private void cancelRecording(){main.removeCallbacks(tick);recordingNow=false;if(recorder!=null){try{recorder.stop();}catch(Exception ignored){}recorder.release();recorder=null;}if(recording!=null){recording.delete();recording=null;}}
+    private void cancelRecording(){closeLanguages();main.removeCallbacks(holdLanguage);main.removeCallbacks(repeatDelete);deleteHeld=false;languageGesture=false;main.removeCallbacks(tick);recordingNow=false;if(recorder!=null){try{recorder.stop();}catch(Exception ignored){}recorder.release();recorder=null;}if(recording!=null){recording.delete();recording=null;}}
     @Override public void onDestroy(){destroyed=true;cancelRecording();worker.shutdownNow();main.removeCallbacksAndMessages(null);super.onDestroy();}
 }
