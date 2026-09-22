@@ -32,6 +32,10 @@ jobs:
             adb shell am instrument -w tw.localvoice.keyboard/.SmokeInstrumentation | tee work/emulator-probe/result.txt
             grep -q 'dreamtype=passed' work/emulator-probe/result.txt
             adb pull /sdcard/Android/data/tw.localvoice.keyboard/files work/emulator-probe/screenshots
+            adb shell am force-stop tw.localvoice.keyboard
+            adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n tw.localvoice.keyboard/.HomeActivity
+            sleep 3
+            adb exec-out screencap -p > work/emulator-probe/screenshots/launcher-home.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:
