@@ -12,9 +12,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--runtime-root', type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--cases', type=Path, help='Optional separate corpus; defaults to Taiwan Chinese regression cases.')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
-    cases = json.loads((repo / 'tests/quality/taiwan-chinese.json').read_text(encoding='utf-8-sig'))
+    cases = json.loads((args.cases or repo / 'tests/quality/taiwan-chinese.json').read_text(encoding='utf-8-sig'))
     key = (args.runtime_root / 'work/local-voice.key').read_text(encoding='ascii').strip()
     rows = []
     with httpx.Client(timeout=90) as client:
