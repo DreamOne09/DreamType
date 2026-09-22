@@ -1,0 +1,31 @@
+{
+  "simultaneous_accounts": 3,
+  "transport": "localhost HTTP",
+  "audio_bytes": 31270,
+  "same_test_clip_for_all": true,
+  "native_device_test": false,
+  "capacity_guarantee": false,
+  "results": [
+    {
+      "completed_seconds": 2.55,
+      "observed_queue": true,
+      "used_seconds": 5,
+      "cross_account_denied": true,
+      "duplicate_receipt_no_extra_charge": true
+    },
+    {
+      "completed_seconds": 1.49,
+      "observed_queue": true,
+      "used_seconds": 5,
+      "cross_account_denied": true,
+      "duplicate_receipt_no_extra_charge": true
+    },
+    {
+      "completed_seconds": 2.02,
+      "observed_queue": true,
+      "used_seconds": 5,
+      "cross_account_denied": true,
+      "duplicate_receipt_no_extra_charge": true
+    }
+  ]
+}
