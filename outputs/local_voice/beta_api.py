@@ -63,6 +63,10 @@ class Beta:
         await asyncio.gather(*self.tasks,return_exceptions=True)
         self.store.recover();self.results.clear()
         self.queue=asyncio.Queue(maxsize=8)
+    def workers_ready(self):
+        # Both inference consumption and retention cleanup are required. An
+        # empty/partially started task list must not count as a healthy service.
+        return len(self.tasks)==2 and all(not task.done() for task in self.tasks)
     async def expire(self):
         while True:
             await asyncio.sleep(30)
@@ -178,7 +182,7 @@ def install_beta(app,work,provider,decoder):
         try:maintenance=json.loads((work/'maintenance-status.json').read_text())
         except (OSError,ValueError):maintenance={'errors':['maintenance_not_run']}
         from operations import summarize
-        return {'queue_size':beta.queue.qsize(),'jobs_last_24h':counts,'worker_alive':bool(beta.tasks) and all(not t.done() for t in beta.tasks),'maintenance':maintenance,
+        return {'queue_size':beta.queue.qsize(),'jobs_last_24h':counts,'worker_alive':beta.workers_ready(),'maintenance':maintenance,
                 'operations':summarize(maintenance,(work/'backup-config.json').is_file())}
     @app.get('/v2/me')
     async def me(request:Request):return beta.store.me(beta.user(request)['id'])

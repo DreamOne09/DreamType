@@ -8,6 +8,17 @@ import server
 from personalization import formatting_prompt, speech_hint, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint
 
 class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_model_health_cannot_hide_failed_background_workers(self):
+        client_type=httpx.AsyncClient
+        def engine(request):return httpx.Response(200,json={'status':'ok'})
+        with patch.object(server.httpx,'AsyncClient',lambda **kwargs:client_type(transport=httpx.MockTransport(engine))), \
+                patch.object(server,'model',object()):
+            for alive in (True,False):
+                with patch.object(server.beta,'workers_ready',return_value=alive):
+                    report=await server.health()
+                    self.assertEqual(report['status']=='ready',alive)
+                    self.assertEqual(report['workers_ready'],alive)
+
     async def test_identifiers_are_hidden_from_model_and_restored_before_return(self):
         import json
         original = '訂單 AB-007，電話 0912-003-456，網址 example.com.tw。'

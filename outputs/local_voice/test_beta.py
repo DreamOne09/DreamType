@@ -15,6 +15,18 @@ class Provider:
         return {'text':'整理完成','timings':{'total_seconds':0.1}}
 
 class BetaTests(unittest.IsolatedAsyncioTestCase):
+    async def test_worker_health_detects_either_background_task_stopping(self):
+        self.assertTrue(self.beta.workers_ready())
+        for index in (0,1):
+            task=self.beta.tasks[index]
+            task.cancel()
+            await asyncio.gather(task,return_exceptions=True)
+            self.assertFalse(self.beta.workers_ready())
+            response=await self.client.get('/v2/admin/metrics',headers=self.admin)
+            self.assertFalse(response.json()['worker_alive'])
+            await self.beta.stop();await self.beta.start()
+            self.assertTrue(self.beta.workers_ready())
+
     async def test_stalled_provider_releases_quota_and_next_user_runs(self):
         first,a=await self.account();second,b=await self.account('bob')
         cancelled=asyncio.Event();calls=[]

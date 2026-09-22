@@ -93,9 +93,11 @@ async def health():
     try:
         async with httpx.AsyncClient(timeout=2) as client:translation_ready=(await client.get('http://127.0.0.1:19873/health')).status_code==200
     except httpx.HTTPError:pass
-    return {'status': 'ready' if model is not None and llm_ready and (translation_ready or not translation_configured) else 'starting',
+    workers_ready=beta.workers_ready()
+    return {'status': 'ready' if model is not None and llm_ready and workers_ready and (translation_ready or not translation_configured) else 'starting',
             'speech_ready': model is not None, 'formatting_ready': llm_ready,
             'translation_ready':translation_ready,
+            'workers_ready':workers_ready,
             'processing': 'local', 'version': 1}
 
 async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=True, mode='organize',target_language='en',source_language='zh'):
