@@ -1,0 +1,66 @@
+{
+  "synthetic_text_only": true,
+  "native_speaker_review": false,
+  "results": [
+    {
+      "target": "zh-TW",
+      "input": "Order number AB-007. Call 02-23456789, then email hi@example.com.",
+      "output": "訂單編號：AB-007。請致電02-23456789，然後寄電子郵件至hi@example.com。"
+    },
+    {
+      "target": "en",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "Order number AB-007. Call 02-23456789, then email hi@example.com."
+    },
+    {
+      "target": "en",
+      "input": "請先確認新台幣1500元，不要先付款。聯絡電話是 02-23456789。",
+      "output": "Please first confirm TWD 1500, do not make payment beforehand. Contact telephone number is 02-23456789."
+    },
+    {
+      "target": "ja",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "注文番号 AB-007。02-23456789に電話し、その後hi@example.comにメールしてください。"
+    },
+    {
+      "target": "ja",
+      "input": "請先確認新台幣1500元，不要先付款。聯絡電話是 02-23456789。",
+      "output": "まず、TWD 1500をご確認ください。前払いはお控えください。連絡先電話番号は02-23456789です。"
+    },
+    {
+      "target": "th",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "หมายเลขคำสั่ง AB-007 กรุณาโทรไปยัง 02-23456789 จากนั้นส่งอีเมลไปยัง hi@example.com"
+    },
+    {
+      "target": "th",
+      "input": "請先確認新台幣1500元，不要先付款。聯絡電話是 02-23456789。",
+      "output": "กรุณาตรวจสอบ TWD 1500 ก่อน และอย่าชำระเงินล่วงหน้า โปรดติดต่อเบอร์โทรศัพท์ 02-23456789"
+    },
+    {
+      "target": "ms",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "Nombor perintah AB-007. Hubungi 02-23456789, kemudian emel ke hi@example.com."
+    },
+    {
+      "target": "ms",
+      "input": "請先確認新台幣1500元，不要先付款。聯絡電話是 02-23456789。",
+      "output": "Sila pertama-tama, sahkan TWD 1500, dan jangan bayar terlebih dahulu. Nombor telefon untuk menghubungi ialah 02-23456789."
+    },
+    {
+      "target": "ko",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "주문 번호 AB-007. 02-23456789으로 전화하고, 그 다음 hi@example.com으로 이메일 보내기."
+    },
+    {
+      "target": "vi",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "Số đơn hàng AB-007. Gọi số 02-23456789, sau đó gửi email đến hi@example.com."
+    },
+    {
+      "target": "id",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "Nomor pesanan AB-007. Hubungi nomor 02-23456789, lalu kirim email ke hi@example.com."
+    }
+  ]
+}

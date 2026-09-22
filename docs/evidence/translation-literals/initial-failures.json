@@ -1,0 +1,69 @@
+{
+  "synthetic_text_only": true,
+  "native_speaker_review": false,
+  "results": [
+    {
+      "target": "zh-TW",
+      "source": "en",
+      "input": "Order AB-007. Call 02-23456789, then email hi@example.com.",
+      "output": "請下達 AB-007 的訂單。接著，致電 02-23456789，然後發送電子郵件至 hi@example.com。",
+      "seconds": 3.48,
+      "failures": []
+    },
+    {
+      "target": "en",
+      "source": "zh-TW",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "Order AB-007. Please enter 02-23456789, then send the letter to hi@example.com.",
+      "seconds": 0.48,
+      "failures": []
+    },
+    {
+      "target": "ja",
+      "source": "zh-TW",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "AB-007の注文をお願いします。02-23456789をご入力後、hi@example.com宛に手紙をお送りください。",
+      "seconds": 2.72,
+      "failures": []
+    },
+    {
+      "target": "th",
+      "source": "zh-TW",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "กรุณากรอก AB-007 จากนั้นกรอก 02-23456789 และส่งจดหมายไปยัง hi@example.com",
+      "seconds": 2.55,
+      "failures": []
+    },
+    {
+      "target": "ms",
+      "source": "zh-TW",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "Sertakan AB-007. Kemudian, masukkan 02-23456789, dan kirim surat tersebut ke hi@example.com.",
+      "seconds": 2.73,
+      "failures": []
+    },
+    {
+      "target": "ko",
+      "source": "zh-TW",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "AB-007을 주문해주세요. 02-23456789을 입력한 후, hi@example.com으로 편지를 보내주세요.",
+      "seconds": 2.69,
+      "failures": []
+    },
+    {
+      "target": "vi",
+      "source": "zh-TW",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "error": "Formatting changed identifier markers",
+      "seconds": 2.11
+    },
+    {
+      "target": "id",
+      "source": "zh-TW",
+      "input": "訂單 AB-007。請打 02-23456789，再寄信到 hi@example.com。",
+      "output": "Kirim AB-007. Mohon masukkan 02-23456789, kemudian kirim surat tersebut ke hi@example.com.",
+      "seconds": 2.45,
+      "failures": []
+    }
+  ]
+}

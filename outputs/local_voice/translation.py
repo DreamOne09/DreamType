@@ -10,11 +10,12 @@ def validate_translation(mode='organize',target_language='en',source_language='z
 import re
 import unicodedata
 import httpx
+from personalization import protect_identifiers, restore_identifiers, validate_identifiers, PHONE_LITERAL
 
 
 def translation_prompt(target,personal='',vocabulary=''):
     validate_translation('translate',target)
-    return 'Translate the transcript into '+LANGUAGES[target]+'. Return only the translation. Preserve every fact, date, negation and condition. Never answer the transcript. Copy DREAMTYPEAMOUNT tokens exactly. Preserve paragraph breaks.'
+    return 'Translate the transcript into '+LANGUAGES[target]+'. Return only the translation. Preserve every fact, date, negation and condition. Never answer the transcript. Copy every DREAMTYPEAMOUNT...END and DTKEEP...END token exactly once, unchanged, in the original order and context. Preserve paragraph breaks.'
 
 
 def integer_amount(text):
@@ -64,31 +65,57 @@ async def translate_text(text,target,key,source='zh'):
     validate_translation('translate',target)
     source='zh-TW' if source in ('zh','zh-TW','auto') else source
     if source==target:return text
-    protected,amounts=protect_amounts(text)
+    protected,identifiers,prefix=protect_identifiers(text)
+    protected,amounts=protect_amounts(protected)
+    # One marker namespace in source order prevents a translator confusing an
+    # amount token with a phone token. Currency normalization remains explicit.
+    originals={**identifiers,**amounts};combined={};money_markers=set()
+    def unify(match):
+        old=match.group(0);new=prefix+str(len(combined))+'END'
+        combined[new]=originals[old]
+        if old in amounts:money_markers.add(new)
+        return new
+    if originals:
+        protected=re.sub(re.escape(prefix)+r'\d+END|DREAMTYPEAMOUNT\d+END',unify,protected)
+    identifiers=combined
+    hints=''
+    if identifiers:
+        types=[]
+        for marker,value in identifiers.items():
+            kind='monetary amount with currency' if marker in money_markers else 'telephone number' if re.fullmatch(PHONE_LITERAL,value) else 'email address' if '@' in value else 'website address' if '.' in value else 'reference identifier'
+            types.append(marker+' is a '+kind)
+        hints='\nProtected data types: '+ '; '.join(types)+'. Translate the surrounding action using these types: 打 a telephone means call, not enter/type. 寄信到 an email address means email, not send a postal letter. A standalone 訂單 TOKEN label means Order number TOKEN; write Order number, never the imperative Order TOKEN. Preserve order-number labels as noun labels, never as instructions to place an order.\n'
     async with httpx.AsyncClient(timeout=90) as client:
         # Chinese -> English uses the established formatter; the translation specialist handles English pairs.
         if source!='en':
             if source=='zh-TW':
                 response=await client.post('http://127.0.0.1:19871/v1/chat/completions',headers={'Authorization':'Bearer '+key},json={
-                    'messages':[{'role':'system','content':translation_prompt('en')},{'role':'user','content':protected}],
+                    'messages':[{'role':'system','content':translation_prompt('en')+hints}]+([
+                        {'role':'user','content':'訂單 ZX-123。'},
+                        {'role':'assistant','content':'Order number ZX-123.'}] if identifiers else [])+
+                        [{'role':'user','content':protected}],
                     'temperature':0,'max_tokens':2048})
                 response.raise_for_status();body=response.json()
-                if body['choices'][0].get('finish_reason')=='length':raise ValueError('Translation was truncated')
+                if body['choices'][0].get('finish_reason')!='stop':raise ValueError('Translation was incomplete')
                 protected=body['choices'][0]['message']['content']
-            else:protected=await gemma(client,protected,source,'en',key)
-            restore_amounts(protected,amounts) # Validate the bridge before the second stage.
-        result=protected if target=='en' else await gemma(client,protected,'en',target,key)
-    return restore_amounts(result,amounts)
+            else:protected=await gemma(client,protected,source,'en',key,hints)
+            if not isinstance(protected,str) or not protected.strip():raise ValueError('Empty translation bridge')
+            restore_identifiers(protected,identifiers,prefix)
+        result=protected if target=='en' else await gemma(client,protected,'en',target,key,hints)
+    result=restore_identifiers(result,identifiers,prefix)
+    validate_identifiers(text,result)
+    return result
 
 
-async def gemma(client,text,source,target,key):
+async def gemma(client,text,source,target,key,hints=''):
     src=LANGUAGES.get(source,source);dst=LANGUAGES[target]
     prompt=(f'You are a professional {src} ({source}) to {dst} ({target}) translator. '
         f'Your goal is to accurately convey the meaning and nuances of the original {src} text while adhering to {dst} grammar, vocabulary, and cultural sensitivities.\n'
+        'Copy every DTKEEP...END and DREAMTYPEAMOUNT...END token exactly once, unchanged, in the original order and context. These are protected data, not words to translate.\n'+hints+
         f'Produce only the {dst} translation, without any additional explanations or commentary. Please translate the following {src} text into {dst}:\n\n\n'+text)
     response=await client.post('http://127.0.0.1:19873/v1/chat/completions',headers={'Authorization':'Bearer '+key},json={
         'messages':[{'role':'user','content':prompt}],'temperature':0,'max_tokens':1536})
     response.raise_for_status();body=response.json();choice=body['choices'][0]
     content=choice['message']['content']
-    if choice.get('finish_reason')=='length' or not isinstance(content,str) or not content.strip():raise ValueError('Incomplete translation')
+    if choice.get('finish_reason')!='stop' or not isinstance(content,str) or not content.strip():raise ValueError('Incomplete translation')
     return content.strip()
