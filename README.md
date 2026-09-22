@@ -8,11 +8,11 @@
 
 > 0.8.0 封閉試用版：已加入帳號、個人設定同步、排隊與管理介面。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
 
-## 最新測試版：0.9.2
+## 最新測試版：0.9.3
 
-[下載 0.9.2 測試 APK](https://github.com/DreamOne09/DreamType/releases/download/v0.9.2-rc1/DreamType-0.9.2.apk) · [Pixel 9 驗收步驟](docs/PIXEL9_ACCEPTANCE.md) · [目前上線缺口](docs/LAUNCH_STATUS.md)
+[下載 0.9.3 測試 APK](https://github.com/DreamOne09/DreamType/releases/download/v0.9.3-rc1/DreamType-0.9.3.apk) · [Pixel 9 驗收步驟](docs/PIXEL9_ACCEPTANCE.md) · [目前上線缺口](docs/LAUNCH_STATUS.md)
 
-主畫面簡化、翻譯重試保留原本語言，空白結果不再被當成成功。此為預覽版，尚未完成 Pixel 9 原生驗收；上方「下載 Android APK」仍指向穩定頻道。若舊版有未完成錄音，請先取回上一筆再更新；不要先解除安裝。
+主畫面簡化、翻譯重試保留原本語言，空白結果不再被當成成功；0.9.3 新增排隊滿、上一筆待取回與登入限流的具體中文引導。此為預覽版，尚未完成 Pixel 9 原生驗收；上方「下載 Android APK」仍指向穩定頻道。若舊版有未完成錄音，請先取回上一筆再更新；不要先解除安裝。
 
 ## 0.8.0：說中文，翻成需要的語言
 
