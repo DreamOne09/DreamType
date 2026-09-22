@@ -3,6 +3,7 @@ package tw.localvoice.keyboard;
 final class Draft {
  static String text=null;
  static boolean edited=false;
- static void begin(String value){text=value;edited=false;}
- static void clear(){text=null;edited=false;}
+ static long revision=0;
+ static void begin(String value){revision++;text=value;edited=false;}
+ static void clear(){revision++;text=null;edited=false;}
 }

@@ -20,6 +20,35 @@ public final class SmokeInstrumentation extends Instrumentation {
   return null;
  }
  private Activity open(Class<?> page){Activity a=startActivitySync(new Intent(getTargetContext(),page).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();return a;}
+ private EditText input(View view){
+  if(view instanceof EditText)return (EditText)view;
+  if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++){EditText found=input(((ViewGroup)view).getChildAt(i));if(found!=null)return found;}
+  return null;
+ }
+ private void editorChecks(Context context)throws Exception{
+  new AppConfig("https://example.invalid","synthetic-editor-token",false).save(context);
+  Draft.begin("明天到板橋。");Activity first=open(EditActivity.class);
+  runOnMainSync(()->{EditText field=input(first.getWindow().getDecorView());field.setText("明天下午到汐止。");field.setSelection(2,4);});
+  ActivityMonitor monitor=addMonitor(EditActivity.class.getName(),null,false);
+  runOnMainSync(()->first.recreate());Activity recreated=waitForMonitorWithTimeout(monitor,5000);removeMonitor(monitor);
+  if(recreated==null)throw new AssertionError("Editor did not recreate");waitForIdleSync();
+  runOnMainSync(()->{
+   EditText field=input(recreated.getWindow().getDecorView());
+   if(!"明天下午到汐止。".equals(field.getText().toString())||field.getSelectionStart()!=2||field.getSelectionEnd()!=4)throw new AssertionError("Unsaved edit or selection lost on recreation");
+   if(field.isSaveEnabled())throw new AssertionError("Editor text may enter saved instance state");
+   find(recreated.getWindow().getDecorView(),"復原這次修改").performClick();
+   if(!"明天到板橋。".equals(field.getText().toString()))throw new AssertionError("Restore lost original text");
+   field.setText("明天下午到汐止。");
+  });
+  screenshot("editor-recreated");runOnMainSync(()->find(recreated.getWindow().getDecorView(),"完成修改").performClick());waitForIdleSync();
+  if(!Draft.edited||!"明天下午到汐止。".equals(Draft.text))throw new AssertionError("Edited handoff missing");
+  Draft.begin("舊的文字。");Activity stale=open(EditActivity.class);
+  runOnMainSync(()->{Draft.begin("新的文字。");find(stale.getWindow().getDecorView(),"完成修改").performClick();});waitForIdleSync();
+  if(Draft.edited||!"新的文字。".equals(Draft.text))throw new AssertionError("Old editor overwrote new draft");
+  Activity logout=open(EditActivity.class);AppConfig.clearSession(context);
+  runOnMainSync(()->find(logout.getWindow().getDecorView(),"完成修改").performClick());waitForIdleSync();
+  if(Draft.text!=null||Draft.edited)throw new AssertionError("Editor restored text after logout");
+ }
  private void screenshot(String name)throws Exception{
   // System bar transitions do not necessarily post accessibility idle events.
   android.os.SystemClock.sleep(2000);
@@ -69,6 +98,7 @@ public final class SmokeInstrumentation extends Instrumentation {
    final boolean[] found={false};runOnMainSync(()->{found[0]=find(privacy.getWindow().getDecorView(),"資料與隱私")!=null;});
    if(!found[0])throw new AssertionError("Offline privacy screen missing");
    screenshot("privacy");
+   editorChecks(context);
    if(configureVoice)new AppConfig("http://10.0.2.2:18765",voiceToken,false,"","",true,accountVoice).save(context);
    result.putString("dreamtype","passed");result.putString("checks","Chinese onboarding, login navigation, Android Keystore credentials and recording, logout deletion, offline privacy");
    finish(Activity.RESULT_OK,result);
