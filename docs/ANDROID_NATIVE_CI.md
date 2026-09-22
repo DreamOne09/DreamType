@@ -39,3 +39,13 @@
 [工作 35720545412](https://github.com/DreamOne09/DreamType/actions/runs/35720545412)，來源 `c563423`，新增測試結束後 force-stop，再以 MAIN／LAUNCHER 啟動首頁，等待三秒後截圖。[一般啟動首頁](evidence/android-36-launcher/launcher-home.png) 人工檢視可見深色時間與系統圖示，與淺色背景有清楚區別；[原生結果](evidence/android-36-launcher/result.txt) 同時確認登出清除與既有檢查通過。這不解釋所有 Instrumentation 內截圖差異，也不代表不同機型、字級與輸入法畫面已驗收。
 
 首頁設定修正尚未打包到 0.9.3-rc1，待下一個候選版；本次沒有覆蓋已發布 APK。
+
+## 外部 App 的真實輸入法視窗
+
+[工作 35722107778](https://github.com/DreamOne09/DreamType/actions/runs/35722107778)，來源 `5d6f257`：Android 16 模擬器啟用真實 `VoiceIme`，在獨立套件 `tw.dreamtype.fixture` 的文字框測試，一般文字的「開始說話」可用；密碼欄位的同一按鈕停用且顯示密碼保護提示；切回一般文字後恢復可用。
+
+[結構化結果](evidence/android-36-ime/ime-result.json)、[Instrumentation 結果](evidence/android-36-ime/ime-instrumentation.txt)、[一般文字](evidence/android-36-ime/ime-normal.png)、[密碼欄位](evidence/android-36-ime/ime-password.png)、[切回一般文字](evidence/android-36-ime/ime-normal-return.png)。截圖已人工核對按鈕外觀與提示。
+
+前兩次嘗試使用舊的 shell UI dump，只列出輸入 App 的節點，漏掉已出現在截圖及系統狀態中的 IME 視窗，造成測試誤報。改成 fixture 內的 UiAutomation，啟用 `FLAG_RETRIEVE_INTERACTIVE_WINDOWS` 並走訪所有視窗；保持相同啟用／停用條件，沒有放寬判定。
+
+測試 App、Instrumentation、測試簽章都不進正式 APK。此次以測試 App 的 requestFocus／showSoftInput 切換輸入框，未錄音、未連 AI、未插入辨識結果，不能當成完整語音流程通過。Pixel 9、Surfshark 與其他輸入類型仍待驗證。
