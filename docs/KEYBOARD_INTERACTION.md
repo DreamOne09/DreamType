@@ -33,3 +33,12 @@ Pixel 9 行動網路、不同 App 與 TalkBack 尚未驗收。
 ![圓形鍵盤](evidence/android-36-keyboard/ime-inserted.png)
 
 ![長按上滑選語言](evidence/android-36-keyboard/ime-translation-menu.png)
+
+
+## 0.9.7 之後的錄音設定保護（原始碼，尚未發布 APK）
+
+錄音開始時保留不可變的 AppConfig，停止後使用同一份語言、個人偏好及連線設定。停止時與背景送出前核對登入金鑰、主機及授權模式；變更時拒絕送出並清除這次暫存音訊。進度回報、結果顯示及插入亦核對同一組連線身分，避免只比金鑰而漏掉主機變更。
+
+這無法撤回已送出的 HTTP 請求；若送出後才換帳號，既有請求仍可能由原帳號完成，但新帳號畫面不接收它的結果。
+
+七套 JVM 合約測試通過，新增檢查偏好變更不改動既有 AppConfig、同金鑰不同主機／不同授權模式不能視為同一登入。Android 16 原生回歸 [35799359269](https://github.com/DreamOne09/DreamType/actions/runs/35799359269)（來源 bf056e2）通過私人、帳號及正式 API 隔離環境三條既有鍵盤流程，[正式 API 結果](evidence/android-36-recording-session/backend-ime-result.json)已保存；尚未用原生實機模擬「錄音期間外部同步設定」的競爭情境。
