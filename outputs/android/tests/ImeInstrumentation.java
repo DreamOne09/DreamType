@@ -1,0 +1,51 @@
+package tw.dreamtype.fixture;
+import android.app.*;
+import android.accessibilityservice.AccessibilityServiceInfo;
+import android.content.*;
+import android.os.*;
+import android.graphics.Bitmap;
+import android.view.accessibility.*;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import java.io.*;
+
+public final class ImeInstrumentation extends Instrumentation {
+ @Override public void onCreate(Bundle args){super.onCreate(args);start();}
+ private AccessibilityNodeInfo find(AccessibilityNodeInfo node,String text){
+  if(node==null)return null;
+  if(text.contentEquals(node.getText()==null?"":node.getText()))return node;
+  for(int i=0;i<node.getChildCount();i++){AccessibilityNodeInfo found=find(node.getChild(i),text);if(found!=null)return found;}
+  return null;
+ }
+ private AccessibilityNodeInfo find(String text){
+  for(AccessibilityWindowInfo window:getUiAutomation().getWindows()){AccessibilityNodeInfo found=find(window.getRoot(),text);if(found!=null)return found;}
+  return null;
+ }
+ private void screenshot(String name)throws Exception{
+  Bitmap bitmap=getUiAutomation().takeScreenshot();if(bitmap==null)throw new AssertionError("No screenshot");
+  try(FileOutputStream stream=new FileOutputStream(new File(getTargetContext().getExternalFilesDir(null),name+".png"))){bitmap.compress(Bitmap.CompressFormat.PNG,100,stream);}finally{bitmap.recycle();}
+ }
+ private void check(Activity activity,int id,boolean enabled,String name)throws Exception{
+  runOnMainSync(()->{EditText field=activity.findViewById(id);field.requestFocus();((InputMethodManager)activity.getSystemService(Context.INPUT_METHOD_SERVICE)).showSoftInput(field,InputMethodManager.SHOW_IMPLICIT);});
+  long deadline=SystemClock.uptimeMillis()+15000;
+  while(SystemClock.uptimeMillis()<deadline){
+   AccessibilityNodeInfo mic=find("開始說話");
+   if(mic!=null&&mic.isEnabled()==enabled){
+    if(!enabled&&find("密碼欄位不使用語音，請切回原本鍵盤。")==null)throw new AssertionError("Password guidance missing");
+    screenshot(name);return;
+   }
+   SystemClock.sleep(100);
+  }
+  throw new AssertionError("Microphone state mismatch: "+name);
+ }
+ @Override public void onStart(){Bundle result=new Bundle();
+  try{
+   AccessibilityServiceInfo info=getUiAutomation().getServiceInfo();info.flags|=AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;getUiAutomation().setServiceInfo(info);
+   Activity activity=startActivitySync(new Intent(getTargetContext(),InputFixture.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();
+   check(activity,101,true,"ime-normal");
+   check(activity,102,false,"ime-password");
+   check(activity,101,true,"ime-normal-return");
+   result.putString("ime","passed");result.putString("checks","external editor, real IME window, password disables voice, normal field restores voice");finish(Activity.RESULT_OK,result);
+  }catch(Throwable error){try{screenshot("ime-failure");}catch(Exception ignored){}result.putString("ime","failed");result.putString("failure",error.toString());finish(Activity.RESULT_CANCELED,result);}
+ }
+}

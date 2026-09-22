@@ -44,4 +44,5 @@ jobs:
           path: |
             work/emulator-probe/result.txt
             work/emulator-probe/ime-result.json
+            work/emulator-probe/ime-instrumentation.txt
             work/emulator-probe/screenshots

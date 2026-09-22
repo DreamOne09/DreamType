@@ -36,9 +36,9 @@ run(build/'apksigner','sign','--ks',out/'test.p12','--ks-pass','pass:android','-
 # A separate package is necessary: DreamType intentionally disables voice inside its own editor.
 fixture=out/'fixture'
 for name in ('classes','dex'):(fixture/name).mkdir(parents=True,exist_ok=True)
-(fixture/'AndroidManifest.xml').write_text("""<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="tw.dreamtype.fixture"><uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36"/><application android:label="DreamType Test Editor" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:testOnly="true"><activity android:name=".InputFixture" android:exported="true"/></application></manifest>""",encoding='utf-8')
+(fixture/'AndroidManifest.xml').write_text("""<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="tw.dreamtype.fixture"><uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36"/><application android:label="DreamType Test Editor" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:testOnly="true"><activity android:name=".InputFixture" android:exported="true"/></application><instrumentation android:name=".ImeInstrumentation" android:targetPackage="tw.dreamtype.fixture"/></manifest>""",encoding='utf-8')
 run(build/'aapt2','link','-o',fixture/'unsigned.apk','-I',android,'--manifest',fixture/'AndroidManifest.xml')
-run('javac','--release','8','-encoding','UTF-8','-cp',android,'-d',fixture/'classes',source/'tests/InputFixture.java')
+run('javac','--release','8','-encoding','UTF-8','-cp',android,'-d',fixture/'classes',source/'tests/InputFixture.java',source/'tests/ImeInstrumentation.java')
 run('jar','cf',fixture/'classes.jar','-C',fixture/'classes','.')
 run('java','-cp',build/'lib/d8.jar','com.android.tools.r8.D8','--lib',android,'--min-api','26','--output',fixture/'dex',fixture/'classes.jar')
 with zipfile.ZipFile(fixture/'unsigned.apk','a',zipfile.ZIP_DEFLATED) as archive:
