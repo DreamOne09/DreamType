@@ -8,6 +8,28 @@ import server
 from personalization import formatting_prompt, speech_hint
 
 class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_translation_routes_target_and_never_falls_back_to_chinese(self):
+        captured=[]
+        async def formatter(text,*args):captured.append(args);return '明日の予約をキャンセルしないでください。'
+        with patch.object(server,'decode_audio',lambda *a,**k:[0]*16000),patch.object(server,'recognize',lambda *a:('不要取消明天的預約。','zh')),patch.object(server,'format_text',formatter):
+            r=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('x.wav',b'fake')},data={'mode':'translate','target_language':'ja'})
+        self.assertEqual(r.status_code,200);self.assertEqual(r.json()['target_language'],'ja')
+        self.assertEqual(captured[0][-3:],('translate','ja','zh'))
+        async def failure(*a):raise ValueError('offline')
+        with patch.object(server,'decode_audio',lambda *a,**k:[0]*16000),patch.object(server,'recognize',lambda *a:('不要取消。','zh')),patch.object(server,'format_text',failure):
+            r=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('x.wav',b'fake')},data={'mode':'translate','target_language':'th'})
+        self.assertEqual(r.status_code,503);self.assertNotIn('text',r.json())
+    async def test_translation_source_and_target_validation(self):
+        seen=[]
+        def recognize(audio,language,prompt):seen.append((language,prompt));return 'hello','en'
+        async def formatter(*a):return '你好'
+        with patch.object(server,'decode_audio',lambda *a,**k:[0]*16000),patch.object(server,'recognize',recognize),patch.object(server,'format_text',formatter):
+            r=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('x.wav',b'fake')},data={'mode':'translate','target_language':'zh-TW','source_language':'auto'})
+        self.assertEqual(r.status_code,200);self.assertEqual(seen,[(None,'')])
+        r=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('x.wav',b'fake')},data={'mode':'translate','target_language':'invalid'})
+        self.assertEqual(r.status_code,400)
+        r=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('x.wav',b'fake')},data={'mode':'translate','model':'local-raw'})
+        self.assertEqual(r.status_code,400)
     async def asyncSetUp(self):
         self.client = httpx.AsyncClient(transport=httpx.ASGITransport(app=server.app),base_url='http://local')
         self.auth={'Authorization':'Bearer '+server.API_KEY}

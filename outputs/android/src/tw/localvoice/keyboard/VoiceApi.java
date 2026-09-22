@@ -14,9 +14,9 @@ final class VoiceApi {
         ApiError(int code,String message){super(message);this.code=code;}
     }
     static final class Result {
-        final String text,warning,id;
+        final String text,warning,id,mode,targetLanguage;
         final double computerSeconds;
-        Result(String t,String w,double s,String id){text=t;warning=w;computerSeconds=s;this.id=id;}
+        Result(String t,String w,double s,String id,String mode,String target){text=t;warning=w;computerSeconds=s;this.id=id;this.mode=mode;targetLanguage=target;}
     }
     private static HttpURLConnection connection(AppConfig config,String path) throws Exception {
         HttpURLConnection c=(HttpURLConnection)new URL(config.server+path).openConnection();
@@ -48,10 +48,11 @@ final class VoiceApi {
             if(config.accountMode&&retryFailed)c.setRequestProperty("X-DreamType-Retry","1");
             String boundary="LocalVoice"+UUID.randomUUID().toString().replace("-","");
             StringBuilder body=new StringBuilder();
-            if(config.accountMode){c.setRequestProperty("Idempotency-Key",requestId);c.setRequestProperty("X-DreamType-Receipt","1");}
+            if(config.accountMode){c.setRequestProperty("Idempotency-Key",requestId);c.setRequestProperty("X-DreamType-Receipt","1");c.setRequestProperty("X-DreamType-Mode",config.mode);c.setRequestProperty("X-DreamType-Target",config.targetLanguage);c.setRequestProperty("X-DreamType-Source",config.sourceLanguage);}
             else {
             part(body,boundary,"model","local-dictation");
             part(body,boundary,"language","zh");
+            part(body,boundary,"mode",config.mode);part(body,boundary,"target_language",config.targetLanguage);part(body,boundary,"source_language",config.sourceLanguage);
             part(body,boundary,"response_format","json");
             part(body,boundary,"personal_prompt",config.personalPrompt);
             part(body,boundary,"vocabulary",config.vocabulary);
@@ -68,22 +69,27 @@ final class VoiceApi {
             }
             error(c.getResponseCode());
             JSONObject result=new JSONObject(read(c.getInputStream()));
-            return config.accountMode?awaitResult(config,result,progress):result(result);
+            if(!config.accountMode&&config.mode.equals("translate"))requireTranslation(config,result);
+            return config.accountMode?awaitResult(config,result,progress,config.mode.equals("translate")&&!retryFailed):result(result);
         } finally {c.disconnect();}
     }
     static Result recover(AppConfig config,Progress progress) throws Exception {
         if(!config.accountMode)throw new IOException("取回結果需要使用帳號登入。");
         progress.update("正在尋找上一筆錄音…");
-        return awaitResult(config,json(config,"GET","/v2/me/latest-dictation",null),progress);
+        return awaitResult(config,json(config,"GET","/v2/me/latest-dictation",null),progress,false);
     }
     static boolean retryable(IOException error) {
         return !(error instanceof ApiError)||((ApiError)error).code>=500;
     }
-    private static Result awaitResult(AppConfig config,JSONObject body,Progress progress) throws Exception {
+    private static void requireTranslation(AppConfig config,JSONObject body)throws IOException {
+        if(!"translate".equals(body.optString("mode"))||!config.targetLanguage.equals(body.optString("target_language")))throw new IOException("電腦未回傳指定的翻譯，請確認主機已更新至 0.8.0。未自動插入原文。");
+    }
+    private static Result awaitResult(AppConfig config,JSONObject body,Progress progress,boolean requireTranslation) throws Exception {
         long deadline=System.nanoTime()+180000000000L;int failures=0;
         while(true) {
             String state=body.optString("state");
             if("done".equals(state)){
+                if(requireTranslation)requireTranslation(config,body);
                 Result received=result(body);
                 if(body.optBoolean("receipt_required",false))json(config,"POST","/v2/dictations/"+body.getString("id")+"/receipt",new JSONObject());
                 return received;
@@ -91,7 +97,7 @@ final class VoiceApi {
             if("failed".equals(state)||"expired".equals(state)||"none".equals(state))throw new IOException(body.optString("message","無法取回結果。"));
             if(!"queued".equals(state)&&!"running".equals(state))throw new IOException("服務回應格式不正確。");
             if(System.nanoTime()>deadline)throw new IOException("等候已超過三分鐘，可稍後從「更多 → 取回上一筆」查看。");
-            progress.update("queued".equals(state)?"正在排隊，服務有 "+body.optInt("queue_size",0)+" 段等待中…":"正在辨識與整理…");
+            progress.update("queued".equals(state)?"正在排隊，服務有 "+body.optInt("queue_size",0)+" 段等待中…":(config.mode.equals("translate")?"正在辨識與翻譯…":"正在辨識與整理…"));
             Thread.sleep(1000);
             try {body=json(config,"GET","/v2/dictations/"+body.getString("id"),null);failures=0;}
             catch(IOException e){
@@ -102,7 +108,7 @@ final class VoiceApi {
     }
     private static Result result(JSONObject body) throws Exception {
         String warning=body.isNull("warning")?"":body.optString("warning","");JSONObject timings=body.optJSONObject("timings");
-        return new Result(body.getString("text"),warning,timings==null?0:timings.optDouble("total_seconds",0),body.optString("id",""));
+        return new Result(body.getString("text"),warning,timings==null?0:timings.optDouble("total_seconds",0),body.optString("id",""),body.optString("mode","organize"),body.optString("target_language","zh-TW"));
     }
     static JSONObject json(AppConfig config,String method,String path,JSONObject body) throws Exception {
         HttpURLConnection c=connection(config,path);

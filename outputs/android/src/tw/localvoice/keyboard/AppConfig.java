@@ -13,7 +13,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
 final class AppConfig {
-    final String server, key, personalPrompt, vocabulary;
+    final String server, key, personalPrompt, vocabulary, mode, targetLanguage, sourceLanguage;
+    static final String[] LANGUAGE_CODES={"zh-TW","en","ja","th","ms","ko","vi","id"};
+    static final String[] LANGUAGE_NAMES={"台灣繁中","英文","日文","泰文","馬來文","韓文","越南文","印尼文"};
+    static int languageIndex(String code){for(int i=0;i<LANGUAGE_CODES.length;i++)if(LANGUAGE_CODES[i].equals(code))return i;return 0;}
+    String modeLabel(){return mode.equals("translate")?"翻譯 → "+LANGUAGE_NAMES[languageIndex(targetLanguage)]:"整理 · 台灣繁中";}
     final boolean autoInsert, taiwanPlaces, accountMode;
     AppConfig(String server, String key, boolean autoInsert) {
         this(server,key,autoInsert,"","",true);
@@ -22,6 +26,10 @@ final class AppConfig {
         this(server,key,autoInsert,personalPrompt,vocabulary,taiwanPlaces,false);
     }
     AppConfig(String server, String key, boolean autoInsert,String personalPrompt,String vocabulary,boolean taiwanPlaces,boolean accountMode) {
+        this(server,key,autoInsert,personalPrompt,vocabulary,taiwanPlaces,accountMode,"organize","en","zh-TW");
+    }
+    AppConfig(String server,String key,boolean autoInsert,String personalPrompt,String vocabulary,boolean taiwanPlaces,boolean accountMode,String mode,String targetLanguage,String sourceLanguage){
+        this.mode=mode;this.targetLanguage=targetLanguage;this.sourceLanguage=sourceLanguage;
         this.server=server; this.key=key; this.autoInsert=autoInsert;
         this.personalPrompt=personalPrompt;this.vocabulary=vocabulary;this.taiwanPlaces=taiwanPlaces;
         this.accountMode=accountMode;
@@ -58,7 +66,7 @@ final class AppConfig {
             }
         } catch(Exception ignored) { /* Re-pair if a restored/invalid key cannot be decrypted. */ }
         SharedPreferences style=c.getSharedPreferences("style",Context.MODE_PRIVATE);
-        return new AppConfig(p.getString("server",""),key,p.getBoolean("auto",false),style.getString("prompt",""),style.getString("vocabulary",""),style.getBoolean("taiwan",true),p.getBoolean("account",false));
+        return new AppConfig(p.getString("server",""),key,p.getBoolean("auto",false),style.getString("prompt",""),style.getString("vocabulary",""),style.getBoolean("taiwan",true),p.getBoolean("account",false),style.getString("mode","organize"),style.getString("target_language","en"),style.getString("source_language","zh-TW"));
     }
     void save(Context c) throws Exception {
         Cipher cipher=Cipher.getInstance("AES/GCM/NoPadding"); cipher.init(Cipher.ENCRYPT_MODE,secret());
@@ -69,7 +77,7 @@ final class AppConfig {
     }
     static void saveStyle(Context c,org.json.JSONObject prefs) {
         c.getSharedPreferences("style",Context.MODE_PRIVATE).edit().putString("prompt",prefs.optString("personal_prompt",""))
-            .putString("vocabulary",prefs.optString("vocabulary","" )).putBoolean("taiwan",prefs.optBoolean("taiwan_places",true)).commit();
+            .putString("vocabulary",prefs.optString("vocabulary","" )).putBoolean("taiwan",prefs.optBoolean("taiwan_places",true)).putString("mode",prefs.optString("mode","organize")).putString("target_language",prefs.optString("target_language","en")).putString("source_language",prefs.optString("source_language","zh-TW")).commit();
     }
     static void clearSession(Context c) {
         String server=load(c).server;

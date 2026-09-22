@@ -24,6 +24,7 @@ from faster_whisper import WhisperModel
 from faster_whisper.audio import decode_audio
 from opencc import OpenCC
 from personalization import formatting_prompt, speech_hint, validate_preferences
+from translation import validate_translation, translate_text
 from beta_api import install_beta, LocalProvider, audio_duration
 
 PROMPT = (Path(__file__).parent / 'formatting.txt').read_text(encoding='utf-8')
@@ -66,10 +67,10 @@ async def test_page():
 
 @app.get('/download/localvoice.apk')
 async def android_apk():
-    apk = Path(__file__).parent.parent / 'android/DreamType-0.7.0.apk'
+    apk = Path(__file__).parent.parent / 'android/DreamType-0.8.0.apk'
     if not apk.exists():
         raise HTTPException(404, 'Android package is not ready')
-    return FileResponse(apk, filename='DreamType-0.7.0.apk',
+    return FileResponse(apk, filename='DreamType-0.8.0.apk',
         media_type='application/vnd.android.package-archive',
         headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
 
@@ -82,18 +83,27 @@ async def load_model():
 @app.get('/health')
 async def health():
     llm_ready = False
+    translation_ready=False
+    translation_configured=(WORK/'models/translategemma/translategemma-4b-it.Q4_K_M.gguf').exists()
     try:
         async with httpx.AsyncClient(timeout=2) as client:
             llm_ready = (await client.get('http://127.0.0.1:19871/health')).status_code == 200
     except httpx.HTTPError:
         pass
-    return {'status': 'ready' if model is not None and llm_ready else 'starting',
+    try:
+        async with httpx.AsyncClient(timeout=2) as client:translation_ready=(await client.get('http://127.0.0.1:19873/health')).status_code==200
+    except httpx.HTTPError:pass
+    return {'status': 'ready' if model is not None and llm_ready and (translation_ready or not translation_configured) else 'starting',
             'speech_ready': model is not None, 'formatting_ready': llm_ready,
+            'translation_ready':translation_ready,
             'processing': 'local', 'version': 1}
 
-async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=True):
+async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=True, mode='organize',target_language='en',source_language='zh'):
     if not text.strip():
         return ''
+    if mode=='translate':
+        translated=await translate_text(text,target_language,API_KEY,source_language)
+        return converter.convert(translated) if target_language=='zh-TW' else translated
     async with httpx.AsyncClient(timeout=90) as client:
         result = await client.post('http://127.0.0.1:19871/v1/chat/completions',
             headers={'Authorization': 'Bearer ' + API_KEY}, json={
@@ -113,7 +123,7 @@ def recognize(audio, language, prompt):
         vad_filter=True, vad_parameters={'min_silence_duration_ms': 350},
         condition_on_previous_text=False, initial_prompt=prompt)
     text = ''.join(segment.text for segment in segments).strip()
-    return converter.convert(text), info.language
+    return (converter.convert(text) if info.language=='zh' else text), info.language
 
 async def acquire():
     try:
@@ -131,7 +141,8 @@ async def transcribe(file: UploadFile = File(...), model: str = Form('local-dict
                      language: str = Form('zh'), response_format: str = Form('json'),
                      prompt: str = Form('以下為台灣繁體中文，可能包含英文專有名詞。'),
                      personal_prompt: str = Form(''), vocabulary: str = Form(''),
-                     taiwan_places: bool = Form(True)):
+                     taiwan_places: bool = Form(True), mode: str = Form('organize'),
+                     target_language: str = Form('en'),source_language: str = Form('zh-TW')):
     started = time.perf_counter()
     try:
         data = await file.read(MAX_BYTES + 1)
@@ -139,6 +150,8 @@ async def transcribe(file: UploadFile = File(...), model: str = Form('local-dict
         await file.close()
     try:
         validate_preferences(personal_prompt, vocabulary, taiwan_places)
+        validate_translation(mode,target_language,source_language)
+        if mode=='translate' and model=='local-raw':raise ValueError('Raw mode cannot produce a translation')
     except ValueError as error:
         raise HTTPException(400, str(error))
     if not data or len(data) > MAX_BYTES:
@@ -153,15 +166,19 @@ async def transcribe(file: UploadFile = File(...), model: str = Form('local-dict
     await acquire()
     try:
         speech_start = time.perf_counter()
+        selected=source_language if mode=='translate' or language=='zh' else language
+        if selected=='zh-TW':selected='zh'
+        hint=speech_hint(prompt,vocabulary,taiwan_places) if selected=='zh' else vocabulary[:280]
         raw, detected = await asyncio.to_thread(recognize, audio,
-            None if language in ('', 'auto') else language, speech_hint(prompt, vocabulary, taiwan_places))
+            None if selected in ('', 'auto') else selected, hint)
         speech_seconds = time.perf_counter() - speech_start
         format_start = time.perf_counter()
         text, warning = raw, None
         if raw and model != 'local-raw':
             try:
-                text = await format_text(raw, personal_prompt, vocabulary, taiwan_places)
+                text = await format_text(raw, personal_prompt, vocabulary, taiwan_places,mode,target_language,detected)
             except (httpx.HTTPError, ValueError, KeyError, IndexError):
+                if mode=='translate':raise HTTPException(503,'Translation unavailable; please retry. No translated result was produced.')
                 warning = 'Formatting unavailable; returning original transcription'
         timings = {'speech_seconds': round(speech_seconds, 3),
                    'format_seconds': round(time.perf_counter() - format_start, 3),
@@ -172,7 +189,7 @@ async def transcribe(file: UploadFile = File(...), model: str = Form('local-dict
         if response_format == 'text':
             return PlainTextResponse(text, headers=headers)
         return {'text': text, 'raw_text': raw, 'language': detected,
-                'duration': duration, 'timings': timings, 'warning': warning}
+                'duration': duration, 'timings': timings, 'warning': warning,'mode':mode,'target_language':target_language if mode=='translate' else 'zh-TW'}
     finally:
         gpu_lock.release()
 

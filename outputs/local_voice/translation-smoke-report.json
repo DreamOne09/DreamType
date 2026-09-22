@@ -1,0 +1,46 @@
+{
+  "synthetic_input": true,
+  "native_speaker_review": false,
+  "results": [
+    {
+      "target": "zh-TW",
+      "text": "請不要取消明天下午三點的預約。我們有兩個人，預算是一千五百元。請問可以刷卡嗎？",
+      "seconds": 0.0
+    },
+    {
+      "target": "en",
+      "text": "Please do not cancel our appointment at 3 PM tomorrow. We have two people, and our budget is 1500 元. May I pay by card?",
+      "seconds": 0.88
+    },
+    {
+      "target": "ja",
+      "text": "明日午後3時のご予約をキャンセルしないでください。当方には2名のお客様で、予算は1500 元です。クレジットカードでの支払い可能でしょうか？",
+      "seconds": 3.06
+    },
+    {
+      "target": "th",
+      "text": "กรุณาอย่ายกเลิกนัดหมายของเราในเวลา 15:00 น. วันพรุ่งนี้ เรามี 2 ท่าน และงบประมาณของเราคือ 1500 元 สามารถชำระด้วยบัตรได้หรือไม่?",
+      "seconds": 4.33
+    },
+    {
+      "target": "ms",
+      "text": "Mohon jangan batalkan janji kami pada pukul 3 petang esok. Kami ada dua orang, dan anggaran kami ialah 1500 元. Bolehkah saya membayar dengan kad?",
+      "seconds": 3.55
+    },
+    {
+      "target": "ko",
+      "text": "내일 오후 3시에 예약된 약속을 취소하지 마주세요. 저희는 두 명이고, 예산은 1500 元입니다. 신용카드로 결제할 수 있을까요?",
+      "seconds": 3.92
+    },
+    {
+      "target": "vi",
+      "text": "Vui lòng không hủy cuộc hẹn của chúng tôi vào lúc 3 giờ chiều ngày mai. Chúng tôi có hai người, và ngân sách của chúng tôi là 1500 元. Tôi có thể thanh toán bằng thẻ không?",
+      "seconds": 4.02
+    },
+    {
+      "target": "id",
+      "text": "Mohon jangan membatalkan janji temu kami pada pukul 3 sore besok. Kami berdua, dan anggaran kami adalah 1500 元. Apakah saya bisa membayar dengan kartu?",
+      "seconds": 3.46
+    }
+  ]
+}

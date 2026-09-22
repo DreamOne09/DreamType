@@ -15,6 +15,7 @@ from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, FileResponse
 from beta_store import Store, StoreError
 from personalization import validate_preferences
+from translation import validate_translation
 
 def audio_duration(data):
     """Decode frames incrementally; stop long/compressed recordings before allocating PCM."""
@@ -184,9 +185,11 @@ def install_beta(app,work,provider,decoder):
     @app.patch('/v2/me/preferences')
     async def prefs(request:Request):
         body=await object_body(request)
-        try:p,v,t=validate_preferences(body.get('personal_prompt',''),body.get('vocabulary',''),body.get('taiwan_places',True))
+        try:
+            p,v,t=validate_preferences(body.get('personal_prompt',''),body.get('vocabulary',''),body.get('taiwan_places',True))
+            mode,target,source=validate_translation(body.get('mode','organize'),body.get('target_language','en'),body.get('source_language','zh-TW'))
         except ValueError as e:raise StoreError(400,str(e))
-        uid=beta.user(request)['id'];beta.store.preferences(uid,{'personal_prompt':p,'vocabulary':v,'taiwan_places':t})
+        uid=beta.user(request)['id'];beta.store.preferences(uid,{'personal_prompt':p,'vocabulary':v,'taiwan_places':t,'mode':mode,'target_language':target,'source_language':source})
         return beta.store.me(uid)['preferences']
     @app.delete('/v2/me')
     async def delete(request:Request):
@@ -210,6 +213,11 @@ def install_beta(app,work,provider,decoder):
             audio=await file.read(2*1024*1024+1)
         if not audio or len(audio)>2*1024*1024:raise StoreError(413,'錄音需小於 2 MB')
         prefs=beta.store.me(uid)['preferences']
+        if request.headers.get('x-dreamtype-mode') is not None:
+            try:
+                mode,target,source=validate_translation(request.headers.get('x-dreamtype-mode'),request.headers.get('x-dreamtype-target','en'),request.headers.get('x-dreamtype-source','zh-TW'))
+            except ValueError as error:raise StoreError(400,str(error))
+            prefs={**prefs,'mode':mode,'target_language':target,'source_language':source}
         # Personal settings are fetched from the authenticated account, never from another user ID.
         # Retrying the same recording uses the original job's preference snapshot.
         # Preference edits made while offline must not invalidate its request ID.

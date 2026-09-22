@@ -28,7 +28,7 @@ public final class VoiceIme extends InputMethodService {
     private String lastText="";
     private String sessionKey="";
     private TextView status,preview;
-    private Button mic,edit,discard;
+    private Button mic,edit,discard,modeButton;
     private LinearLayout editRow;
     private ScrollView resultArea;
     private final Runnable tick=new Runnable(){public void run(){if(!recordingNow)return;long seconds=(SystemClock.elapsedRealtime()-began)/1000;status.setText("正在錄音　"+seconds+" 秒");if(seconds>=118){finishRecording();return;}main.postDelayed(this,500);}};
@@ -41,6 +41,8 @@ public final class VoiceIme extends InputMethodService {
     @Override public boolean onEvaluateFullscreenMode(){return false;}
     @Override public View onCreateInputView() {
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(12),dp(12),dp(12),dp(12));root.setBackgroundColor(Ui.PAPER);
+        LinearLayout modes=new LinearLayout(this);root.addView(modes);
+        modeButton=button(modes,"整理 · 台灣繁中 ▾",v->chooseMode(v),1f);
         status=new TextView(this);status.setTextSize(14);status.setTextColor(Ui.INK);status.setPadding(dp(5),dp(3),dp(5),dp(6));status.setMaxLines(3);root.addView(status);
         ScrollView scroll=new ScrollView(this);resultArea=scroll;preview=new TextView(this);preview.setTextSize(17);preview.setTextColor(Ui.INK);preview.setPadding(dp(8),dp(4),dp(8),dp(4));scroll.addView(preview);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(66)));
         mic=new Button(this);mic.setAllCaps(false);mic.setTextSize(20);mic.setTextColor(Color.WHITE);Ui.button(mic,true);mic.setOnClickListener(v->{if(pending)insertPending();else if(recordingNow)finishRecording();else if(retained)retryRecording();else startRecording();});root.addView(mic,new LinearLayout.LayoutParams(-1,dp(64)));
@@ -65,7 +67,9 @@ public final class VoiceIme extends InputMethodService {
         String active=AppConfig.load(this).key;
         if(!sessionKey.equals(active)){sessionKey=active;pending=false;lastText="";Draft.clear();preview.setText("");}
         retained=PendingAudio.exists(this,AppConfig.load(this));
-        mic.setText(recordingNow?"停止並整理":busy?"正在整理…":pending?"插入文字":retained?"重試上一段":"開始說話");mic.setEnabled(!busy&&!protectedField);
+        AppConfig chosen=AppConfig.load(this);boolean translating=chosen.mode.equals("translate");
+        modeButton.setText(chosen.modeLabel()+" ▾");modeButton.setEnabled(!busy&&!recordingNow&&!pending&&!retained);
+        mic.setText(recordingNow?(translating?"停止並翻譯":"停止並整理"):busy?(translating?"正在翻譯…":"正在整理…"):pending?"插入文字":retained?"重試上一段":"開始說話");mic.setEnabled(!busy&&!protectedField);
         if(editRow!=null)editRow.setVisibility(pending?View.VISIBLE:View.GONE);
         if(resultArea!=null)resultArea.setVisibility(pending?View.VISIBLE:View.GONE);
         if(discard!=null)discard.setEnabled(pending&&!busy&&!recordingNow);
@@ -73,11 +77,22 @@ public final class VoiceIme extends InputMethodService {
         if(getCurrentInputEditorInfo()!=null&&getPackageName().equals(getCurrentInputEditorInfo().packageName)){mic.setEnabled(false);if(edit!=null)edit.setEnabled(false);status.setText("請切換 Gboard 修改；完成後回到原 App 插入。");return;}
         if(recordingNow)return;
         if(protectedField)status.setText("密碼欄位不使用語音，請切回原本鍵盤。");
-        else if(busy)status.setText("已送出，正在排隊或整理…");
+        else if(busy)status.setText("已送出，正在排隊或處理…");
         else if(!AppConfig.load(this).ready())status.setText("請從「更多」開啟連線設定。");
-        else if(pending)status.setText("文字已整理好，可修改或插入。");
+        else if(pending)status.setText("文字已準備好，可修改或插入。");
         else if(retained)status.setText("有未完成錄音，可重試；不想保留可從「更多」刪除。");
-        else status.setText("DreamType · 自然說，清楚寫。");
+        else status.setText(translating?(chosen.sourceLanguage.equals("zh-TW")?"說中文，翻成":"說話，翻成")+AppConfig.LANGUAGE_NAMES[AppConfig.languageIndex(chosen.targetLanguage)]+"。":"DreamType · 自然說，清楚寫。");
+    }
+    private void chooseMode(View anchor){
+        if(busy||recordingNow||pending||retained)return;
+        PopupMenu menu=new PopupMenu(this,anchor);menu.getMenu().add(0,0,0,"整理成台灣繁中");
+        for(int i=0;i<AppConfig.LANGUAGE_NAMES.length;i++)menu.getMenu().add(0,i+1,i+1,"翻譯成"+AppConfig.LANGUAGE_NAMES[i]);
+        menu.setOnMenuItemClickListener(item->{
+            AppConfig config=AppConfig.load(this);int index=item.getItemId();
+            String mode=index==0?"organize":"translate",target=index==0?config.targetLanguage:AppConfig.LANGUAGE_CODES[index-1];
+            // Local selection is also sent per request; other devices cannot silently change this recording's mode.
+            getSharedPreferences("style",MODE_PRIVATE).edit().putString("mode",mode).putString("target_language",target).commit();refresh();return true;
+        });menu.show();
     }
     private void startRecording() {
         if(busy||protectedField)return;
@@ -132,7 +147,7 @@ public final class VoiceIme extends InputMethodService {
                 if(audio!=null&&pending&&config.autoInsert&&generation==expected&&isInputViewShown()&&!protectedField)inserted=insertPending();
                 String timing=String.format(Locale.TAIWAN,"%.1f 秒",(SystemClock.elapsedRealtime()-start)/1000.0);
                 if(!done.warning.isEmpty())status.setText("排版暫時失敗，已保留辨識原文。"+(inserted?"已輸入。":"按插入可使用。"));
-                else status.setText(lastText.trim().isEmpty()?"沒有辨識到語音，請再試一次。":(inserted?"已輸入　":"已整理，按插入　")+timing);
+                else status.setText(lastText.trim().isEmpty()?"沒有辨識到語音，請再試一次。":(inserted?"已輸入　":done.mode.equals("translate")?"已翻成"+AppConfig.LANGUAGE_NAMES[AppConfig.languageIndex(done.targetLanguage)]+"，按插入　":"已整理，按插入　")+timing);
             });
         });
     }

@@ -15,6 +15,17 @@ class Provider:
         return {'text':'整理完成','timings':{'total_seconds':0.1}}
 
 class BetaTests(unittest.IsolatedAsyncioTestCase):
+    async def test_translation_choice_snapshot_and_retry(self):
+        _,a=await self.account();self.provider.gate.clear()
+        header={**a,'X-DreamType-Mode':'translate','X-DreamType-Target':'th','X-DreamType-Source':'zh-TW'}
+        r=await self.upload(header);self.assertEqual(r.status_code,202)
+        await self.client.post('/v2/me/preferences',headers=a,json={'mode':'translate','target_language':'ja'})
+        self.provider.gate.set();await asyncio.wait_for(self.beta.queue.join(),2)
+        self.assertEqual(self.provider.calls[0][1]['target_language'],'th')
+        r=await self.upload({**header,'X-DreamType-Target':'ja'})
+        self.assertEqual(r.status_code,202);self.assertEqual(len(self.provider.calls),1)
+        r=await self.upload({**header,'X-DreamType-Target':'unsupported'},jid='new-request-12345678')
+        self.assertEqual(r.status_code,400)
     async def asyncSetUp(self):
         self.temp=tempfile.TemporaryDirectory();self.provider=Provider();self.app=FastAPI()
         self.beta=install_beta(self.app,Path(self.temp.name),self.provider,lambda audio:10)

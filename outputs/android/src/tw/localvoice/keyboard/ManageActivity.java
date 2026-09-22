@@ -22,6 +22,16 @@ public final class ManageActivity extends Activity {
   scroll.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
   AppConfig config=AppConfig.load(this);
   text(p,"我的 DreamType",28);text(p,config.accountMode?"偏好儲存在你的帳號，可在其他裝置取回。":"設定只保存在這支手機；其他人的偏好不會被改動。",16);
+  text(p,"說完之後",20);
+  Spinner mode=new Spinner(this);mode.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"整理成台灣繁中","翻譯成其他語言"}));mode.setSelection(config.mode.equals("translate")?1:0);p.addView(mode,new LinearLayout.LayoutParams(-1,dp(48)));
+  TextView targetLabel=new TextView(this);targetLabel.setText("翻譯成");targetLabel.setTextColor(Ui.INK);p.addView(targetLabel);
+  Spinner target=new Spinner(this);target.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,AppConfig.LANGUAGE_NAMES));target.setSelection(AppConfig.languageIndex(config.targetLanguage));p.addView(target,new LinearLayout.LayoutParams(-1,dp(48)));
+  target.setVisibility(mode.getSelectedItemPosition()==1?View.VISIBLE:View.GONE);targetLabel.setVisibility(target.getVisibility());
+  mode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> a){}public void onItemSelected(AdapterView<?> a,View v,int pos,long id){target.setVisibility(pos==1?View.VISIBLE:View.GONE);targetLabel.setVisibility(target.getVisibility());}});
+  text(p,"我說的語言（預設中文）",16);
+  String[] sourceNames=new String[9];sourceNames[0]="自動辨識";System.arraycopy(AppConfig.LANGUAGE_NAMES,0,sourceNames,1,8);
+  Spinner source=new Spinner(this);source.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,sourceNames));source.setSelection(config.sourceLanguage.equals("auto")?0:AppConfig.languageIndex(config.sourceLanguage)+1);p.addView(source,new LinearLayout.LayoutParams(-1,dp(48)));
+  text(p,"平常說中文即可；要說外文時再調整。翻譯不會替你回答問題或增加內容。",14);
   text(p,"我的整理提示詞",20);
   EditText prompt=field(p,"例如：使用台灣口語；工作安排用條列；保留所有時間與條件。",config.personalPrompt,2000);
   text(p,"最多 2,000 字。調整語氣和排版，不補寫沒說過的事。",14);
@@ -29,13 +39,14 @@ public final class ManageActivity extends Activity {
   EditText words=field(p,"每行一個，例如：汐止、新莊、板橋、竹北、鹽埕、苓雅。也可以加入公司或人名。",config.vocabulary,1000);
   text(p,"最多 1,000 字。優先填最常用的詞；只作辨識參考，不強制替換同音字。",14);
   CheckBox taiwan=new CheckBox(this);taiwan.setText("加強台灣地名辨識");taiwan.setChecked(config.taiwanPlaces);p.addView(taiwan);
-  CheckBox automatic=new CheckBox(this);automatic.setText("整理完成後直接插入（不先修改）");automatic.setChecked(config.autoInsert);p.addView(automatic);
+  CheckBox automatic=new CheckBox(this);automatic.setText("完成後直接插入（不先修改）");automatic.setChecked(config.autoInsert);p.addView(automatic);
   status=new TextView(this);status.setTextColor(Ui.MUTED);status.setTextSize(15);status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);p.addView(status);
   Button save=button(p,"儲存我的偏好",v->{
    final String personal=prompt.getText().toString().trim(),vocabulary=words.getText().toString().trim();final boolean places=taiwan.isChecked(),auto=automatic.isChecked();
+   final String outputMode=mode.getSelectedItemPosition()==1?"translate":"organize",targetCode=AppConfig.LANGUAGE_CODES[target.getSelectedItemPosition()],sourceCode=source.getSelectedItemPosition()==0?"auto":AppConfig.LANGUAGE_CODES[source.getSelectedItemPosition()-1];
    v.setEnabled(false);status.setText("正在儲存…");worker.execute(()->{String message;
     try{AppConfig active=AppConfig.load(this);if(!active.key.equals(config.key))throw new Exception("帳號已切換，請重新開啟設定。");
-     org.json.JSONObject prefs=new org.json.JSONObject().put("personal_prompt",personal).put("vocabulary",vocabulary).put("taiwan_places",places);
+     org.json.JSONObject prefs=new org.json.JSONObject().put("personal_prompt",personal).put("vocabulary",vocabulary).put("taiwan_places",places).put("mode",outputMode).put("target_language",targetCode).put("source_language",sourceCode);
      if(active.accountMode)VoiceApi.json(active,"POST","/v2/me/preferences",prefs);
      AppConfig.saveStyle(this,prefs);getSharedPreferences("connection",MODE_PRIVATE).edit().putBoolean("auto",auto).commit();message="已儲存，下次錄音生效。";
     }catch(Exception e){message=VoiceApi.friendly(e);}final String result=message;runOnUiThread(()->{if(!isDestroyed()){status.setText(result);v.setEnabled(true);}});
