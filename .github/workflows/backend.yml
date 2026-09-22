@@ -11,3 +11,21 @@ jobs:
       - run: pip install fastapi==0.141.1 httpx==0.28.1 python-multipart==0.0.32 cryptography==50.0.1
       - run: python -m unittest test_beta test_backup test_durability test_maintenance test_translation test_operations test_session_race
         working-directory: outputs/local_voice
+
+  android-contracts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Android compile platform
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36"'
+      - name: Check networking and encrypted recording contracts
+        run: python scripts/check_android_contracts.py --android-jar "$ANDROID_HOME/platforms/android-36/android.jar"
