@@ -77,3 +77,11 @@ CI 主機的 loopback HTTP 測試服務只接受虛構 token，檢查收到非�
 證據：[帳號報告](evidence/android-36-account/account-ime-result.json)、[插入斷言](evidence/android-36-account/account-ime-instrumentation.txt)、[錄音清除](evidence/android-36-account/account-delivered.txt)、[已插入截圖](evidence/android-36-account/ime-inserted.png)。截圖已人工確認文字位於外部 App、鍵盤回復「開始說話」。
 
 前一輪第二個案例卡在鍵盤顯示；測試自我 Instrumentation 會重啟目標 App，因此在每個案例設定前先重設模擬器輸入法，再重新選用 DreamType，避免沿用上一個案例的服務連線。這是測試隔離修正，不是正式版設定變更。登入表單、真實後端、斷線恢復及 Pixel 9 仍未由此測試證明。
+
+## 0.9.4 候選版
+
+[工作 35726483810](https://github.com/DreamOne09/DreamType/actions/runs/35726483810)，來源 `39ba910`，重跑私人與帳號模式均通過：[私人](evidence/android-36-094/ime-result.json)、[帳號](evidence/android-36-094/account-ime-result.json)、[完成錄音清除](evidence/android-36-094/account-delivered.txt)。正式候選 APK 使用同來源的產品程式碼與維護者簽章；模擬器仍使用獨立測試 APK，不能當成正式簽章覆蓋安裝的實機證據。
+
+0.9.4 已納入前述首頁系統列修正，另新增接收確認的有限重試：暫時性網路／5xx 錯誤最多三次，只重送可重複確認的 receipt；401 等不可重試錯誤立即停止，不重新送出音訊。新增 `ReceiptRecoveryTest` 的 HTTP 故障注入與其他五組 JVM 測試通過；本輪原生測試只驗證正常路徑，不宣稱已在原生 UI 注入斷線。
+
+[下載候選版](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.4-rc1)。versionCode 14、原 package／簽章，APK SHA-256 `39b8ed78a04043c28384854b6c8a0f4d62836b46a5ea43b0b8b772196b4dc46a`，與 GitHub 發布資產 digest 相符。
