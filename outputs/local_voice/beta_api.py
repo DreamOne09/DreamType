@@ -43,6 +43,9 @@ class LocalProvider:
             r.raise_for_status();return r.json()
 
 class Beta:
+    # Bound the entire provider call, including a peer that keeps sending bytes
+    # and therefore never reaches an HTTP read-idle timeout.
+    processing_timeout = 240
     def __init__(self,work,provider,decoder):
         self.store=Store(work/'beta/accounts.sqlite3');self.provider,self.decoder=provider,decoder
         path=work/'beta/admin.key'
@@ -72,9 +75,9 @@ class Beta:
             try:
                 if not self.store.me(uid)['enabled']:raise ValueError('disabled')
                 self.store.state(uid,jid,'running')
-                result=await self.provider.transcribe(audio,prefs)
+                result=await asyncio.wait_for(self.provider.transcribe(audio,prefs),timeout=self.processing_timeout)
                 if not self.store.me(uid)['enabled']:raise ValueError('disabled')
-                if not isinstance(result.get('text'),str):raise ValueError('Invalid response')
+                if not isinstance(result.get('text'),str) or not result['text'].strip():raise ValueError('Empty or invalid response')
                 self.store.complete(uid,jid,result)
                 self.results[(uid,jid)]={'result':result,'expires':time.time()+900}
             except asyncio.CancelledError:

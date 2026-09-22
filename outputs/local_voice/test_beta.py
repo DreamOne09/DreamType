@@ -15,6 +15,38 @@ class Provider:
         return {'text':'整理完成','timings':{'total_seconds':0.1}}
 
 class BetaTests(unittest.IsolatedAsyncioTestCase):
+    async def test_stalled_provider_releases_quota_and_next_user_runs(self):
+        first,a=await self.account();second,b=await self.account('bob')
+        cancelled=asyncio.Event();calls=[]
+        async def stalled_then_ok(audio,prefs):
+            calls.append(audio)
+            if audio==b'stalled':
+                try:await asyncio.Event().wait()
+                finally:cancelled.set()
+            return {'text':'第二位使用者的結果'}
+        self.provider.transcribe=stalled_then_ok;self.beta.processing_timeout=0.05
+        await self.upload(a,audio=b'stalled');await self.upload(b,audio=b'next')
+        await asyncio.wait_for(self.beta.queue.join(),2)
+        self.assertTrue(cancelled.is_set())
+        self.assertEqual(calls,[b'stalled',b'next'])
+        self.assertEqual(self.beta.store.me(first)['reserved_seconds'],0)
+        self.assertEqual(self.beta.store.me(first)['used_seconds'],0)
+        self.assertEqual(self.beta.progress(first,'request-1234567890')['state'],'failed')
+        self.assertEqual(self.beta.progress(second,'request-1234567890')['text'],'第二位使用者的結果')
+        self.assertTrue(all(not task.done() for task in self.beta.tasks))
+
+    async def test_empty_provider_result_is_not_charged(self):
+        uid,auth=await self.account()
+        for index,text in enumerate(('', ' \n\t')):
+            async def empty(audio,prefs):return {'text':text}
+            self.provider.transcribe=empty
+            jid='empty-result-request-'+str(index)
+            await self.upload(auth,jid=jid)
+            await asyncio.wait_for(self.beta.queue.join(),2)
+            self.assertEqual(self.beta.progress(uid,jid)['state'],'failed')
+        self.assertEqual(self.beta.store.me(uid)['used_seconds'],0)
+        self.assertEqual(self.beta.store.me(uid)['reserved_seconds'],0)
+
     async def test_admin_metrics_report_missing_or_malformed_maintenance(self):
         self.assertEqual((await self.client.get('/v2/admin/metrics')).status_code,401)
         for data in ('[]', '{"checked_at": 1, "ready": true, "errors": []}'):
