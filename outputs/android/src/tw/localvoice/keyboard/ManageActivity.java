@@ -59,7 +59,26 @@ public final class ManageActivity extends Activity {
   if(BuildChannel.PLAY_STORE){
    button(p,"在 Google Play 查看更新",v->{try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://play.google.com/store/apps/details?id="+getPackageName())));}catch(Exception e){status.setText("無法開啟 Google Play，請稍後再試。");}});
   }else{
-  button(p,"檢查 App 更新",v->{status.setText("正在檢查 GitHub…");v.setEnabled(false);worker.execute(()->{String tag=null,problem=null;try{tag=UpdateCheck.latest();}catch(Exception e){problem="暫時無法檢查更新，請稍後再試。";}final String version=tag,error=problem;runOnUiThread(()->{if(isDestroyed())return;v.setEnabled(true);if(error!=null){status.setText(error);return;}try{String current=getPackageManager().getPackageInfo(getPackageName(),0).versionName;if(!UpdateCheck.newer(version,current)){status.setText("目前已是最新版本 "+current);return;}new AlertDialog.Builder(this).setTitle("有新版 "+version).setMessage("開啟 GitHub 下載 APK，安裝時選擇更新。已儲存設定會保留。").setPositiveButton("開啟下載",(d,w)->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://github.com/DreamOne09/DreamType/releases/latest")))).setNegativeButton("稍後",null).show();}catch(Exception e){status.setText("請到 GitHub Releases 查看更新。");}});});});
+  CheckBox previews=new CheckBox(this);previews.setText("更新時包含測試版（可能不穩定）");
+  previews.setChecked(getSharedPreferences("updates",MODE_PRIVATE).getBoolean("previews",false));p.addView(previews);
+  previews.setOnCheckedChangeListener((view,checked)->getSharedPreferences("updates",MODE_PRIVATE).edit().putBoolean("previews",checked).apply());
+  button(p,"檢查 App 更新",v->{
+   final boolean includePreviews=previews.isChecked();status.setText("正在檢查 GitHub…");v.setEnabled(false);previews.setEnabled(false);
+   worker.execute(()->{UpdateCheck.Release release=null;try{release=UpdateCheck.latest(includePreviews);}catch(Exception ignored){}
+    final UpdateCheck.Release found=release;
+    runOnUiThread(()->{if(isDestroyed())return;v.setEnabled(true);previews.setEnabled(true);
+     if(found==null){status.setText("暫時無法取得可安裝的更新，請稍後再試。");return;}
+     try{
+      String current=getPackageManager().getPackageInfo(getPackageName(),0).versionName;
+      if(!UpdateCheck.newer(found.version,current)){status.setText("目前版本 "+current+"；"+(includePreviews?"穩定版與測試版":"穩定版")+"中沒有更高版本。");return;}
+      new AlertDialog.Builder(this).setTitle("有新版 "+found.tag+(found.preview?"（測試版）":""))
+       .setMessage("請先插入或取回上一筆文字，再下載 APK 安裝更新。不要解除安裝舊版。"+(found.preview?"\n測試版可能尚未完成手機驗收。":""))
+       .setPositiveButton("開啟這個版本",(dialog,which)->{try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(found.url)));}catch(Exception error){status.setText("無法開啟瀏覽器，請到 DreamType 的 GitHub Releases 查看更新。");}})
+       .setNegativeButton("稍後",null).show();
+     }catch(Exception error){status.setText("無法讀取目前版本，請到 GitHub Releases 查看更新。");}
+    });
+   });
+  });
   }
   try{text(p,"App 版本 "+getPackageManager().getPackageInfo(getPackageName(),0).versionName,14);}catch(Exception ignored){}
   button(p,"返回",v->finish());
