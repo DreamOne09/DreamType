@@ -25,7 +25,7 @@ class Store:
         self.payload_key=key_file(path.parent/'payload.key')
         with self.db() as db:
             version=db.execute('PRAGMA user_version').fetchone()[0]
-            if version>3:raise RuntimeError('Database is newer than this server; refusing to downgrade.')
+            if version>4:raise RuntimeError('Database is newer than this server; refusing to downgrade.')
             db.executescript('''
             CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL,
               salt TEXT NOT NULL, password TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1,
@@ -45,7 +45,8 @@ class Store:
               PRIMARY KEY(uid,id),FOREIGN KEY(uid,id) REFERENCES jobs(uid,id) ON DELETE CASCADE);
             CREATE TABLE IF NOT EXISTS pending_audio(uid TEXT NOT NULL,id TEXT NOT NULL,payload BLOB NOT NULL,
               expires REAL NOT NULL,PRIMARY KEY(uid,id),FOREIGN KEY(uid,id) REFERENCES jobs(uid,id) ON DELETE CASCADE);
-            PRAGMA user_version=3;
+            CREATE TABLE IF NOT EXISTS deletions(uid TEXT PRIMARY KEY,deleted_at REAL NOT NULL);
+            PRAGMA user_version=4;
             ''')
     @contextlib.contextmanager
     def db(self):
@@ -209,6 +210,7 @@ class Store:
         with self.db() as db:
             row=db.execute('SELECT * FROM users WHERE id=?',(uid,)).fetchone()
             if not row or not isinstance(password,str) or len(password)>128 or not secrets.compare_digest(password_hash(password,row['salt']),row['password']):raise StoreError(403,'密碼不正確')
+            db.execute('INSERT INTO deletions(uid,deleted_at) VALUES(?,?)',(uid,time.time()))
             db.execute('DELETE FROM users WHERE id=?',(uid,))
     def change_password(self,uid,current,new):
         if not isinstance(new,str) or not 12<=len(new)<=128:raise StoreError(400,'新密碼需為 12–128 個字元')

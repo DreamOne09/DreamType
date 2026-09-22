@@ -6,7 +6,7 @@ import sys
 import time
 from pathlib import Path
 import httpx
-from backup import create
+from backup import create,export_deletions
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -36,6 +36,19 @@ def run(root=ROOT):
             subprocess.run([sys.executable,str(root/'outputs/local_voice/control.py'),'tunnel'],check=True,timeout=45,capture_output=True)
             state['last_tunnel_restart']=now;state['phone_url_may_have_changed']=True
         except Exception:state['errors'].append('tunnel_restart_failed')
+    # Refresh separately from daily backups, so an older archive can be safely
+    # reconciled with later account deletions. A local copy is not cloud proof.
+    try:
+        ledger=export_deletions(root)
+        state['last_deletion_export']=now
+        config=work/'backup-config.json'
+        if config.exists():
+            target=Path(json.loads(config.read_text())['sync_directory'])
+            if not target.is_dir():raise ValueError('Backup destination must already exist')
+            shutil.copy2(ledger,target/ledger.name)
+            state['last_deletion_copy']=now
+    except Exception:
+        state['errors'].append('deletion_export_or_copy_failed')
     if now-state.get('last_backup',0)>86400:
         try:
             archive=create(root)

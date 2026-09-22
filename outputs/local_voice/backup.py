@@ -6,12 +6,49 @@ import sqlite3
 import tempfile
 import zipfile
 import io
+import hashlib
+import time
+import re
 from private_crypto import key_file,encrypt,decrypt
 from contextlib import closing
 from datetime import datetime,timezone
 from pathlib import Path
 
 FILES={'accounts.sqlite3','admin.key','local-voice.key','manifest.json'}
+
+def export_deletions(root):
+    """Export an encrypted, separate deletion ledger for reconciling old backups."""
+    work=root/'work'
+    database=(work/'beta/accounts.sqlite3').resolve().as_uri()+'?mode=ro'
+    with closing(sqlite3.connect(database,uri=True)) as db:
+        rows=db.execute('SELECT uid,deleted_at FROM deletions ORDER BY uid').fetchall()
+    payload={'format':1,'exported_at':time.time(),
+        'host':hashlib.sha256((work/'local-voice.key').read_bytes().strip()).hexdigest(),
+        'deletions':rows}
+    target=work/'backups/latest-deletions.dtledger';target.parent.mkdir(exist_ok=True)
+    temporary=target.with_name('deletions-'+secrets.token_hex(8)+'.tmp')
+    try:
+        temporary.write_bytes(b'DTD1'+encrypt(key_file(work/'backup-recovery.key'),
+            json.dumps(payload).encode(),b'DreamType deletions v1'))
+        temporary.replace(target)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return target
+
+def read_deletions(ledger,recovery_key,host_key):
+    if ledger.stat().st_size>16*1024*1024:raise ValueError('Deletion ledger is too large.')
+    data=ledger.read_bytes()
+    if not data.startswith(b'DTD1'):raise ValueError('Invalid deletion ledger.')
+    if recovery_key is None:raise ValueError('Deletion ledger requires the recovery key.')
+    payload=json.loads(decrypt(Path(recovery_key).read_bytes(),data[4:],b'DreamType deletions v1'))
+    if payload.get('format')!=1 or payload.get('host')!=hashlib.sha256(host_key.strip()).hexdigest():
+        raise ValueError('Deletion ledger belongs to another host or has an unsupported format.')
+    rows=payload.get('deletions')
+    if not isinstance(rows,list) or any(not isinstance(row,list) or len(row)!=2 or
+        not isinstance(row[0],str) or not re.fullmatch('[0-9a-f]{32}',row[0]) or
+        type(row[1]) not in (int,float) or not 0<row[1]<=time.time()+300 for row in rows):
+        raise ValueError('Invalid deletion records.')
+    return rows
 
 def create(root):
     work=root/'work';database=work/'beta/accounts.sqlite3'
@@ -36,9 +73,10 @@ def create(root):
     with zipfile.ZipFile(buffer,'w',zipfile.ZIP_DEFLATED) as package:
         for name,data in contents.items():package.writestr(name,data)
     archive.write_bytes(b'DTB1'+encrypt(key_file(work/'backup-recovery.key'),buffer.getvalue(),b'DreamType backup v1'))
+    export_deletions(root)
     return archive
 
-def restore(root,archive,recovery_key=None):
+def restore(root,archive,recovery_key=None,deletion_ledger=None):
     work=root/'work';beta=work/'beta';key=work/'local-voice.key'
     if beta.exists() and any(beta.iterdir()):raise ValueError('Refusing to overwrite existing work/beta. Restore only to a new host directory before starting it.')
     if archive.stat().st_size>256*1024*1024:raise ValueError('Backup exceeds supported size.')
@@ -55,14 +93,28 @@ def restore(root,archive,recovery_key=None):
         value=contents[name].strip()
         if not 32<=len(value)<=128 or not all(c in b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_' for c in value):raise ValueError('Invalid key format.')
     if key.exists() and key.read_bytes().strip()!=contents['local-voice.key'].strip():raise ValueError('Existing host key differs; refusing to replace it.')
+    ledger=Path(deletion_ledger) if deletion_ledger else archive.parent/'latest-deletions.dtledger'
+    if not ledger.is_file():raise ValueError('Restore requires the latest deletion ledger; export it on the source host and supply --deletion-ledger.')
+    deletions=read_deletions(ledger,recovery_key,contents['local-voice.key'])
     work.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(dir=work) as temp:
         path=Path(temp)/'accounts.sqlite3';path.write_bytes(contents['accounts.sqlite3'])
         with closing(sqlite3.connect(path)) as db,db:
+            db.execute('PRAGMA foreign_keys=ON')
+            if db.execute('PRAGMA user_version').fetchone()[0]>4:raise ValueError('Backup database is newer than this restore tool.')
             if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('Invalid database.')
             if db.execute('PRAGMA foreign_key_check').fetchall():raise ValueError('Invalid database references.')
             db.execute('DELETE FROM sessions')
             db.execute("UPDATE jobs SET state='failed' WHERE state IN ('queued','running')")
+            db.execute('CREATE TABLE IF NOT EXISTS deletions(uid TEXT PRIMARY KEY,deleted_at REAL NOT NULL)')
+            for uid,deleted_at in deletions:
+                db.execute('INSERT OR REPLACE INTO deletions(uid,deleted_at) VALUES(?,?)',(uid,deleted_at))
+            has_audit=db.execute("SELECT 1 FROM sqlite_master WHERE name='audit'").fetchone()
+            for uid, in db.execute('SELECT uid FROM deletions').fetchall():
+                db.execute('DELETE FROM users WHERE id=?',(uid,))
+                if has_audit:db.execute('DELETE FROM audit WHERE uid=?',(uid,))
+            db.execute('PRAGMA user_version=4')
+        with closing(sqlite3.connect(path)) as db:db.execute('VACUUM')
         beta.mkdir(exist_ok=True)
         # Targets are known filenames in a new host directory; never extract arbitrary ZIP paths.
         (beta/'accounts.sqlite3').write_bytes(path.read_bytes())
@@ -72,9 +124,12 @@ def restore(root,archive,recovery_key=None):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action',choices=['create','restore']);parser.add_argument('--archive',type=Path);parser.add_argument('--recovery-key',type=Path)
+    parser.add_argument('action',choices=['create','restore','export-deletions']);parser.add_argument('--archive',type=Path);parser.add_argument('--recovery-key',type=Path);parser.add_argument('--deletion-ledger',type=Path)
     args=parser.parse_args();root=Path(__file__).resolve().parents[2]
     if args.action=='restore' and not args.archive:parser.error('restore requires --archive')
-    result=create(root) if args.action=='create' else restore(root,args.archive,args.recovery_key)
+    result=create(root) if args.action=='create' else export_deletions(root) if args.action=='export-deletions' else restore(root,args.archive,args.recovery_key,args.deletion_ledger)
     print(str(result))
-    print('Private backup contains account data and host keys. Restored accounts must log in again.')
+    if args.action=='export-deletions':
+        print('Encrypted deletion ledger exported. Keep the latest copy; store its recovery key separately.')
+    else:
+        print('Private backup contains account data and host keys. Restored accounts must log in again.')

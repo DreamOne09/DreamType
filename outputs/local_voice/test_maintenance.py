@@ -11,9 +11,10 @@ class MaintenanceTests(unittest.TestCase):
             root=Path(directory);work=root/'work';work.mkdir();cloud=root/'sync';cloud.mkdir()
             (work/'backup-config.json').write_text(json.dumps({'sync_directory':str(cloud)}))
             archive=work/'test.dtbackup';archive.write_bytes(b'DTB1 encrypted')
-            with patch('maintenance.httpx.get',return_value=Mock(status_code=200,json=lambda:{'status':'ready'})),patch('maintenance.create',return_value=archive),patch('maintenance.subprocess.run') as process:
+            ledger=work/'latest-deletions.dtledger';ledger.write_bytes(b'DTD1 encrypted')
+            with patch('maintenance.export_deletions',return_value=ledger),patch('maintenance.httpx.get',return_value=Mock(status_code=200,json=lambda:{'status':'ready'})),patch('maintenance.create',return_value=archive),patch('maintenance.subprocess.run') as process:
                 state=run(root);process.assert_not_called()
-            self.assertEqual(state['errors'],[]);self.assertEqual([p.name for p in cloud.iterdir()],['test.dtbackup'])
+            self.assertEqual(state['errors'],[]);self.assertEqual(sorted(p.name for p in cloud.iterdir()),['latest-deletions.dtledger','test.dtbackup'])
     def test_host_restart_waits_for_two_failures(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);(root/'work').mkdir()
