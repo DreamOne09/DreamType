@@ -1,5 +1,7 @@
 work/
 *.apk
+*.aab
+*.apks
 *.idsig
 *.p12
 *.password

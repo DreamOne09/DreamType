@@ -1,0 +1,27 @@
+{
+  "aab": "DreamType-0.8.0-experimental.aab",
+  "aab_sha256": "66b238c810fc132d06b651850e5eefe8f7a81ab18f59428b89592412838bf8ac",
+  "test_apk": "DreamType-0.8.0-bundle-test.apk",
+  "test_apk_sha256": "2eef6348b21ef7c8e1955a35e56b2680226268107bd8781fac7bf38f433d92db",
+  "package": "tw.localvoice.keyboard",
+  "version": "0.8.0",
+  "version_code": 9,
+  "bundletool_validation": true,
+  "signed": true,
+  "apk_signature_verified": true,
+  "distribution_channel": "play",
+  "native_device_test": false,
+  "play_upload_test": false,
+  "store_ready": false,
+  "remaining": [
+    "Play Console and signing enrollment",
+    "Play listing update link verification",
+    "Billing and purchase verification",
+    "Target SDK policy review",
+    "Native device tests and store disclosures"
+  ],
+  "tool_sha256": {
+    "bundletool-all-1.18.3.jar": "a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29",
+    "aapt2-9.4.1-15978811-windows.jar": "5fe3c8ee5c6b3f47efd1fced1d6418084037f54f13290816c5db717e6b5c92aa"
+  }
+}
