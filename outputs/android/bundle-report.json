@@ -1,8 +1,8 @@
 {
   "aab": "DreamType-0.8.0-experimental.aab",
-  "aab_sha256": "66b238c810fc132d06b651850e5eefe8f7a81ab18f59428b89592412838bf8ac",
+  "aab_sha256": "baf0ad46912c312a65998b6af0109184dd468d089236e8d1f05e23983b7939cd",
   "test_apk": "DreamType-0.8.0-bundle-test.apk",
-  "test_apk_sha256": "2eef6348b21ef7c8e1955a35e56b2680226268107bd8781fac7bf38f433d92db",
+  "test_apk_sha256": "4deb06879340bce5dd806a2dd437fa66434229121fc26979dbef33b6c5179331",
   "package": "tw.localvoice.keyboard",
   "version": "0.8.0",
   "version_code": 9,

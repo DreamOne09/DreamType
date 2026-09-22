@@ -45,7 +45,7 @@ public final class AccountActivity extends Activity {
    button("移除手機登入資料",false,v->new AlertDialog.Builder(this).setTitle("清除這支手機的登入？").setMessage("連不到服務時可使用。只清除手機資料，不會撤銷其他裝置的登入，也不會刪除帳號。")
      .setPositiveButton("清除",(d,w)->{AppConfig.clearSession(this);show();}).setNegativeButton("取消",null).show());
    button("刪除我的帳號",false,v->{EditText password=new EditText(this);password.setHint("再次輸入密碼");password.setInputType(129);password.setSaveEnabled(false);password.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
-    new AlertDialog.Builder(this).setTitle("永久刪除帳號？").setMessage("帳號、所有登入、個人偏好與用量紀錄將刪除，無法復原。").setView(password).setPositiveButton("永久刪除",(d,w)->{final String pass=password.getText().toString();password.setText("");task(()->{VoiceApi.json(current,"DELETE","/v2/me",new JSONObject().put("password",pass));AppConfig.clearSession(this);return "帳號已刪除。";},true);}).setNegativeButton("取消",null).show();});
+    new AlertDialog.Builder(this).setTitle("永久刪除帳號？").setMessage("線上帳號、所有登入、個人偏好與用量紀錄將刪除。歷史備份不會立即改寫，主機保留帳號 ID 與刪除時間供還原核對。詳見「資料與隱私」。").setView(password).setPositiveButton("永久刪除",(d,w)->{final String pass=password.getText().toString();password.setText("");task(()->{VoiceApi.json(current,"DELETE","/v2/me",new JSONObject().put("password",pass));AppConfig.clearSession(this);return "帳號已刪除。";},true);}).setNegativeButton("取消",null).show();});
   }else{
    text("輸入管理者提供的網址與試用帳號。",16);
    EditText server=field("服務網址（https://…）",current.server,false);
@@ -61,6 +61,7 @@ public final class AccountActivity extends Activity {
    });
    text("目前由管理者建立帳號，不開放自行註冊。登入有效七天，到期後重新登入。",14);
   }
+  button("資料與隱私",false,v->startActivity(new android.content.Intent(this,PrivacyActivity.class)));
   button("返回",false,v->finish());
  }
  @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}

@@ -32,6 +32,8 @@
 - bundletool 能產生 universal APK；APK v2/v3 簽章驗證通過，套件、版本及 IME 元件正常。
 - GitHub APK 原始碼分流仍能編譯，沒有覆蓋發布檔。
 - 尚未完成：Pixel 9 原生安裝／鍵盤測試、Play Console 上傳驗證、正式 Billing 與後端購買驗證、固定服務入口、審查揭露。
-- 此產物 target SDK 仍為 35；送審前必須重新核對當時政策並完成所需 SDK 升級與行為測試。AAB 格式通過不等於商店政策通過。
+- 此產物 target SDK 仍為 35。2026-09-22 查核 [Google Play 官方要求](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en)：自 2026-08-31 起一般手機新 App／更新需 target API 36。因此目前此產物尚不符合該上架門檻，必須升級並驗證 Android 16 行為。AAB 格式通過不等於商店政策通過。
+
+待發布原始碼另加入離線繁中 [資料說明頁](DATA_DISCLOSURE.md)，仍待原生畫面驗收及完整正式政策。
 
 流程依照 [Android 官方命令列建置文件](https://developer.android.com/build/building-cmdline) 的 protobuf 資源、base module、bundletool 與 jarsigner 作法；工具來源為 [Google bundletool](https://github.com/google/bundletool/releases/tag/1.18.3) 和 Google Maven。

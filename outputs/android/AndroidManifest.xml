@@ -11,6 +11,7 @@
         </activity>
         <activity android:name=".ManageActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".AccountActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".PrivacyActivity" android:exported="false" />
         <activity android:name=".EditActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <service android:name=".VoiceIme" android:exported="true" android:label="DreamType" android:permission="android.permission.BIND_INPUT_METHOD">
             <intent-filter><action android:name="android.view.InputMethod" /></intent-filter>
