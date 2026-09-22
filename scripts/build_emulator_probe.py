@@ -19,6 +19,8 @@ ET.register_namespace('android',ns)
 manifest=ET.parse(source/'AndroidManifest.xml')
 manifest.getroot().find('application').set('{'+ns+'}debuggable','true')
 manifest.getroot().find('application').set('{'+ns+'}testOnly','true')
+# Only the disposable probe may reach the synthetic runner-local HTTP service.
+manifest.getroot().find('application').set('{'+ns+'}usesCleartextTraffic','true')
 ET.SubElement(manifest.getroot(),'instrumentation',{'{'+ns+'}name':'.SmokeInstrumentation','{'+ns+'}targetPackage':'tw.localvoice.keyboard'})
 manifest.write(out/'AndroidManifest.xml',encoding='utf-8')
 run(build/'aapt2','compile','--dir',source/'res','-o',out/'resources.zip')

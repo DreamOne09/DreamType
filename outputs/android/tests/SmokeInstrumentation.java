@@ -11,7 +11,8 @@ import java.util.Arrays;
 
 /** Included only in the disposable emulator APK, never in a release build. */
 public final class SmokeInstrumentation extends Instrumentation {
- @Override public void onCreate(Bundle args){super.onCreate(args);start();}
+ private boolean configureVoice;
+ @Override public void onCreate(Bundle args){super.onCreate(args);configureVoice=args!=null&&"true".equals(args.getString("configure_voice"));start();}
  private TextView find(View v,String text){
   if(v instanceof TextView&&text.equals(((TextView)v).getText().toString()))return (TextView)v;
   if(v instanceof ViewGroup){ViewGroup group=(ViewGroup)v;for(int i=0;i<group.getChildCount();i++){TextView result=find(group.getChildAt(i),text);if(result!=null)return result;}}
@@ -60,6 +61,7 @@ public final class SmokeInstrumentation extends Instrumentation {
    final boolean[] found={false};runOnMainSync(()->{found[0]=find(privacy.getWindow().getDecorView(),"資料與隱私")!=null;});
    if(!found[0])throw new AssertionError("Offline privacy screen missing");
    screenshot("privacy");
+   if(configureVoice)new AppConfig("http://10.0.2.2:18765","synthetic-emulator-token",false).save(context);
    result.putString("dreamtype","passed");result.putString("checks","Chinese onboarding, login navigation, Android Keystore credentials and recording, logout deletion, offline privacy");
    finish(Activity.RESULT_OK,result);
   }catch(Throwable failure){result.putString("dreamtype","failed");result.putString("failure",failure.toString());finish(Activity.RESULT_CANCELED,result);}
