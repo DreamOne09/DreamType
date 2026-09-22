@@ -33,7 +33,7 @@ if not KEY_PATH.exists():
     KEY_PATH.write_text(secrets.token_urlsafe(32), encoding='ascii')
 API_KEY = KEY_PATH.read_text(encoding='ascii').strip()
 app = FastAPI(title='Local Voice', docs_url=None, redoc_url=None, openapi_url=None)
-converter = OpenCC('s2twp')
+converter = OpenCC('s2tw')  # Taiwan glyphs, without context-free phrase substitutions (文件 -> 檔案).
 model = None
 gpu_lock = asyncio.Lock()
 MAX_BYTES = 25 * 1024 * 1024

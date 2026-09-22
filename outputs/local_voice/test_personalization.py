@@ -8,6 +8,15 @@ import server
 from personalization import formatting_prompt, speech_hint, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint
 
 class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_traditional_conversion_preserves_paper_document_meaning(self):
+        client_type=httpx.AsyncClient
+        def engine(request):
+            return httpx.Response(200,json={'choices':[{'finish_reason':'stop',
+                'message':{'content':'去板桥拿文件，不是电脑里的档案。'}}]})
+        with patch.object(server.httpx,'AsyncClient',lambda **kwargs:client_type(transport=httpx.MockTransport(engine))):
+            self.assertEqual(await server.format_text('去板橋拿文件，不是電腦裡的檔案。'),
+                             '去板橋拿文件，不是電腦裡的檔案。')
+
     async def test_model_health_cannot_hide_failed_background_workers(self):
         client_type=httpx.AsyncClient
         def engine(request):return httpx.Response(200,json={'status':'ok'})

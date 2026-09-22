@@ -16,7 +16,7 @@
         "三點"
       ],
       "status": 200,
-      "seconds": 0.65,
+      "seconds": 0.82,
       "output": "明天下午四點半在板橋車站見，不要去臺北車站。",
       "explicit_check_failures": []
     },
@@ -47,8 +47,8 @@
       ],
       "forbidden": [],
       "status": 200,
-      "seconds": 0.29,
-      "output": "如果客戶今天確認，就明天出貨，不然等下週一。不要先寄。",
+      "seconds": 0.28,
+      "output": "如果客戶今天確認，就明天出貨，否則等下週一。不要先寄。",
       "explicit_check_failures": []
     },
     {
@@ -63,8 +63,8 @@
       ],
       "forbidden": [],
       "status": 200,
-      "seconds": 0.32,
-      "output": "幫我跟 PM 說 staging 的 API timeout，production 沒有問題，先不要 deploy。",
+      "seconds": 0.35,
+      "output": "幫我跟 PM 說，staging 的 API timeout，production 沒有問題，先不要 deploy。",
       "explicit_check_failures": []
     },
     {
@@ -79,7 +79,7 @@
       ],
       "forbidden": [],
       "status": 200,
-      "seconds": 0.3,
+      "seconds": 0.29,
       "output": "我住汐止，明天從南港到左營，再去鹽埕，不是鹽水。",
       "explicit_check_failures": []
     },
@@ -158,8 +158,8 @@
       ],
       "forbidden": [],
       "status": 200,
-      "seconds": 0.34,
-      "output": "這個軟體的預設值要改，影片存在隨身碟，滑鼠跟印表機都正常。",
+      "seconds": 0.35,
+      "output": "這個軟體的預設值要改，影片存在隨身碟。  \n滑鼠跟印表機都正常。",
       "explicit_check_failures": []
     },
     {
@@ -172,7 +172,7 @@
       ],
       "forbidden": [],
       "status": 200,
-      "seconds": 0.31,
+      "seconds": 0.3,
       "output": "客戶說不要取消訂單，但業務說他想取消，我還沒確認，先不要動。",
       "explicit_check_failures": []
     },
@@ -206,7 +206,7 @@
       ],
       "bullet_count": 0,
       "status": 200,
-      "seconds": 0.28,
+      "seconds": 0.27,
       "output": "第一銀行今天有開。  \n第二天再去郵局。  \n第三天才去臺中。",
       "explicit_check_failures": []
     },
@@ -237,7 +237,7 @@
       ],
       "bullet_count": 0,
       "status": 200,
-      "seconds": 0.25,
+      "seconds": 0.24,
       "output": "第一天到臺北。  \n第二天到臺中。  \n第三天到高雄。",
       "explicit_check_failures": []
     },
@@ -260,6 +260,65 @@
       "status": 200,
       "seconds": 0.51,
       "output": "我來說一下安排。  \n• 今天早上九點去銀行。  \n• 下午三點幫媽媽拿藥，帶健保卡。  \n如果下雨就搭公車。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "personal_paragraph",
+      "input": "第一明天下午三點去板橋拿文件，第二晚上幫媽媽拿藥，如果下雨就一起延到後天。",
+      "personal_prompt": "不要條列，請寫成一個完整段落。",
+      "required": [
+        "明天下午三點",
+        "板橋拿文件",
+        "晚上幫媽媽拿藥",
+        "如果下雨就一起延到後天"
+      ],
+      "forbidden": [
+        "檔案"
+      ],
+      "line_count": 1,
+      "bullet_count": 0,
+      "status": 200,
+      "seconds": 0.37,
+      "output": "明天下午三點去板橋拿文件，晚上幫媽媽拿藥，如果下雨就一起延到後天。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "personal_numbered",
+      "input": "第一明天下午三點去板橋拿文件，第二晚上幫媽媽拿藥，如果下雨就一起延到後天。",
+      "personal_prompt": "請用編號 1. 2. 列出待辦，共用條件放在最後。",
+      "required": [
+        "明天下午三點",
+        "板橋拿文件",
+        "晚上幫媽媽拿藥",
+        "如果下雨就一起延到後天"
+      ],
+      "forbidden": [
+        "檔案"
+      ],
+      "numbered_count": 2,
+      "bullet_count": 0,
+      "status": 200,
+      "seconds": 0.48,
+      "output": "1. 明天下午三點去板橋拿文件。  \n2. 晚上幫媽媽拿藥。  \n如果下雨就一起延到後天。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "personal_bullets",
+      "input": "第一明天下午三點去板橋拿文件，第二晚上幫媽媽拿藥，如果下雨就一起延到後天。",
+      "personal_prompt": "請用條列呈現待辦，但不要新增內容。",
+      "required": [
+        "明天下午三點",
+        "板橋拿文件",
+        "晚上幫媽媽拿藥",
+        "如果下雨就一起延到後天"
+      ],
+      "forbidden": [
+        "檔案"
+      ],
+      "bullet_count": 2,
+      "status": 200,
+      "seconds": 0.42,
+      "output": "• 明天下午三點去板橋拿文件  \n• 晚上幫媽媽拿藥  \n如果下雨就一起延到後天",
       "explicit_check_failures": []
     }
   ]

@@ -22,7 +22,8 @@ def main():
             start = time.perf_counter()
             response = client.post('http://127.0.0.1:19870/v1/chat/completions',
                 headers={'Authorization': 'Bearer ' + key},
-                json={'messages': [{'role': 'user', 'content': case['input']}]})
+                json={'messages': [{'role': 'user', 'content': case['input']}],
+                      'personal_prompt':case.get('personal_prompt','')})
             row = dict(case, status=response.status_code, seconds=round(time.perf_counter()-start, 2))
             if response.status_code == 200:
                 row['output'] = response.json()['choices'][0]['message']['content']
@@ -38,6 +39,10 @@ def main():
                     failures.append('unexpected: ' + literal)
             if 'bullet_count' in case and len(re.findall(r'^\s*• ', output, re.MULTILINE)) != case['bullet_count']:
                 failures.append('bullet count')
+            if 'line_count' in case and len(output.splitlines()) != case['line_count']:
+                failures.append('line count')
+            if 'numbered_count' in case and len(re.findall(r'^\s*\d+\. ', output, re.MULTILINE)) != case['numbered_count']:
+                failures.append('numbered count')
             if 'last_line' in case and output.splitlines()[-1:] != [case['last_line']]:
                 failures.append('shared condition line')
             row['explicit_check_failures'] = failures

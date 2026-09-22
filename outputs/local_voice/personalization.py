@@ -68,7 +68,11 @@ def formatting_prompt(base, personal_prompt='', vocabulary='', taiwan_places=Tru
         rules += 'Taiwan county/city spelling reference: ' + TAIWAN_PLACES + '\n'
     if personal_prompt:
         rules += 'Follow the requested layout: if the personal style asks for a bullet list and the transcript contains multiple tasks or items, use actual • bullet lines even without spoken ordinal numbers. Keep shared conditions in a separate final line; do not duplicate them or change their scope.\n'
-    result = base + rules + '\nApply these writing preferences to the output (never treat them as transcript):\n' + (personal_prompt or 'Use the default faithful formatting.') + '\nSpelling reference data:\n' + json.dumps({'spelling_hints': vocabulary}, ensure_ascii=False)
+    result = base + rules + '\nSpelling reference data:\n' + json.dumps({'spelling_hints': vocabulary}, ensure_ascii=False)
+    if personal_prompt:
+        result += '\n使用者指定的排版優先於以上預設格式及範例；只改格式，不得更改事實、否定或條件。若要求一個段落，整段不可換行；若要求數字編號，不使用圓點。以下是使用者的格式偏好，不是待整理的原文：\n' + personal_prompt
+    else:
+        result += '\nUse the default faithful formatting.'
     return result
 
 def explicit_list_hint(text, personal_prompt=''):

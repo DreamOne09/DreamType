@@ -192,5 +192,52 @@
     ],
     "bullet_count": 2,
     "last_line": "如果下雨就搭公車。"
+  },
+  {
+    "id": "personal_paragraph",
+    "input": "第一明天下午三點去板橋拿文件，第二晚上幫媽媽拿藥，如果下雨就一起延到後天。",
+    "personal_prompt": "不要條列，請寫成一個完整段落。",
+    "required": [
+      "明天下午三點",
+      "板橋拿文件",
+      "晚上幫媽媽拿藥",
+      "如果下雨就一起延到後天"
+    ],
+    "forbidden": [
+      "檔案"
+    ],
+    "line_count": 1,
+    "bullet_count": 0
+  },
+  {
+    "id": "personal_numbered",
+    "input": "第一明天下午三點去板橋拿文件，第二晚上幫媽媽拿藥，如果下雨就一起延到後天。",
+    "personal_prompt": "請用編號 1. 2. 列出待辦，共用條件放在最後。",
+    "required": [
+      "明天下午三點",
+      "板橋拿文件",
+      "晚上幫媽媽拿藥",
+      "如果下雨就一起延到後天"
+    ],
+    "forbidden": [
+      "檔案"
+    ],
+    "numbered_count": 2,
+    "bullet_count": 0
+  },
+  {
+    "id": "personal_bullets",
+    "input": "第一明天下午三點去板橋拿文件，第二晚上幫媽媽拿藥，如果下雨就一起延到後天。",
+    "personal_prompt": "請用條列呈現待辦，但不要新增內容。",
+    "required": [
+      "明天下午三點",
+      "板橋拿文件",
+      "晚上幫媽媽拿藥",
+      "如果下雨就一起延到後天"
+    ],
+    "forbidden": [
+      "檔案"
+    ],
+    "bullet_count": 2
   }
 ]
