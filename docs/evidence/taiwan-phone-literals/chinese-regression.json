@@ -1,0 +1,325 @@
+{
+  "synthetic_text_only": true,
+  "speech_recognition_tested": false,
+  "automatic_semantic_score": null,
+  "requires_review": true,
+  "results": [
+    {
+      "id": "correction",
+      "input": "明天下午三點，不對，是四點半，在板橋車站見，不要去台北車站。",
+      "required": [
+        "明天下午四點半",
+        "板橋車站",
+        "不要去"
+      ],
+      "forbidden": [
+        "三點"
+      ],
+      "status": 200,
+      "seconds": 0.28,
+      "output": "明天下午四點半在板橋車站見，不要去臺北車站。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "money",
+      "input": "報價一萬五，不是十五萬，含稅但不含運費，沒確認前不要付款。",
+      "required": [
+        "一萬五",
+        "不是十五萬",
+        "含稅",
+        "不含運費",
+        "沒確認前不要付款"
+      ],
+      "forbidden": [],
+      "status": 200,
+      "seconds": 0.34,
+      "output": "報價一萬五，不是十五萬，含稅但不含運費，沒確認前不要付款。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "conditional",
+      "input": "如果客戶今天確認就明天出貨，不然等下週一。不要先寄。",
+      "required": [
+        "如果客戶今天確認",
+        "明天出貨",
+        "下週一",
+        "不要先寄"
+      ],
+      "forbidden": [],
+      "status": 200,
+      "seconds": 0.3,
+      "output": "如果客戶今天確認，就明天出貨，否則等下週一。不要先寄。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "mixed",
+      "input": "幫我跟 PM 說 staging 的 API timeout，production 沒有問題，先不要 deploy。",
+      "required": [
+        "PM",
+        "staging",
+        "API timeout",
+        "production 沒有問題",
+        "不要 deploy"
+      ],
+      "forbidden": [],
+      "status": 200,
+      "seconds": 0.35,
+      "output": "幫我跟 PM 說，staging 的 API timeout，production 沒有問題，先不要 deploy。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "places",
+      "input": "我住汐止，明天從南港到左營，再去鹽埕，不是鹽水。",
+      "required": [
+        "汐止",
+        "南港",
+        "左營",
+        "鹽埕",
+        "不是鹽水"
+      ],
+      "forbidden": [],
+      "status": 200,
+      "seconds": 0.3,
+      "output": "我住汐止，明天從南港到左營，再去鹽埕，不是鹽水。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "names",
+      "input": "請寄給陳怡君，不是陳宜君，副本給林奕辰。",
+      "required": [
+        "陳怡君",
+        "不是陳宜君",
+        "林奕辰"
+      ],
+      "forbidden": [],
+      "status": 200,
+      "seconds": 0.27,
+      "output": "請寄給陳怡君，不是陳宜君，副本給林奕辰。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "request",
+      "input": "幫我寫一封信給房東，問他下個月可不可以晚兩天繳房租。",
+      "required": [
+        "幫我寫一封信",
+        "房東",
+        "下個月",
+        "晚兩天",
+        "房租"
+      ],
+      "forbidden": [
+        "親愛的房東"
+      ],
+      "status": 200,
+      "seconds": 0.3,
+      "output": "幫我寫一封信給房東，問他下個月可不可以晚兩天繳房租。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "list",
+      "input": "第一明天早上買牛奶，第二下午幫媽媽拿藥，第三晚上繳電費，如果下雨就一起延到後天。",
+      "bullet_count": 3,
+      "required": [
+        "明天早上買牛奶",
+        "下午幫媽媽拿藥",
+        "晚上繳電費"
+      ],
+      "last_line": "如果下雨就一起延到後天。",
+      "status": 200,
+      "seconds": 0.51,
+      "output": "• 明天早上買牛奶。  \n• 下午幫媽媽拿藥。  \n• 晚上繳電費。  \n如果下雨就一起延到後天。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "codes",
+      "input": "訂單編號 AB-007，電話 0912-003-456，網址 example.com.tw，不要改這些資料。",
+      "required": [
+        "AB-007",
+        "0912-003-456",
+        "example.com.tw",
+        "不要改"
+      ],
+      "forbidden": [],
+      "status": 200,
+      "seconds": 0.42,
+      "output": "訂單編號 AB-007，電話 0912-003-456，網址 example.com.tw，不要改這些資料。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "taiwan",
+      "input": "這個軟體的預設值要改，影片存在隨身碟，滑鼠跟印表機都正常。",
+      "required": [
+        "軟體",
+        "預設值",
+        "影片",
+        "隨身碟",
+        "滑鼠",
+        "印表機"
+      ],
+      "forbidden": [],
+      "status": 200,
+      "seconds": 0.36,
+      "output": "這個軟體的預設值要改，影片存在隨身碟。  \n滑鼠跟印表機都正常。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "quoted",
+      "input": "客戶說不要取消訂單，但業務說他想取消，我還沒確認，先不要動。",
+      "required": [
+        "客戶說不要取消訂單",
+        "他想取消",
+        "先不要動"
+      ],
+      "forbidden": [],
+      "status": 200,
+      "seconds": 0.32,
+      "output": "客戶說不要取消訂單，但業務說他想取消，我還沒確認，先不要動。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "short",
+      "input": "嗯那個我我想要兩杯無糖去冰拿鐵，啊不是，一杯就好。",
+      "required": [
+        "一杯",
+        "無糖去冰拿鐵"
+      ],
+      "forbidden": [
+        "兩杯",
+        "嗯",
+        "那個"
+      ],
+      "status": 200,
+      "seconds": 0.17,
+      "output": "我想要一杯無糖去冰拿鐵。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "bank_not_list",
+      "input": "第一銀行今天有開，第二天再去郵局，第三天才去台中。",
+      "required": [
+        "第一銀行",
+        "第二天",
+        "第三天"
+      ],
+      "forbidden": [
+        "第一天"
+      ],
+      "bullet_count": 0,
+      "status": 200,
+      "seconds": 0.28,
+      "output": "第一銀行今天有開。  \n第二天再去郵局。  \n第三天才去臺中。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "rank_not_list",
+      "input": "第一名是陳怡君，第二名是林奕辰，第三名是王小明。",
+      "required": [
+        "第一名",
+        "陳怡君",
+        "第二名",
+        "林奕辰",
+        "第三名",
+        "王小明"
+      ],
+      "bullet_count": 0,
+      "status": 200,
+      "seconds": 0.31,
+      "output": "第一名是陳怡君。  \n第二名是林奕辰。  \n第三名是王小明。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "days_not_list",
+      "input": "第一天到台北，第二天到台中，第三天到高雄。",
+      "required": [
+        "第一天",
+        "第二天",
+        "第三天"
+      ],
+      "bullet_count": 0,
+      "status": 200,
+      "seconds": 0.25,
+      "output": "第一天到臺北。  \n第二天到臺中。  \n第三天到高雄。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "list_correction",
+      "input": "我來說一下安排，第一今天早上八點，不對九點，去銀行。第二下午三點幫媽媽拿藥，帶健保卡。如果下雨就搭公車。",
+      "required": [
+        "我來說一下安排",
+        "九點",
+        "銀行",
+        "下午三點",
+        "媽媽",
+        "健保卡"
+      ],
+      "forbidden": [
+        "八點"
+      ],
+      "bullet_count": 2,
+      "last_line": "如果下雨就搭公車。",
+      "status": 200,
+      "seconds": 0.51,
+      "output": "我來說一下安排。  \n• 今天早上九點去銀行。  \n• 下午三點幫媽媽拿藥，帶健保卡。  \n如果下雨就搭公車。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "personal_paragraph",
+      "input": "第一明天下午三點去板橋拿文件，第二晚上幫媽媽拿藥，如果下雨就一起延到後天。",
+      "personal_prompt": "不要條列，請寫成一個完整段落。",
+      "required": [
+        "明天下午三點",
+        "板橋拿文件",
+        "晚上幫媽媽拿藥",
+        "如果下雨就一起延到後天"
+      ],
+      "forbidden": [
+        "檔案"
+      ],
+      "line_count": 1,
+      "bullet_count": 0,
+      "status": 200,
+      "seconds": 0.37,
+      "output": "明天下午三點去板橋拿文件，晚上幫媽媽拿藥，如果下雨就一起延到後天。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "personal_numbered",
+      "input": "第一明天下午三點去板橋拿文件，第二晚上幫媽媽拿藥，如果下雨就一起延到後天。",
+      "personal_prompt": "請用編號 1. 2. 列出待辦，共用條件放在最後。",
+      "required": [
+        "明天下午三點",
+        "板橋拿文件",
+        "晚上幫媽媽拿藥",
+        "如果下雨就一起延到後天"
+      ],
+      "forbidden": [
+        "檔案"
+      ],
+      "numbered_count": 2,
+      "bullet_count": 0,
+      "status": 200,
+      "seconds": 0.48,
+      "output": "1. 明天下午三點去板橋拿文件。  \n2. 晚上幫媽媽拿藥。  \n如果下雨就一起延到後天。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "personal_bullets",
+      "input": "第一明天下午三點去板橋拿文件，第二晚上幫媽媽拿藥，如果下雨就一起延到後天。",
+      "personal_prompt": "請用條列呈現待辦，但不要新增內容。",
+      "required": [
+        "明天下午三點",
+        "板橋拿文件",
+        "晚上幫媽媽拿藥",
+        "如果下雨就一起延到後天"
+      ],
+      "forbidden": [
+        "檔案"
+      ],
+      "bullet_count": 2,
+      "status": 200,
+      "seconds": 0.42,
+      "output": "• 明天下午三點去板橋拿文件  \n• 晚上幫媽媽拿藥  \n如果下雨就一起延到後天",
+      "explicit_check_failures": []
+    }
+  ]
+}

@@ -111,6 +111,8 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
     instructions += explicit_list_hint(text, personal_prompt)
     if identifiers:
         instructions += '\nProtected identifiers appear as ' + marker_prefix + '0END etc. Copy each marker exactly once, unchanged and in the same order and context. Do not translate, expand, omit, or explain markers.\n'
+    if identifiers:
+        instructions += '\n識別碼前後的動作、否定、時間及條件必須保留。例如「先打 CODE，如果沒接再打 CODE」不可刪去「先打」，也不可改成只有電話清單。識別碼不是標題；若使用者要求一個段落，不得為識別碼另起一行。\n'
     async with httpx.AsyncClient(timeout=90) as client:
         result = await client.post('http://127.0.0.1:19871/v1/chat/completions',
             headers={'Authorization': 'Bearer ' + API_KEY}, json={

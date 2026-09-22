@@ -1,0 +1,68 @@
+{
+  "synthetic_text_only": true,
+  "speech_recognition_tested": false,
+  "automatic_semantic_score": null,
+  "requires_review": true,
+  "results": [
+    {
+      "id": "tw-phone-1",
+      "input": "請打 02-23456789，不要打 0912 345 678。",
+      "personal_prompt": "整理成一個段落，保留原意。",
+      "required": [
+        "02-23456789",
+        "不要打",
+        "0912 345 678"
+      ],
+      "line_count": 1,
+      "status": 200,
+      "seconds": 0.85,
+      "output": "請打 02-23456789，不要打 0912 345 678。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "tw-phone-2",
+      "input": "聯絡電話是 (02)2345-6789，明天下午四點半再打。",
+      "personal_prompt": "整理成一個段落，保留原意。",
+      "required": [
+        "(02)2345-6789",
+        "明天下午四點半"
+      ],
+      "line_count": 1,
+      "status": 200,
+      "seconds": 0.25,
+      "output": "聯絡電話是 (02)2345-6789，明天下午四點半再打。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "tw-phone-3",
+      "input": "請保留國碼，電話是 +886 912 345 678。",
+      "personal_prompt": "整理成一個段落，保留原意。",
+      "required": [
+        "+886 912 345 678",
+        "保留國碼"
+      ],
+      "line_count": 1,
+      "status": 200,
+      "seconds": 0.19,
+      "output": "請保留國碼，電話是 +886 912 345 678。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "tw-phone-4",
+      "input": "先打 +886-2-2345-6789，如果沒接，再打 03-1234567。",
+      "personal_prompt": "整理成一個段落，保留原意。",
+      "required": [
+        "先打",
+        "+886-2-2345-6789",
+        "如果沒接",
+        "再打",
+        "03-1234567"
+      ],
+      "line_count": 1,
+      "status": 200,
+      "seconds": 0.27,
+      "output": "先打 +886-2-2345-6789，如果沒接，再打 03-1234567。",
+      "explicit_check_failures": []
+    }
+  ]
+}

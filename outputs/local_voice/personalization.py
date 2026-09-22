@@ -5,12 +5,18 @@ from collections import Counter
 
 # Only machine-readable identifiers: do not constrain ordinary spoken amounts,
 # dates or explicit verbal self-corrections. On ambiguity, retain the raw text.
+# Recognize literal phone spellings, not whether a number is assigned/valid.
+# Keep separators and country code exactly as supplied; do not normalize them.
+PHONE_LITERAL = (r'(?:\+886[ -]?(?:9[0-9]{2}[ -]?[0-9]{3}[ -]?[0-9]{3}'
+    r'|[2-8][ -]?[0-9]{3,4}[ -]?[0-9]{4})'
+    r'|(?:\(0[2-8][0-9]?\)|0[2-8][0-9]?)[ -]?[0-9]{3,4}[ -]?[0-9]{4}'
+    r'|09[0-9]{2}[ -]?[0-9]{3}[ -]?[0-9]{3})')
 IDENTIFIER = re.compile(r'(?<![A-Za-z0-9_])(?:'
     r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
     r'|(?:https?://)?(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?:/[A-Za-z0-9_~:/?#\[\]@!$&()*+,;=%.-]*)?'
     r'|[A-Za-z]+-\d+(?:-[A-Za-z0-9]+)*'
+    r'|' + PHONE_LITERAL +
     r'|\d{2,4}(?:-\d{2,4}){2,}'
-    r'|09\d{8}'
     r')(?![A-Za-z0-9_])')
 
 def validate_identifiers(original, edited):
