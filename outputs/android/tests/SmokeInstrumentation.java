@@ -30,6 +30,10 @@ public final class SmokeInstrumentation extends Instrumentation {
    Activity home=open(HomeActivity.class);
    final TextView[] login={null};runOnMainSync(()->{login[0]=find(home.getWindow().getDecorView(),"登入開始使用");});
    if(!(login[0] instanceof Button))throw new AssertionError("Traditional Chinese onboarding button missing");
+   runOnMainSync(()->{
+    int appearance=home.getWindow().getInsetsController().getSystemBarsAppearance();
+    if((appearance&WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS)==0)throw new AssertionError("Status bar icons are not dark on the light home screen");
+   });
    screenshot("home");
    ActivityMonitor monitor=addMonitor(AccountActivity.class.getName(),null,false);
    runOnMainSync(()->login[0].performClick());

@@ -37,6 +37,12 @@ public final class HomeActivity extends Activity {
   });
   text(p,"按下錄音才使用麥克風。預設先確認文字，再插入；可在設定開啟直接插入。",14).setTextColor(Ui.MUTED);
  }
+ @Override public void onWindowFocusChanged(boolean focused){super.onWindowFocusChanged(focused);if(focused){
+  if(android.os.Build.VERSION.SDK_INT>=30){
+   android.view.WindowInsetsController controller=getWindow().getInsetsController();
+   if(controller!=null)controller.setSystemBarsAppearance(android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS|android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS|android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+  }else{View decor=getWindow().getDecorView();decor.setSystemUiVisibility(decor.getSystemUiVisibility()|View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);}
+ }}
  @Override protected void onResume(){super.onResume();refresh();}
  private void refresh(){
   action.setEnabled(true);
