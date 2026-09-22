@@ -52,10 +52,14 @@ public final class ImeInstrumentation extends Instrumentation {
   throw new AssertionError("External editor did not receive exact Traditional Chinese response");
  }
  private void check(Activity activity,int id,boolean enabled,String name)throws Exception{
+  final boolean[] focused={false};long focusDeadline=SystemClock.uptimeMillis()+10000;
+  do{runOnMainSync(()->focused[0]=activity.hasWindowFocus());if(focused[0])break;SystemClock.sleep(100);}while(SystemClock.uptimeMillis()<focusDeadline);
+  if(!focused[0])throw new AssertionError("Editor window did not receive focus");
   runOnMainSync(()->{EditText field=activity.findViewById(id);field.requestFocus();((InputMethodManager)activity.getSystemService(Context.INPUT_METHOD_SERVICE)).showSoftInput(field,InputMethodManager.SHOW_IMPLICIT);});
   long deadline=SystemClock.uptimeMillis()+15000;
   while(SystemClock.uptimeMillis()<deadline){
    AccessibilityNodeInfo mic=find("開始說話");
+   if(mic==null)runOnMainSync(()->{EditText field=activity.findViewById(id);((InputMethodManager)activity.getSystemService(Context.INPUT_METHOD_SERVICE)).showSoftInput(field,InputMethodManager.SHOW_IMPLICIT);});
    if(mic!=null&&mic.isEnabled()==enabled&&(enabled||find("密碼欄位不使用語音，請切回原本鍵盤。")!=null)){
     screenshot(name);return;
    }
