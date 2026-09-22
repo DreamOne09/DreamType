@@ -23,7 +23,7 @@ from fastapi.responses import PlainTextResponse, FileResponse
 from faster_whisper import WhisperModel
 from faster_whisper.audio import decode_audio
 from opencc import OpenCC
-from personalization import formatting_prompt, speech_hint, validate_preferences
+from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers
 from translation import validate_translation, translate_text
 from beta_api import install_beta, LocalProvider, audio_duration
 
@@ -121,7 +121,9 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
         content = choice['message']['content']
         if not isinstance(content, str) or not content.strip():
             raise ValueError('Empty formatting result')
-        return converter.convert(content.strip())
+        edited = converter.convert(content.strip())
+        validate_identifiers(text, edited)
+        return edited
 
 def recognize(audio, language, prompt):
     segments, info = model.transcribe(audio, language=language, beam_size=1,

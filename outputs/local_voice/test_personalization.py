@@ -5,9 +5,25 @@ import unittest
 from unittest.mock import patch
 import httpx
 import server
-from personalization import formatting_prompt, speech_hint
+from personalization import formatting_prompt, speech_hint, validate_identifiers
 
 class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_changed_phone_returns_complete_audio_transcript_with_warning(self):
+        original = '電話 0912-003-456，請明天聯絡。'
+        client_type = httpx.AsyncClient
+        def engine(request):
+            return httpx.Response(200, json={'choices': [{'finish_reason': 'stop',
+                'message': {'content': '電話 0912-003-45，請明天聯絡。'}}]})
+        with patch.object(server.httpx, 'AsyncClient',
+                lambda **kwargs: client_type(transport=httpx.MockTransport(engine))), \
+                patch.object(server, 'decode_audio', lambda *a, **k: [0]*16000), \
+                patch.object(server, 'recognize', lambda *a: (original, 'zh')):
+            response = await self.client.post('/v1/audio/transcriptions', headers=self.auth,
+                files={'file': ('test.wav', b'fake')})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['text'], original)
+            self.assertTrue(response.json()['warning'])
+
     async def test_incomplete_model_output_never_replaces_full_dictation(self):
         original = '明天去汐止拿文件，如果下雨就改成星期五。不要取消預約。'
         client_type = httpx.AsyncClient
@@ -97,6 +113,18 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('汐止',seen[0]);self.assertNotIn('臺北市',seen[0])
 
 class PromptTests(unittest.TestCase):
+    def test_literal_identifiers_cannot_be_changed_or_lost(self):
+        original = '訂單 AB-007，電話 0912-003-456，網址 example.com.tw，信箱 hi@example.com。'
+        validate_identifiers(original, original.replace('，', '。'))
+        for edited in (original.replace('456', '45'), original.replace('AB-007', 'AB-008'),
+                       original.replace('example.com.tw', 'example.com'),
+                       original.replace('hi@', 'hey@'), original + ' AB-007'):
+            with self.assertRaises(ValueError):
+                validate_identifiers(original, edited)
+        validate_identifiers('三點，不對四點半。', '四點半。')
+        validate_identifiers('一萬五，不是十五萬。', '一萬五，不是十五萬。')
+        with self.assertRaises(ValueError):
+            validate_identifiers('0912003456', '091200345')
     def test_place_switch_and_preserve_rules(self):
         self.assertIn('臺北市',formatting_prompt('base'))
         self.assertNotIn('臺北市',formatting_prompt('base',taiwan_places=False))

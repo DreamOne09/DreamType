@@ -1,5 +1,22 @@
 """Per-request preferences; never store or reuse one user's prompt for another."""
 import json
+import re
+from collections import Counter
+
+# Only machine-readable identifiers: do not constrain ordinary spoken amounts,
+# dates or explicit verbal self-corrections. On ambiguity, retain the raw text.
+IDENTIFIER = re.compile(r'(?<![A-Za-z0-9_])(?:'
+    r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+    r'|(?:https?://)?(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?:/[A-Za-z0-9_~:/?#\[\]@!$&()*+,;=%.-]*)?'
+    r'|[A-Za-z]+-\d+(?:-[A-Za-z0-9]+)*'
+    r'|\d{2,4}(?:-\d{2,4}){2,}'
+    r'|09\d{8}'
+    r')(?![A-Za-z0-9_])')
+
+def validate_identifiers(original, edited):
+    """Reject altered/dropped identifiers rather than silently repairing prose."""
+    if Counter(IDENTIFIER.findall(original)) != Counter(IDENTIFIER.findall(edited)):
+        raise ValueError('Formatting changed a literal identifier')
 
 # County/city names checked against Chunghwa Post's county list.
 # https://www.post.gov.tw/post/internet/Download/index.jsp?ID=220306

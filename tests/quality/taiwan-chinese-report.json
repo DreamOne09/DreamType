@@ -1,0 +1,92 @@
+{
+  "synthetic_text_only": true,
+  "speech_recognition_tested": false,
+  "automatic_semantic_score": null,
+  "requires_review": true,
+  "results": [
+    {
+      "id": "correction",
+      "input": "明天下午三點，不對，是四點半，在板橋車站見，不要去台北車站。",
+      "status": 200,
+      "seconds": 0.79,
+      "output": "明天下午四點半在板橋車站見，不要去臺北車站。"
+    },
+    {
+      "id": "money",
+      "input": "報價一萬五，不是十五萬，含稅但不含運費，沒確認前不要付款。",
+      "status": 200,
+      "seconds": 0.33,
+      "output": "報價一萬五，不是十五萬，含稅但不含運費，沒確認前不要付款。"
+    },
+    {
+      "id": "conditional",
+      "input": "如果客戶今天確認就明天出貨，不然等下週一。不要先寄。",
+      "status": 200,
+      "seconds": 0.29,
+      "output": "如果客戶今天確認，就明天出貨，不然等下週一。不要先寄。"
+    },
+    {
+      "id": "mixed",
+      "input": "幫我跟 PM 說 staging 的 API timeout，production 沒有問題，先不要 deploy。",
+      "status": 200,
+      "seconds": 0.33,
+      "output": "幫我跟 PM 說 staging 的 API timeout，production 沒有問題，先不要 deploy。"
+    },
+    {
+      "id": "places",
+      "input": "我住汐止，明天從南港到左營，再去鹽埕，不是鹽水。",
+      "status": 200,
+      "seconds": 0.3,
+      "output": "我住汐止，明天從南港到左營，再去鹽埕，不是鹽水。"
+    },
+    {
+      "id": "names",
+      "input": "請寄給陳怡君，不是陳宜君，副本給林奕辰。",
+      "status": 200,
+      "seconds": 0.26,
+      "output": "請寄給陳怡君，不是陳宜君，副本給林奕辰。"
+    },
+    {
+      "id": "request",
+      "input": "幫我寫一封信給房東，問他下個月可不可以晚兩天繳房租。",
+      "status": 200,
+      "seconds": 0.3,
+      "output": "幫我寫一封信給房東，問他下個月可不可以晚兩天繳房租。"
+    },
+    {
+      "id": "list",
+      "input": "第一明天早上買牛奶，第二下午幫媽媽拿藥，第三晚上繳電費，如果下雨就一起延到後天。",
+      "status": 200,
+      "seconds": 0.42,
+      "output": "第一明天早上買牛奶。  \n第二下午幫媽媽拿藥。  \n第三晚上繳電費。  \n如果下雨就一起延到後天。"
+    },
+    {
+      "id": "codes",
+      "input": "訂單編號 AB-007，電話 0912-003-456，網址 example.com.tw，不要改這些資料。",
+      "status": 503,
+      "seconds": 0.46,
+      "output": null
+    },
+    {
+      "id": "taiwan",
+      "input": "這個軟體的預設值要改，影片存在隨身碟，滑鼠跟印表機都正常。",
+      "status": 200,
+      "seconds": 0.34,
+      "output": "這個軟體的預設值要改，影片存在隨身碟，滑鼠跟印表機都正常。"
+    },
+    {
+      "id": "quoted",
+      "input": "客戶說不要取消訂單，但業務說他想取消，我還沒確認，先不要動。",
+      "status": 200,
+      "seconds": 0.31,
+      "output": "客戶說不要取消訂單，但業務說他想取消，我還沒確認，先不要動。"
+    },
+    {
+      "id": "short",
+      "input": "嗯那個我我想要兩杯無糖去冰拿鐵，啊不是，一杯就好。",
+      "status": 200,
+      "seconds": 0.17,
+      "output": "我想要一杯無糖去冰拿鐵。"
+    }
+  ]
+}
