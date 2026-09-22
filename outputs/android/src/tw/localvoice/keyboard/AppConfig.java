@@ -34,6 +34,7 @@ final class AppConfig {
         this.personalPrompt=personalPrompt;this.vocabulary=vocabulary;this.taiwanPlaces=taiwanPlaces;
         this.accountMode=accountMode;
     }
+    boolean sameSession(AppConfig other){return other!=null&&key.equals(other.key)&&server.equals(other.server)&&accountMode==other.accountMode;}
     boolean ready() { return !server.isEmpty() && !key.isEmpty(); }
     static String normalize(String text) throws Exception {
         String s=text.trim();
@@ -89,7 +90,7 @@ final class AppConfig {
     // credentials. Never acquire it while holding the separate Keystore lock.
     private static void requireSession(Context c,AppConfig expected)throws java.io.IOException {
         AppConfig current=load(c);
-        if(!current.key.equals(expected.key)||!current.server.equals(expected.server)||current.accountMode!=expected.accountMode)
+        if(!current.sameSession(expected))
             throw new java.io.IOException("登入或連線已變更，請重新開啟頁面再操作。");
     }
     static void savePreferences(Context c,AppConfig expected,org.json.JSONObject prefs,Boolean auto)throws Exception {

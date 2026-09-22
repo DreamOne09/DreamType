@@ -26,7 +26,7 @@ public final class VoiceIme extends InputMethodService {
     private boolean retained=false;
     private volatile boolean destroyed=false;
     private String lastText="";
-    private String sessionKey="";
+    private AppConfig sessionConfig,recordingConfig;
     private TextView status,preview;
     private Button mic,edit,discard,modeButton;
     private LinearLayout editRow;
@@ -141,10 +141,10 @@ public final class VoiceIme extends InputMethodService {
     @Override public void onFinishInput(){generation++;cancelRecording();super.onFinishInput();}
     private void refresh() {
         if(mic==null)return;
-        String active=AppConfig.load(this).key;
-        if(!sessionKey.equals(active)){sessionKey=active;pending=false;lastText="";Draft.clear();preview.setText("");}
+        AppConfig active=AppConfig.load(this);
+        if(!active.sameSession(sessionConfig)){sessionConfig=active;pending=false;lastText="";Draft.clear();preview.setText("");}
         retained=PendingAudio.exists(this,AppConfig.load(this));
-        AppConfig chosen=AppConfig.load(this);boolean translating=chosen.mode.equals("translate");
+        AppConfig chosen=recordingNow&&recordingConfig!=null?recordingConfig:active;boolean translating=chosen.mode.equals("translate");
         modeButton.setText(chosen.modeLabel()+" ▾");modeButton.setEnabled(!busy&&!recordingNow&&!pending&&!retained);
         mic.setContentDescription(recordingNow?(translating?"停止並翻譯":"停止並整理"):busy?(translating?"正在翻譯…":"正在整理…"):pending?"插入文字":retained?"重試上一段":"開始說話");mic.setText(recordingNow?"停止":busy?"處理中":pending?"插入":retained?"重試":"說話");mic.setEnabled(!busy&&!protectedField);
         if(editRow!=null)editRow.setVisibility(pending?View.VISIBLE:View.GONE);
@@ -182,17 +182,19 @@ public final class VoiceIme extends InputMethodService {
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);recorder.setAudioSamplingRate(16000);recorder.setAudioEncodingBitRate(64000);
             recorder.setOutputFile(recording.getAbsolutePath());recorder.prepare();recorder.start();
-            began=SystemClock.elapsedRealtime();recordingNow=true;pending=false;lastText="";Draft.clear();preview.setText("");refresh();main.post(tick);
+            recordingConfig=config;began=SystemClock.elapsedRealtime();recordingNow=true;pending=false;lastText="";Draft.clear();preview.setText("");refresh();main.post(tick);
         } catch(Exception e){cancelRecording();refresh();status.setText("無法錄音，請確認麥克風權限或其他 App 是否正在使用麥克風。");}
     }
     private void finishRecording() {
         if(!recordingNow)return;
         recordingNow=false;main.removeCallbacks(tick);
         File audio=recording;recording=null;
+        AppConfig captured=recordingConfig;recordingConfig=null;
         try{recorder.stop();}catch(RuntimeException e){recorder.release();recorder=null;if(audio!=null)audio.delete();refresh();status.setText("錄音太短，請再說一次。");return;}
         recorder.release();recorder=null;
         if(audio==null){refresh();return;}
-        process(audio,false);
+        if(captured==null||!captured.sameSession(AppConfig.load(this))){audio.delete();refresh();status.setText("登入或連線已變更，這段錄音未送出，請重新說話。");return;}
+        process(audio,false,captured);
     }
     private void recoverLast() {
         if(busy||recordingNow||protectedField)return;
@@ -201,13 +203,15 @@ public final class VoiceIme extends InputMethodService {
         process(null,false);
     }
     private void retryRecording(){if(!busy&&!recordingNow&&!protectedField&&!pending)process(null,true);}
-    private void process(File audio,boolean retry) {
-        final long expected=generation,start=SystemClock.elapsedRealtime();final AppConfig config=AppConfig.load(this);
+    private void process(File audio,boolean retry){process(audio,retry,AppConfig.load(this));}
+    private void process(File audio,boolean retry,final AppConfig config) {
+        final long expected=generation,start=SystemClock.elapsedRealtime();
         busy=true;refresh();
         worker.execute(()->{
             VoiceApi.Result result=null;String error=null;
-            VoiceApi.Progress progress=message->main.post(()->{if(!destroyed&&busy&&AppConfig.load(this).key.equals(config.key))status.setText(message);});
+            VoiceApi.Progress progress=message->main.post(()->{if(!destroyed&&busy&&AppConfig.load(this).sameSession(config))status.setText(message);});
             try{
+                if(!config.sameSession(AppConfig.load(this)))throw new java.io.IOException("登入或連線已變更，錄音未送出。");
                 if(config.accountMode&&(audio!=null||retry)){
                     EncryptedRecording.Entry saved=retry?PendingAudio.read(this,config):PendingAudio.prepare(this,config,audio);
                     result=VoiceApi.upload(saved.requestConfig(config),saved.audio,saved.id,progress,retry);
@@ -217,7 +221,7 @@ public final class VoiceIme extends InputMethodService {
             final VoiceApi.Result done=result;final String problem=error;
             main.post(()->{
                 if(destroyed)return;busy=false;
-                if(!AppConfig.load(this).key.equals(config.key)){refresh();status.setText("帳號已切換，上一筆結果已清除。");return;}
+                if(!AppConfig.load(this).sameSession(config)){refresh();status.setText("帳號已切換，上一筆結果已清除。");return;}
                 if(problem!=null){refresh();status.setText(problem+(retained?" 錄音已加密保留，可按重試或從「更多」刪除。":""));return;}
                 lastText=done.text;pending=!lastText.trim().isEmpty();preview.setText(lastText);refresh();
                 boolean inserted=false;
@@ -229,9 +233,11 @@ public final class VoiceIme extends InputMethodService {
         });
     }
     private boolean insertPending(){
-        if(!pending||protectedField)return false;InputConnection c=getCurrentInputConnection();if(c==null)return false;
+        if(!pending||protectedField)return false;
+        if(!AppConfig.load(this).sameSession(sessionConfig)){refresh();status.setText("登入或連線已變更，上一筆文字已清除。");return false;}
+        InputConnection c=getCurrentInputConnection();if(c==null)return false;
         if(c.commitText(lastText,1)){pending=false;Draft.clear();refresh();status.setText("已插入，可以繼續說話。");return true;}return false;
     }
-    private void cancelRecording(){closeLanguages();main.removeCallbacks(holdLanguage);main.removeCallbacks(repeatDelete);deleteHeld=false;languageGesture=false;main.removeCallbacks(tick);recordingNow=false;if(recorder!=null){try{recorder.stop();}catch(Exception ignored){}recorder.release();recorder=null;}if(recording!=null){recording.delete();recording=null;}}
+    private void cancelRecording(){closeLanguages();main.removeCallbacks(holdLanguage);main.removeCallbacks(repeatDelete);deleteHeld=false;languageGesture=false;main.removeCallbacks(tick);recordingNow=false;recordingConfig=null;if(recorder!=null){try{recorder.stop();}catch(Exception ignored){}recorder.release();recorder=null;}if(recording!=null){recording.delete();recording=null;}}
     @Override public void onDestroy(){destroyed=true;cancelRecording();worker.shutdownNow();main.removeCallbacksAndMessages(null);super.onDestroy();}
 }

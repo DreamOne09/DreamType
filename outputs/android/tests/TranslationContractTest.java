@@ -6,6 +6,13 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 public class TranslationContractTest {
  public static void main(String[] args)throws Exception {
+  AppConfig original=new AppConfig("https://first.invalid","key",false,"","",true,true,"translate","ja","zh-TW");
+  AppConfig changedLanguage=new AppConfig("https://first.invalid","key",false,"","",true,true,"translate","th","zh-TW");
+  if(!original.sameSession(changedLanguage)||!original.targetLanguage.equals("ja"))throw new AssertionError("Recording snapshot changed with preferences");
+  if(original.sameSession(new AppConfig("https://second.invalid","key",false,"","",true,true)))throw new AssertionError("Different host accepted");
+  if(original.sameSession(new AppConfig("https://first.invalid","other",false,"","",true,true)))throw new AssertionError("Different login accepted");
+  if(original.sameSession(new AppConfig("https://first.invalid","key",false)))throw new AssertionError("Different authorization mode accepted");
+  if(original.sameSession(null))throw new AssertionError("Missing session accepted");
   HttpServer server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);AtomicInteger receipts=new AtomicInteger();int[] stage={0};
   server.createContext("/v2/",e->{
    String body;
