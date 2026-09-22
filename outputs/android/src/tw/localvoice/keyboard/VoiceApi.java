@@ -91,7 +91,7 @@ final class VoiceApi {
             if("done".equals(state)){
                 if(requireTranslation)requireTranslation(config,body);
                 Result received=result(body);
-                if(body.optBoolean("receipt_required",false))json(config,"POST","/v2/dictations/"+body.getString("id")+"/receipt",new JSONObject());
+                if(body.optBoolean("receipt_required",false))confirmReceipt(config,body.getString("id"),progress);
                 return received;
             }
             if("failed".equals(state)||"expired".equals(state)||"none".equals(state))throw new IOException(body.optString("message","無法取回結果。"));
@@ -103,6 +103,17 @@ final class VoiceApi {
             catch(IOException e){
                 if(!retryable(e)||++failures>3)throw e;
                 progress.update("網路暫時中斷，正在重新連接…");Thread.sleep(failures*1000L);
+            }
+        }
+    }
+    private static void confirmReceipt(AppConfig config,String id,Progress progress)throws Exception {
+        // The server's receipt is idempotent. Retry only this confirmation,
+        // never the audio upload, when the confirmation response is lost.
+        for(int attempt=0;;attempt++){
+            try{json(config,"POST","/v2/dictations/"+id+"/receipt",new JSONObject());return;}
+            catch(IOException error){
+                if(!retryable(error)||attempt>=2)throw error;
+                progress.update("文字已完成，正在確認接收…");Thread.sleep((attempt+1)*1000L);
             }
         }
     }
@@ -119,7 +130,7 @@ final class VoiceApi {
     static JSONObject json(AppConfig config,String method,String path,JSONObject body) throws Exception {
         HttpURLConnection c=connection(config,path);
         try {
-            if(method.equals("GET")&&path.startsWith("/v2/"))c.setReadTimeout(15000);
+            if(path.startsWith("/v2/")&&(method.equals("GET")||path.endsWith("/receipt")))c.setReadTimeout(15000);
             c.setRequestMethod(method);
             if(body!=null) {
                 byte[] bytes=body.toString().getBytes(StandardCharsets.UTF_8);
