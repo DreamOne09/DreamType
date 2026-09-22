@@ -8,6 +8,12 @@
 
 > 0.8.0 封閉試用版：已加入帳號、個人設定同步、排隊與管理介面。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
 
+## 最新測試版：0.9.2
+
+[下載 0.9.2 測試 APK](https://github.com/DreamOne09/DreamType/releases/download/v0.9.2-rc1/DreamType-0.9.2.apk) · [Pixel 9 驗收步驟](docs/PIXEL9_ACCEPTANCE.md) · [目前上線缺口](docs/LAUNCH_STATUS.md)
+
+主畫面簡化、翻譯重試保留原本語言，空白結果不再被當成成功。此為預覽版，尚未完成 Pixel 9 原生驗收；上方「下載 Android APK」仍指向穩定頻道。若舊版有未完成錄音，請先取回上一筆再更新；不要先解除安裝。
+
 ## 0.8.0：說中文，翻成需要的語言
 
 預設仍是台灣繁中。鍵盤上方可直接選擇翻譯成英文、日文、泰文、馬來文、韓文、越南文、印尼文或台灣繁中；說完確認後插入。模型在家用主機執行，沒有新增付費雲端 API。[使用方式、模型安裝與驗證範圍](docs/TRANSLATION.md)。
