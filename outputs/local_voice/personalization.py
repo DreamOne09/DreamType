@@ -59,13 +59,30 @@ def validate_preferences(personal_prompt='', vocabulary='', taiwan_places=True):
         raise ValueError('taiwan_places must be boolean')
     return personal_prompt.strip(), vocabulary.strip(), taiwan_places
 
-def speech_hint(base, vocabulary='', taiwan_places=True):
-    # Prefer user vocabulary over general locations. Do not dump a whole gazetteer into Whisper.
-    parts = ['台灣繁體中文。', vocabulary[:280]]
-    if taiwan_places:
-        parts.append('地名參考：' + TAIWAN_PLACES)
-    parts.append(base[:100])
-    return ' '.join(parts)[:500]
+def speech_hint(base, vocabulary='', taiwan_places=True, token_count=None, token_budget=200, chinese=True):
+    """Fit complete spelling entries, prioritizing personal vocabulary.
+
+    Whisper retains only the tail of an oversized initial prompt. Count the
+    actual tokenizer input (including its leading space) before sending it.
+    The character fallback is for callers without a loaded speech tokenizer.
+    """
+    count = token_count or len
+    chosen = ['台灣繁體中文。'] if chinese else []
+    entries = re.split(r'[,，、;；\n\r]+', vocabulary)
+    if chinese and taiwan_places:
+        entries += TAIWAN_PLACES.split('、')
+    entries += re.split(r'[,，、;；\n\r]+', base[:100])
+    seen = set()
+    for entry in entries:
+        entry = entry.strip()
+        if not entry or entry in seen:
+            continue
+        seen.add(entry)
+        candidate = '、'.join(chosen + [entry])
+        if len(candidate) <= 500 and count(' ' + candidate) <= token_budget:
+            chosen.append(entry)
+    result = '、'.join(chosen)
+    return result if count(' ' + result) <= token_budget else ''
 
 def formatting_prompt(base, personal_prompt='', vocabulary='', taiwan_places=True):
     personal_prompt, vocabulary, taiwan_places = validate_preferences(personal_prompt, vocabulary, taiwan_places)

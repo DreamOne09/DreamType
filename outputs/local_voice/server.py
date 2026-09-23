@@ -184,7 +184,10 @@ async def transcribe(file: UploadFile = File(...), model: str = Form('local-dict
         speech_start = time.perf_counter()
         selected=source_language if mode=='translate' or language=='zh' else language
         if selected=='zh-TW':selected='zh'
-        hint=speech_hint(prompt,vocabulary,taiwan_places) if selected=='zh' else vocabulary[:280]
+        tokenizer=getattr(model,'hf_tokenizer',None)
+        token_count=(lambda text: len(tokenizer.encode(text,add_special_tokens=False).ids)) if tokenizer is not None else None
+        hint=speech_hint(prompt if selected=='zh' else '',vocabulary,taiwan_places,
+                         token_count=token_count,chinese=selected=='zh')
         raw, detected = await asyncio.to_thread(recognize, audio,
             None if selected in ('', 'auto') else selected, hint)
         speech_seconds = time.perf_counter() - speech_start

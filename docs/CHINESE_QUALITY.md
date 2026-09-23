@@ -78,3 +78,12 @@ OpenCC 改用 s2tw，僅轉換繁體與台灣字形，不再用缺乏上下文�
 部署前相關 19 項單元測試通過。套用到家中服務、確認 health 的辨識／整理／翻譯／worker 均 ready 後，4 個新增電話文字案例及原有 19 個中文案例均通過明確檢查；輸出已人工閱讀。[電話結果](evidence/taiwan-phone-literals/live.json)、[既有中文回歸](evidence/taiwan-phone-literals/chinese-regression.json)。電話案例保留「先打／如果沒接／再打」及原號碼，並維持指定單一段落。
 
 這只保護**已辨識成文字**的號碼，不能修正語音辨識階段已聽錯的數字；測試為合成文字，沒有新增真實口述準確率或與 Typeless 的比較證據。這次是主機更新，手機不必重新安裝。
+
+
+## 自訂詞庫的辨識提示額度（2026-09-23）
+
+修正自訂詞提示以字數截短、卻被 faster-whisper 再按 token 保留尾端的問題。新提示用載入模型的實際 tokenizer 計算（包含 initial_prompt 會加上的前導空白），限制 200 tokens；以完整詞條挑選，個人詞庫優先於通用台灣縣市。逗號、頓號、分號與換行可分隔詞條；不截半個人名，重複詞條只保留一次，過長單一詞條跳過後仍嘗試後面的詞條。詞庫仍有辨識提示容量上限，請把最常用詞放前面；不代表 1,000 字設定全部同時送入 ASR。非中文來源也按相同額度挑選詞庫，不加入台灣地名。
+
+使用目前 whisper-turbo 的實際 tokenizer，比較相同合成長詞庫：舊提示 462 tokens，Whisper 保留最後 223 tokens 後不含首項「陳昀霏」；新提示 199 tokens，首項完整保留。[tokenizer 結果](evidence/speech-hint-budget/tokenizer-result.json)。相關個人化、識別碼保護與翻譯合計 32 項測試通過。
+
+依據本機安裝的 faster-whisper get_prompt 實作與 [上游程式碼](https://github.com/SYSTRAN/faster-whisper/blob/master/faster_whisper/transcribe.py)：previous_tokens 超長時只保留 max_length // 2 - 1 的尾端。此證據只證明提示內容進入可用額度，沒有以真人錄音比較辨識率，不能宣稱準確率提升多少。此為主機修正，手機不用重裝。

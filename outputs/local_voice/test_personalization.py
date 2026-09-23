@@ -205,3 +205,20 @@ class PromptTests(unittest.TestCase):
         self.assertNotIn('user-a',result)
 
 if __name__=='__main__':unittest.main()
+
+
+class SpeechHintBudgetTests(unittest.TestCase):
+    def test_personal_entries_take_priority_over_general_places(self):
+        hint=speech_hint('', '陳昀霏、DreamType、汐止', token_count=lambda s:len(s.encode('utf-8')),token_budget=65)
+        self.assertIn('陳昀霏',hint)
+        self.assertIn('DreamType',hint)
+        self.assertLessEqual(len((' '+hint).encode('utf-8')),65)
+
+    def test_oversized_entry_is_not_cut_and_later_complete_word_can_fit(self):
+        hint=speech_hint('', '長'*300+'、汐止、汐止',False,token_budget=30)
+        self.assertNotIn('長',hint)
+        self.assertEqual(hint.count('汐止'),1)
+
+    def test_non_chinese_hint_does_not_add_taiwanese_context(self):
+        hint=speech_hint('', 'DreamType,John Smith',chinese=False,token_budget=30)
+        self.assertEqual(hint,'DreamType、John Smith')
