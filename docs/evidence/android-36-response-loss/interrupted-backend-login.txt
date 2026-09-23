@@ -1,0 +1,5 @@
+INSTRUMENTATION_RESULT: checks=Chinese onboarding, login navigation, Android Keystore credentials and recording, logout deletion, offline privacy
+INSTRUMENTATION_RESULT: dreamtype=passed
+INSTRUMENTATION_RESULT: login_ui=passed
+INSTRUMENTATION_RESULT: session_isolation=passed
+INSTRUMENTATION_CODE: -1

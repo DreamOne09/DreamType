@@ -126,3 +126,22 @@ Android 錄音 28,320 bytes，PyAV 解碼 3.136 秒；資料庫只有一筆 done
 保存 [登入原生結果](evidence/android-36-login-https/backend-login.txt)、[整合結果](evidence/android-36-login-https/backend-ime-result.json)、[IME 結果](evidence/android-36-login-https/backend-ime-instrumentation.txt)、[錄音清除](evidence/android-36-login-https/backend-delivered.txt)。JSON 的 response_source 沿用 HTTP/ASGI bridge 名稱，本輪外部傳輸實際為 TLS，另以 https_tested 記錄。
 
 登入欄位由 Instrumentation 的 setText 填入，按鈕用 performClick 觸發，未涵蓋實體觸控打字、密碼管理器、TalkBack。後續 IME 使用實際觸控事件。AI provider 仍為固定文字；本輪不能證明語音準確率、真實翻譯、正式 Cloudflare 部署或 Pixel 9 行動網路已通過。測試憑證、私鑰與帳號資料均不進 Git／發布產物；正式 0.9.8 APK 已檢查不含測試 CA/network resources。
+
+
+## TLS 回應遺失後恢復：2026-09-23
+
+[工作 35800811740](https://github.com/DreamOne09/DreamType/actions/runs/35800811740)，來源 `a8ef277`，通過正常與故障兩組正式 API／SQLite 隔離環境。故障組仍先操作原生登入表單，再使用其登入憑證錄音。
+
+故障注入在後端完成處理之後、寫出 HTTP 回應之前關閉 TLS socket：第一次結果查詢回應遺失；第一次收件確認已提交資料庫，但回應遺失。下一個相同類型的請求正常回覆。不是預設回傳成功，也未跳過正式結果或用量檢查。
+
+故障組驗證：
+
+- 27,296 bytes／3.008 秒錄音，只上傳一次。
+- 一個資料庫 job、一個 AI provider 呼叫；job 完成。
+- 收件確認請求兩次，資料庫只有一份已確認回執。
+- 用量只計入 4 秒，預留用量回到 0。
+- 固定繁中文字完整插入外部 App；手機加密錄音與暫存檔已清除。
+
+[故障組完整結果](evidence/android-36-response-loss/interrupted-backend-ime-result.json) · [正常組](evidence/android-36-response-loss/backend-ime-result.json) · [原生文字插入](evidence/android-36-response-loss/interrupted-backend-ime-instrumentation.txt) · [手機錄音清除](evidence/android-36-response-loss/interrupted-backend-delivered.txt)。
+
+這是原生 Android 在兩次 TLS 回應遺失後恢復的證據，不涵蓋飛航模式、長時間離線、程序被系統終止、Pixel 9／Surfshark 行動網路切換。AI 仍回傳固定文字，不是辨識品質測試。測試沒有改動 0.9.8 的產品程式碼。
