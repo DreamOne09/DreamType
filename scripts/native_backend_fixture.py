@@ -3,6 +3,7 @@ import asyncio
 import math
 from pathlib import Path
 import secrets
+import ssl
 import sys
 import tempfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -27,11 +28,9 @@ class BackendFixture:
         self.beta=install_beta(app,Path(self.temporary.name),Provider(),audio_duration)
         self.client=TestClient(app)
         self.client.__enter__()
-        password=secrets.token_urlsafe(24)
+        self.password=password=secrets.token_urlsafe(24)
         created=self.client.post('/v2/admin/users',headers={'Authorization':'Bearer '+self.beta.admin},json={'username':'native-fixture','password':password,'minutes':10})
         created.raise_for_status();self.uid=created.json()['id']
-        logged=self.client.post('/v2/login',json={'username':'native-fixture','password':password})
-        logged.raise_for_status();self.token=logged.json()['token']
         self.requests=[]
         class Bridge(BaseHTTPRequestHandler):
             def log_message(self,*args):pass
@@ -49,6 +48,9 @@ class BackendFixture:
             do_GET=forward
             do_POST=forward
         self.server=ThreadingHTTPServer(('127.0.0.1',18765),Bridge)
+        tls=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        tls.load_cert_chain('work/emulator-probe/tls-cert.pem','work/emulator-probe/tls-key.pem')
+        self.server.socket=tls.wrap_socket(self.server.socket,server_side=True)
 
     def verify(self):
         if len(self.calls)!=1 or self.calls[0]['source']!='zh-TW':raise AssertionError('Expected one Taiwan-Chinese provider call')
@@ -63,10 +65,12 @@ class BackendFixture:
         uploads=[r for r in self.requests if r[:2]==('POST','/v2/dictations')]
         acknowledgements=[r for r in self.requests if r[0]=='POST' and r[1].endswith('/receipt')]
         if len(uploads)!=1 or len(acknowledgements)!=1:raise AssertionError('Unexpected duplicate upload or receipt')
-        if any(r[2]>=400 for r in self.requests):raise AssertionError('Backend request failed')
+        logins=[r[2] for r in self.requests if r[:2]==('POST','/v2/login')]
+        if logins!=[401,200]:raise AssertionError('Expected rejected password then successful UI login')
+        if any(r[2]>=400 and r!=('POST','/v2/login',401) for r in self.requests):raise AssertionError('Backend request failed')
         return {'provider_calls':1,'decoded_seconds':self.calls[0]['seconds'],'charged_seconds':expected,
                 'uploaded_audio_bytes':[self.calls[0]['bytes']],'receipts':1,'sqlite_job_done':True,
-                'quota_matches_decoded_audio':True,'login_api_tested':True}
+                'quota_matches_decoded_audio':True,'login_api_tested':True,'login_ui_tested':True,'login_rejection_tested':True,'https_tested':True}
 
     def close(self):
         self.client.__exit__(None,None,None)

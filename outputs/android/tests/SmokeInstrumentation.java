@@ -12,12 +12,37 @@ import java.util.Arrays;
 /** Included only in the disposable emulator APK, never in a release build. */
 public final class SmokeInstrumentation extends Instrumentation {
  private boolean configureVoice,accountVoice,verifyDelivered;
+ private String loginPassword="";
  private String voiceToken="synthetic-emulator-token";
- @Override public void onCreate(Bundle args){super.onCreate(args);configureVoice=args!=null&&"true".equals(args.getString("configure_voice"));accountVoice=args!=null&&"true".equals(args.getString("account_voice"));verifyDelivered=args!=null&&"true".equals(args.getString("verify_delivered"));if(args!=null)voiceToken=args.getString("voice_token",voiceToken);start();}
+ @Override public void onCreate(Bundle args){super.onCreate(args);configureVoice=args!=null&&"true".equals(args.getString("configure_voice"));accountVoice=args!=null&&"true".equals(args.getString("account_voice"));verifyDelivered=args!=null&&"true".equals(args.getString("verify_delivered"));if(args!=null){voiceToken=args.getString("voice_token",voiceToken);loginPassword=args.getString("login_password","");}start();}
  private TextView find(View v,String text){
   if(v instanceof TextView&&text.equals(((TextView)v).getText().toString()))return (TextView)v;
   if(v instanceof ViewGroup){ViewGroup group=(ViewGroup)v;for(int i=0;i<group.getChildCount();i++){TextView result=find(group.getChildAt(i),text);if(result!=null)return result;}}
   return null;
+ }
+ private EditText labeled(View view,String label){
+  if(view instanceof EditText&&label.contentEquals(view.getContentDescription()==null?"":view.getContentDescription()))return (EditText)view;
+  if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++){EditText field=labeled(((ViewGroup)view).getChildAt(i),label);if(field!=null)return field;}
+  return null;
+ }
+ private void loginForm(Context context)throws Exception{
+  AppConfig.clearSession(context);Activity account=open(AccountActivity.class);
+  final EditText[] password={null};
+  runOnMainSync(()->{
+   View root=account.getWindow().getDecorView();labeled(root,"服務網址（https://…）").setText("https://10.0.2.2:18765");
+   labeled(root,"帳號").setText("native-fixture");password[0]=labeled(root,"密碼");password[0].setText("synthetic-wrong-password");find(root,"登入").performClick();
+  });
+  final boolean[] rejected={false};long deadline=android.os.SystemClock.uptimeMillis()+20000;
+  while(!rejected[0]&&android.os.SystemClock.uptimeMillis()<deadline){runOnMainSync(()->rejected[0]=find(account.getWindow().getDecorView(),"帳號或密碼不正確、登入已失效，或私人金鑰不正確。請重新登入或配對。")!=null);android.os.SystemClock.sleep(100);}
+  if(!rejected[0]||AppConfig.load(context).ready())throw new AssertionError("Wrong password was not rejected by login form");
+  final boolean[] cleared={false};runOnMainSync(()->{cleared[0]=password[0].length()==0;password[0].setText(loginPassword);find(account.getWindow().getDecorView(),"登入").performClick();});
+  if(!cleared[0])throw new AssertionError("Password not cleared after submission");
+  deadline=android.os.SystemClock.uptimeMillis()+20000;final boolean[] success={false};
+  while(!success[0]&&android.os.SystemClock.uptimeMillis()<deadline){runOnMainSync(()->success[0]=find(account.getWindow().getDecorView(),"登入成功。回到首頁，繼續啟用鍵盤。")!=null);android.os.SystemClock.sleep(100);}
+  AppConfig active=AppConfig.load(context);
+  if(!success[0]||!active.ready()||!active.accountMode||!active.server.equals("https://10.0.2.2:18765"))throw new AssertionError("Native login form did not establish account session");
+  if(context.getSharedPreferences("connection",0).getAll().toString().contains(active.key))throw new AssertionError("UI login token stored unencrypted");
+  runOnMainSync(()->account.finish());waitForIdleSync();
  }
  private Activity open(Class<?> page){Activity a=startActivitySync(new Intent(getTargetContext(),page).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();return a;}
  private interface LateAction {void run()throws Exception;}
@@ -124,7 +149,8 @@ public final class SmokeInstrumentation extends Instrumentation {
    screenshot("privacy");
    editorChecks(context);
    sessionChecks(context);result.putString("session_isolation","passed");
-   if(configureVoice)new AppConfig("http://10.0.2.2:18765",voiceToken,false,"","",true,accountVoice).save(context);
+   if(!loginPassword.isEmpty()){loginForm(context);result.putString("login_ui","passed");}
+   else if(configureVoice)new AppConfig("http://10.0.2.2:18765",voiceToken,false,"","",true,accountVoice).save(context);
    result.putString("dreamtype","passed");result.putString("checks","Chinese onboarding, login navigation, Android Keystore credentials and recording, logout deletion, offline privacy");
    finish(Activity.RESULT_OK,result);
   }catch(Throwable failure){result.putString("dreamtype","failed");result.putString("failure",failure.toString());finish(Activity.RESULT_CANCELED,result);}

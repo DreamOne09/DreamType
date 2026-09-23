@@ -55,4 +55,5 @@ jobs:
             work/emulator-probe/backend-ime-result.json
             work/emulator-probe/backend-ime-instrumentation.txt
             work/emulator-probe/backend-delivered.txt
+            work/emulator-probe/backend-login.txt
             work/emulator-probe/screenshots

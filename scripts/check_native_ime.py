@@ -69,7 +69,12 @@ try:
     # Self-instrumentation restarts the target process. Detach the previous IME
     # before reconfiguring, so the next case binds a fresh service instance.
     adb('shell','ime','reset')
-    configured=adb('shell','am','instrument','-w','-e','configure_voice','true','-e','account_voice',str(account).lower(),'-e','voice_token',fixture.token if fixture else 'synthetic-emulator-token','tw.localvoice.keyboard/.SmokeInstrumentation').decode('utf-8')
+    arguments=['shell','am','instrument','-w','-e','configure_voice','true','-e','account_voice',str(account).lower()]
+    if fixture:arguments+=['-e','login_password',fixture.password]
+    configured=adb(*arguments,'tw.localvoice.keyboard/.SmokeInstrumentation').decode('utf-8')
+    if fixture:
+        Path('work/emulator-probe/backend-login.txt').write_text(configured,encoding='utf-8')
+        if 'INSTRUMENTATION_RESULT: login_ui=passed' not in configured:raise AssertionError('Native login form failed')
     if 'INSTRUMENTATION_RESULT: dreamtype=passed' not in configured:
         raise AssertionError(configured)
     adb('shell','pm','grant','tw.localvoice.keyboard','android.permission.RECORD_AUDIO')
