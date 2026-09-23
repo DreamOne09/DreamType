@@ -118,6 +118,22 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
         self.auth={'Authorization':'Bearer '+server.API_KEY}
     async def asyncTearDown(self):
         await self.client.aclose()
+    async def test_audio_model_form_field_does_not_shadow_speech_tokenizer(self):
+        from types import SimpleNamespace
+        encoded=[]
+        class Tokenizer:
+            def encode(self,text,add_special_tokens=False):
+                encoded.append(text)
+                return SimpleNamespace(ids=list(range(len(text)*3)))
+        with patch.object(server,'model',SimpleNamespace(hf_tokenizer=Tokenizer())), \
+             patch.object(server,'decode_audio',lambda *a,**k:[0]*16000), \
+             patch.object(server,'recognize',lambda *a:('測試。','zh')):
+            response=await self.client.post('/v1/audio/transcriptions',headers=self.auth,
+                files={'file':('test.wav',b'fake')},data={'model':'local-raw','vocabulary':'陳昀霏、汐止'})
+            self.assertEqual(response.status_code,200)
+            self.assertTrue(encoded)
+            self.assertTrue(any('陳昀霏' in text for text in encoded))
+
     async def test_two_users_do_not_share_preferences(self):
         calls=[]
         async def formatter(text, *prefs):

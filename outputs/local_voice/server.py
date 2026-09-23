@@ -134,6 +134,11 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
         validate_identifiers(text, edited)
         return edited
 
+def speech_token_count(text):
+    tokenizer=getattr(model,'hf_tokenizer',None)
+    return len(tokenizer.encode(text,add_special_tokens=False).ids) if tokenizer is not None else len(text)
+
+
 def recognize(audio, language, prompt):
     segments, info = model.transcribe(audio, language=language, beam_size=1,
         vad_filter=True, vad_parameters={'min_silence_duration_ms': 350},
@@ -184,10 +189,8 @@ async def transcribe(file: UploadFile = File(...), model: str = Form('local-dict
         speech_start = time.perf_counter()
         selected=source_language if mode=='translate' or language=='zh' else language
         if selected=='zh-TW':selected='zh'
-        tokenizer=getattr(model,'hf_tokenizer',None)
-        token_count=(lambda text: len(tokenizer.encode(text,add_special_tokens=False).ids)) if tokenizer is not None else None
         hint=speech_hint(prompt if selected=='zh' else '',vocabulary,taiwan_places,
-                         token_count=token_count,chinese=selected=='zh')
+                         token_count=speech_token_count,chinese=selected=='zh')
         raw, detected = await asyncio.to_thread(recognize, audio,
             None if selected in ('', 'auto') else selected, hint)
         speech_seconds = time.perf_counter() - speech_start

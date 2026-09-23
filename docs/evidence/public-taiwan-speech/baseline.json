@@ -1,0 +1,146 @@
+{
+  "dataset": "OpenFormosa/common_voice_25_zh-TW",
+  "license": "CC0-1.0",
+  "split": "test",
+  "selection": "first 12 rows, no selection by result; convenience sample, not representative",
+  "model": "existing whisper-turbo local service",
+  "custom_vocabulary": "none; no reference supplied to model",
+  "metric": "micro CER; NFKC, lowercase, ignore punctuation/whitespace, map 臺 to 台",
+  "cer": 0.13043478260869565,
+  "reference_chars": 92,
+  "errors": 12,
+  "cases": [
+    {
+      "index": 0,
+      "file": "sample-000.wav",
+      "reference": "我們的人口結構急速老化",
+      "duration_ms": 4716,
+      "sha256": "21126ccf4b9e75439f903e4f3b4756678632e8e33a85f7c3bdc37f3505eda212",
+      "hypothesis": "我們的人口結構極速老化。",
+      "errors": 1,
+      "reference_chars": 11,
+      "seconds": 1.85
+    },
+    {
+      "index": 1,
+      "file": "sample-001.wav",
+      "reference": "新店端",
+      "duration_ms": 3240,
+      "sha256": "b1b66773a18a33a560029f724e40290430efaf6090cee4ec7c5cb7ddf02b67db",
+      "hypothesis": "新店端",
+      "errors": 0,
+      "reference_chars": 3,
+      "seconds": 0.421
+    },
+    {
+      "index": 2,
+      "file": "sample-002.wav",
+      "reference": "則正確的說明了星球的大小",
+      "duration_ms": 5076,
+      "sha256": "867066979b8c330bafbf04f7b554e223413efb5d95f2a5bcd51e0a4f1e926395",
+      "hypothesis": "則正確地說明瞭星球的大小。",
+      "errors": 2,
+      "reference_chars": 12,
+      "seconds": 0.374
+    },
+    {
+      "index": 3,
+      "file": "sample-003.wav",
+      "reference": "開源服務",
+      "duration_ms": 2988,
+      "sha256": "9b384d6293b326a81fe123ccf83b883656d8b69328e829bf9824958462378024",
+      "hypothesis": "開源服務",
+      "errors": 0,
+      "reference_chars": 4,
+      "seconds": 0.406
+    },
+    {
+      "index": 4,
+      "file": "sample-004.wav",
+      "reference": "東華大學聯外道路",
+      "duration_ms": 3672,
+      "sha256": "d4106b722aefb0648ec7f740145ef3c393a06bd908c334bfdbe8e2dd6534019b",
+      "hypothesis": "東華大學連外道路。",
+      "errors": 1,
+      "reference_chars": 8,
+      "seconds": 0.38
+    },
+    {
+      "index": 5,
+      "file": "sample-005.wav",
+      "reference": "我今天和明天都要上課",
+      "duration_ms": 6072,
+      "sha256": "62144575e62624c3e5bd329cbd627b5802d3f3e276e7ad007f8bed39d5bf0f4f",
+      "hypothesis": "我今天和明天都要上課。",
+      "errors": 0,
+      "reference_chars": 10,
+      "seconds": 0.55
+    },
+    {
+      "index": 6,
+      "file": "sample-006.wav",
+      "reference": "是內建的瀏覽器功能",
+      "duration_ms": 7740,
+      "sha256": "cc64afd531fd4ca1515a9fffa14a1361e1ad3e0777f6c8c87ea3a1834212d6c4",
+      "hypothesis": "室內建的瀏覽器功能。",
+      "errors": 1,
+      "reference_chars": 9,
+      "seconds": 0.543
+    },
+    {
+      "index": 7,
+      "file": "sample-007.wav",
+      "reference": "土地認養案例",
+      "duration_ms": 3672,
+      "sha256": "67432ec82ea3fe79ddf5220dcf1890bf452166d3b70d3ee5f33f888f842323c4",
+      "hypothesis": "土地任養案例",
+      "errors": 1,
+      "reference_chars": 6,
+      "seconds": 0.402
+    },
+    {
+      "index": 8,
+      "file": "sample-008.wav",
+      "reference": "雖然我沒有辦法",
+      "duration_ms": 3960,
+      "sha256": "59e761fa5f60a4869f0e9ed0b1e26e60dc31b19c524e50df41252068302c7e19",
+      "hypothesis": "雖然我沒有辦法",
+      "errors": 0,
+      "reference_chars": 7,
+      "seconds": 0.409
+    },
+    {
+      "index": 9,
+      "file": "sample-009.wav",
+      "reference": "華頓商學院最受歡迎的談判課",
+      "duration_ms": 5292,
+      "sha256": "f502079a930e39cc3ffeae851a96f4298dc456c5f4ae9b7d8bca64ca05d1a21b",
+      "hypothesis": "華盾山學院最受歡迎的談判課",
+      "errors": 2,
+      "reference_chars": 13,
+      "seconds": 0.471
+    },
+    {
+      "index": 10,
+      "file": "sample-010.wav",
+      "reference": "旗六公路",
+      "duration_ms": 3132,
+      "sha256": "1c4fcfa02d4c72ef5f69403fa77a55c2ab91c9c158f93fb2dbba1b2fe31a0af1",
+      "hypothesis": "",
+      "errors": 4,
+      "reference_chars": 4,
+      "seconds": 0.053
+    },
+    {
+      "index": 11,
+      "file": "sample-011.wav",
+      "reference": "你等我模擬",
+      "duration_ms": 3276,
+      "sha256": "76ee7ad52cc848d9c83ea4b2c4d6f4896f962434cd45ef2f33af546a037788c5",
+      "hypothesis": "你等我模擬。",
+      "errors": 0,
+      "reference_chars": 5,
+      "seconds": 0.291
+    }
+  ]
+}

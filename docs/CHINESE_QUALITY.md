@@ -87,3 +87,18 @@ OpenCC 改用 s2tw，僅轉換繁體與台灣字形，不再用缺乏上下文�
 使用目前 whisper-turbo 的實際 tokenizer，比較相同合成長詞庫：舊提示 462 tokens，Whisper 保留最後 223 tokens 後不含首項「陳昀霏」；新提示 199 tokens，首項完整保留。[tokenizer 結果](evidence/speech-hint-budget/tokenizer-result.json)。相關個人化、識別碼保護與翻譯合計 32 項測試通過。
 
 依據本機安裝的 faster-whisper get_prompt 實作與 [上游程式碼](https://github.com/SYSTRAN/faster-whisper/blob/master/faster_whisper/transcribe.py)：previous_tokens 超長時只保留 max_length // 2 - 1 的尾端。此證據只證明提示內容進入可用額度，沒有以真人錄音比較辨識率，不能宣稱準確率提升多少。此為主機修正，手機不用重裝。
+
+
+## 公開真人錄音初步基準（2026-09-23）
+
+來源 [OpenFormosa/common_voice_25_zh-TW](https://huggingface.co/datasets/OpenFormosa/common_voice_25_zh-TW)，資料卡標示 CC0-1.0。直接使用 test split 前 12 筆，沒有按辨識結果挑選；共 52.836 秒，是便利抽樣，不代表整個資料集或所有台灣口音。音訊僅存在本機 work，Git 只保存參考文字、逐段 SHA-256 和結果，不含說話者 ID／人口資料。
+
+走目前家中服務 local-raw，使用預設台灣地名提示，不提供自訂詞庫或參考答案。只評分 ASR，不混入 LLM 整理。CER 正規化採 NFKC、小寫、移除標點與空白、臺→台；總共 92 個參考字元，12 個編輯距離，micro CER 13.04%。五段逐字相符（忽略上述格式），一段「旗六公路」回空字串。錯誤包含「急速→極速」「聯外→連外」「是內建→室內建」「認養→任養」「華頓商學院→華盾山學院」。的／地與了／瞭亦計入 CER，不能把所有字元差異都當成意思錯誤。
+
+[逐段結果與延遲](evidence/public-taiwan-speech/baseline.json)；12 段含首次請求本機處理時間約 0.053–1.850 秒，這不包含手機／外網，也不是整段排版或翻譯延遲。0.053 秒那段為漏辨，不能當成速度優勢。尚未與 Typeless 使用同一批錄音比較。
+
+重跑：先依 `tests/quality/public-taiwan-speech.json` 的 hash 準備本機音訊與 manifest，再執行 `python scripts/check_public_speech.py --runtime-root <家用服務根目錄> --manifest <本機manifest.json> --output <本機結果.json>`。基準不能用來微調模型後又宣稱是獨立測試集。
+
+本次也修正提示 tokenizer 的 API 接線：表單參數 model 是字串，不能當載入的 Whisper 物件；改由獨立 speech_token_count 取得全域辨識模型。新增 API 層測試確認真 tokenizer 被呼叫，相關 33 項測試通過，已部署並確認主機健康。
+
+接下來優先調查短句被 VAD 濾掉的可能性，再用更多未調整過的錄音檢查改善及誤辨取捨。尚未證明準確率超過 Typeless。
