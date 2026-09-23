@@ -111,3 +111,18 @@ Android 錄音 28,320 bytes，PyAV 解碼 3.136 秒；資料庫只有一筆 done
 [結果](evidence/android-36-editor/result.txt)、[重建後修改頁](evidence/android-36-editor/editor-recreated.png)。截圖人工確認繁中內容、指引與主要完成按鈕可見；此截图沒有展開 Gboard，因此不代表軟鍵盤彈出或橫向小螢幕版面已驗收。
 
 編輯暫存使用記憶體中的 non-configuration state，不寫入 Bundle／偏好設定；程序死亡仍可能遺失未完成修改。這不是永久草稿，也不是 Pixel 9 實際旋轉測試。0.9.6 候選來源 `b1ecd7a` 相較測試來源只更新 manifest 版號與建置報告，版本代碼 16、原簽章；發布資產雜湊已核對。
+
+
+## 原生登入表單與 HTTPS：2026-09-23
+
+[工作 35800210436](https://github.com/DreamOne09/DreamType/actions/runs/35800210436)，來源 `59031de`，通過登入表單 → 隔離正式帳號 API／SQLite → 原生錄音 → 文字插入：
+
+- 在真正的 AccountActivity 中，Instrumentation 填入服務網址、帳號和錯誤密碼，呼叫登入按鈕；確認錯誤提示、未建立登入、送出後密碼欄位清空。
+- 再填入一次性正確密碼並點登入；確認成功提示、HTTPS 主機、帳號模式與 Keystore 加密保存憑證。
+- 使用表單取得的憑證繼續外部 App 的真實 IME 錄音。測試不預先呼叫登入 API 或注入成功 token。
+- Android 經過 TLS 到 CI loopback bridge，再由 TestClient 進入正式 API／SQLite。測試專用兩日憑證只加入一次性 debug/testOnly APK；正式 APK、正式 manifest 和正式 resources 不變。
+- 伺服器紀錄登入狀態依序為 401、200。一次錄音（27,808 bytes／3.072 秒）、一次 provider 呼叫、計入 4 秒、一次回執，結果完成且手機錄音清除。
+
+保存 [登入原生結果](evidence/android-36-login-https/backend-login.txt)、[整合結果](evidence/android-36-login-https/backend-ime-result.json)、[IME 結果](evidence/android-36-login-https/backend-ime-instrumentation.txt)、[錄音清除](evidence/android-36-login-https/backend-delivered.txt)。JSON 的 response_source 沿用 HTTP/ASGI bridge 名稱，本輪外部傳輸實際為 TLS，另以 https_tested 記錄。
+
+登入欄位由 Instrumentation 的 setText 填入，按鈕用 performClick 觸發，未涵蓋實體觸控打字、密碼管理器、TalkBack。後續 IME 使用實際觸控事件。AI provider 仍為固定文字；本輪不能證明語音準確率、真實翻譯、正式 Cloudflare 部署或 Pixel 9 行動網路已通過。測試憑證、私鑰與帳號資料均不進 Git／發布產物；正式 0.9.8 APK 已檢查不含測試 CA/network resources。
