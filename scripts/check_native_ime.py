@@ -9,9 +9,10 @@ from email.policy import default
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
 
-backend='--backend' in sys.argv
+interruptions='--interruptions' in sys.argv
+backend='--backend' in sys.argv or interruptions
 account='--account' in sys.argv or backend
-prefix='backend-' if backend else 'account-' if account else ''
+prefix='interrupted-backend-' if interruptions else 'backend-' if backend else 'account-' if account else ''
 uploads=[]
 job={'id':None,'polls':0,'receipts':0}
 class SyntheticResponse(BaseHTTPRequestHandler):
@@ -57,11 +58,11 @@ class SyntheticResponse(BaseHTTPRequestHandler):
 fixture=None
 if backend:
     from native_backend_fixture import BackendFixture
-    fixture=BackendFixture()
+    fixture=BackendFixture(interruptions=interruptions)
 server=fixture.server if fixture else ThreadingHTTPServer(('127.0.0.1',18765),SyntheticResponse)
 Thread(target=server.serve_forever,daemon=True).start()
 
-out=Path('work/emulator-probe/screenshots')/('backend' if backend else 'account' if account else 'private')
+out=Path('work/emulator-probe/screenshots')/('interrupted-backend' if interruptions else 'backend' if backend else 'account' if account else 'private')
 out.mkdir(parents=True,exist_ok=True)
 def adb(*args):return subprocess.run(['adb',*args],check=True,capture_output=True,timeout=90).stdout
 try:
@@ -73,7 +74,7 @@ try:
     if fixture:arguments+=['-e','login_password',fixture.password]
     configured=adb(*arguments,'tw.localvoice.keyboard/.SmokeInstrumentation').decode('utf-8')
     if fixture:
-        Path('work/emulator-probe/backend-login.txt').write_text(configured,encoding='utf-8')
+        Path('work/emulator-probe/'+prefix+'login.txt').write_text(configured,encoding='utf-8')
         if 'INSTRUMENTATION_RESULT: login_ui=passed' not in configured:raise AssertionError('Native login form failed')
     if 'INSTRUMENTATION_RESULT: dreamtype=passed' not in configured:
         raise AssertionError(configured)
@@ -104,7 +105,7 @@ try:
             'login_ui_tested':False,'real_backend_tested':backend}
     if backend:
         report.update(backend_report)
-        report['response_source']='production beta API and SQLite through HTTP/ASGI bridge; synthetic AI provider'
+        report['response_source']='production beta API and SQLite through HTTPS/ASGI bridge; synthetic AI provider'
     Path('work/emulator-probe/'+prefix+'ime-result.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     print(json.dumps(report))
 except Exception:

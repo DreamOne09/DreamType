@@ -41,6 +41,7 @@ jobs:
             python scripts/check_native_ime.py
             python scripts/check_native_ime.py --account
             python scripts/check_native_ime.py --backend
+            python scripts/check_native_ime.py --backend --interruptions
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -56,4 +57,6 @@ jobs:
             work/emulator-probe/backend-ime-instrumentation.txt
             work/emulator-probe/backend-delivered.txt
             work/emulator-probe/backend-login.txt
+            work/emulator-probe/interrupted-backend-*.txt
+            work/emulator-probe/interrupted-backend-*.json
             work/emulator-probe/screenshots
