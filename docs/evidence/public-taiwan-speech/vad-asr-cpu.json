@@ -1,0 +1,16 @@
+[
+  {
+    "threshold": 0.5,
+    "text": "",
+    "duration_after_vad": 0.0,
+    "seconds": 0.39440749993082136,
+    "device": "CPU int8 diagnostic"
+  },
+  {
+    "threshold": 0.4,
+    "text": "新谷完喪",
+    "duration_after_vad": 2.016,
+    "seconds": 76.62143599998672,
+    "device": "CPU int8 diagnostic"
+  }
+]

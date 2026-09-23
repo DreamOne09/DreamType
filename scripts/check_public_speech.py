@@ -47,7 +47,7 @@ def main():
             print('sample',row['index'],'errors',results[-1]['errors'],flush=True)
     denominator=sum(r['reference_chars'] for r in results)
     report={'dataset':'OpenFormosa/common_voice_25_zh-TW','license':'CC0-1.0','split':'test',
-            'selection':'first 12 rows, no selection by result; convenience sample, not representative',
+            'selection':'supplied manifest order, no selection by result; convenience sample, not representative',
             'model':'existing whisper-turbo local service','custom_vocabulary':'none; no reference supplied to model',
             'metric':'micro CER; NFKC, lowercase, ignore punctuation/whitespace, map 臺 to 台',
             'cer':sum(r['errors'] for r in results)/denominator,'reference_chars':denominator,

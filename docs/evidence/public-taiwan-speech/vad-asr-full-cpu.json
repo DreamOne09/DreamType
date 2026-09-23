@@ -1,0 +1,28 @@
+[
+  {
+    "threshold": 0.3,
+    "text": "新竜公路",
+    "segments": [
+      {
+        "avg_logprob": -1.0141223222017288,
+        "no_speech_prob": 1.2211329725175801e-09
+      }
+    ],
+    "duration_after_vad": 2.848,
+    "seconds": 35.4478029999882,
+    "device": "CPU int8 diagnostic"
+  },
+  {
+    "threshold": null,
+    "text": "奇妙公路",
+    "segments": [
+      {
+        "avg_logprob": -0.4135591462254524,
+        "no_speech_prob": 1.177321795609032e-09
+      }
+    ],
+    "duration_after_vad": 3.132,
+    "seconds": 10.487782899988815,
+    "device": "CPU int8 diagnostic"
+  }
+]

@@ -102,3 +102,14 @@ OpenCC 改用 s2tw，僅轉換繁體與台灣字形，不再用缺乏上下文�
 本次也修正提示 tokenizer 的 API 接線：表單參數 model 是字串，不能當載入的 Whisper 物件；改由獨立 speech_token_count 取得全域辨識模型。新增 API 層測試確認真 tokenizer 被呼叫，相關 33 項測試通過，已部署並確認主機健康。
 
 接下來優先調查短句被 VAD 濾掉的可能性，再用更多未調整過的錄音檢查改善及誤辨取捨。尚未證明準確率超過 Typeless。
+
+
+## 漏辨診斷與第二批錄音（2026-09-23）
+
+對第一批第 10 筆（參考文字「旗六公路」）計算目前 Silero VAD：最大 speech probability 為 0.48429，預設 threshold 0.5 時保留音訊長度為 0；0.4 時保留 2.016 秒，0.3 時 2.848 秒，完整錄音 3.132 秒。[VAD 結果](evidence/public-taiwan-speech/vad-diagnostic.json)。這證明預設 VAD 濾掉該筆，但不能證明只調 VAD 就能得到正確文字。
+
+為避免擠占線上 GPU（當時僅剩約 396 MiB），另外載入 CPU int8 版本進行診斷，未更動線上服務：0.4 產生「新谷完喪」、0.3 產生「新竜公路」、不使用 VAD 產生「奇妙公路」。[0.4 比較](evidence/public-taiwan-speech/vad-asr-cpu.json)、[0.3 與完整音訊](evidence/public-taiwan-speech/vad-asr-full-cpu.json)。CPU int8 與線上 CUDA int8_float16 不同，不能把數字當成線上效能或精確相同輸出；也未人工聽音複核此筆標註。
+
+因此未上線放寬門檻或跳過 VAD 的補救。直接把空結果換成可能錯誤的地名，不能算完成品質改善。後續應比較較適合台灣華語的 ASR，並檢查資料標註與真實手機錄音；不可按此單筆答案硬編碼更正。
+
+同一 CC0 資料集 test split 的後續 24 筆（索引 12–35），未用來選擇本次門檻，使用目前線上預設 ASR 評估：[結果](evidence/public-taiwan-speech/holdout-24.json)、`tests/quality/public-taiwan-speech-holdout.json`。總長 99.840 秒，155 個正規化參考字元，19 個編輯距離（CER 12.26%），13 段正規化後完全相符，沒有空白結果。仍是連續便利抽樣，非全面口音／場景評估，也沒有 Typeless 對照。沒有把第二批拿來調整參數後再當獨立驗證。
