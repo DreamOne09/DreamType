@@ -23,7 +23,7 @@ class TranslationTests(unittest.TestCase):
             with self.assertRaises(ValueError):validate_translation(*values)
 
 class TranslationLiteralTests(unittest.IsolatedAsyncioTestCase):
-    async def simulate(self,damage=None,original=None):
+    async def simulate(self,damage=None,original=None,target='th'):
         import json,httpx
         from unittest.mock import patch
         import translation
@@ -40,13 +40,22 @@ class TranslationLiteralTests(unittest.IsolatedAsyncioTestCase):
             return httpx.Response(200,json={'choices':[{'finish_reason':'stop','message':{'content':content}}]})
         original=original or '訂單 AB-007，電話 02-23456789，寄到 hi@example.com，費用新台幣1500元。'
         with patch.object(translation.httpx,'AsyncClient',lambda **kw:client_type(transport=httpx.MockTransport(model))):
-            result=await translation.translate_text(original,'ja','synthetic')
+            result=await translation.translate_text(original,target,'synthetic')
         return result,calls
 
     async def test_identifiers_hidden_in_both_stages_and_restored_with_amount(self):
         result,calls=await self.simulate()
         self.assertEqual(len(calls),2)
         self.assertEqual(result,'訂單 AB-007，電話 02-23456789，寄到 hi@example.com，費用TWD 1500。')
+
+    async def test_taiwan_chinese_to_japanese_has_one_protected_stage(self):
+        result,calls=await self.simulate(target='ja')
+        self.assertEqual(len(calls),1)
+        self.assertEqual(result,'訂單 AB-007，電話 02-23456789，寄到 hi@example.com，費用TWD 1500。')
+        with self.assertRaises(ValueError):
+            await self.simulate(lambda text,stage:text.replace('DTKEEP1END',''),target='ja')
+        with self.assertRaises(ValueError):
+            await self.simulate(lambda text,stage:text+' DTKEEP 999 END',original='請幫我生成計劃。',target='ja')
 
     async def test_bridge_damage_fails_before_second_stage(self):
         observed=[]
