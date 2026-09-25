@@ -33,6 +33,11 @@ public final class EmptyResultCheck {
    }
    response[0].put("text","明天到板橋拿文件。");
    if(!VoiceApi.recover(config,VoiceApi.QUIET).text.equals("明天到板橋拿文件。")||receipts.get()!=1)throw new AssertionError("Valid result not delivered");
+   if(!VoiceApi.recover(config,VoiceApi.QUIET).rawText.isEmpty())throw new AssertionError("Missing original was invented");
+   response[0].put("raw_text","明天到板橋拿文件");
+   if(!VoiceApi.recover(config,VoiceApi.QUIET).rawText.equals("明天到板橋拿文件"))throw new AssertionError("Original transcript lost on recovery");
+   response[0].put("raw_text",123);
+   if(!VoiceApi.recover(config,VoiceApi.QUIET).rawText.isEmpty())throw new AssertionError("Invalid original accepted");
    System.out.println("PASS: six invalid results rejected before receipt; valid Chinese result acknowledged once.");
   }finally{server.stop(0);}
  }

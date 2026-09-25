@@ -25,10 +25,12 @@ public final class VoiceIme extends InputMethodService {
     private boolean recordingNow=false,busy=false,pending=false,protectedField=false;
     private boolean retained=false;
     private volatile boolean destroyed=false;
-    private String lastText="";
+    private String lastText="",lastRawText="",undoText="",undoReplaced="";
+    private int undoEnd=-1;
+    private long undoGeneration;
     private AppConfig sessionConfig,recordingConfig;
     private TextView status,preview;
-    private Button mic,edit,discard,modeButton;
+    private Button mic,edit,discard,restore,undo,modeButton;
     private LinearLayout editRow;
     private ScrollView resultArea;
     private PopupWindow languagePanel;
@@ -127,29 +129,38 @@ public final class VoiceIme extends InputMethodService {
         button(row,"換行",v->{InputConnection c=getCurrentInputConnection();if(c!=null)c.commitText("\n",1);},1f);
         button(row,"更多",v->{PopupMenu menu=new PopupMenu(this,v);String[] items={"刪除一字","換行","取回上一筆","刪除保留錄音","我的設定","連線設定"};for(String item:items)menu.getMenu().add(item);menu.setOnMenuItemClickListener(item->{String name=item.getTitle().toString();InputConnection c=getCurrentInputConnection();if(name.equals("刪除一字")){if(c!=null)c.deleteSurroundingTextInCodePoints(1,0);}else if(name.equals("換行")){if(c!=null)c.commitText("\n",1);}else if(name.equals("取回上一筆")){recoverLast();}else if(name.equals("刪除保留錄音")){if(!busy&&!recordingNow){PendingAudio.clear(this);refresh();}}else if(name.equals("我的設定")){Intent i=new Intent(this,ManageActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}else setup();return true;});menu.show();},1f);
         editRow=new LinearLayout(this);root.addView(editRow);
-        edit=button(editRow,"修改文字",v->{if(!pending||busy||protectedField)return;Draft.begin(lastText);Intent i=new Intent(this,EditActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);},2f);
-        discard=button(editRow,"捨棄",v->{pending=false;lastText="";Draft.clear();preview.setText("");refresh();},1f);
+        edit=button(editRow,"修改文字",v->{if(!pending||busy||protectedField)return;Draft.begin(lastText,lastRawText);Intent i=new Intent(this,EditActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);},2f);
+        restore=button(editRow,"還原原文",v->{
+            if(!pending||busy||protectedField||lastRawText.isEmpty()||!AppConfig.load(this).sameSession(sessionConfig))return;
+            lastText=lastRawText;Draft.clear();preview.setText(lastText);refresh();status.setText("已還原辨識原文，確認後按插入。");
+        },2f);
+        restore.setContentDescription("還原辨識原文");
+        discard=button(editRow,"捨棄",v->{pending=false;lastText="";lastRawText="";clearUndo();Draft.clear();preview.setText("");refresh();},1f);
+        undo=button(root,"復原剛才輸入",v->undoInsertion(),1f);
+        undo.setLayoutParams(new LinearLayout.LayoutParams(-1,dp(48)));
         preview.setText(lastText);refresh();return root;
     }
-    @Override public void onStartInput(EditorInfo info,boolean restarting){super.onStartInput(info,restarting);generation++;cancelRecording();
+    @Override public void onStartInput(EditorInfo info,boolean restarting){super.onStartInput(info,restarting);generation++;clearUndo();cancelRecording();
         int cls=info.inputType&InputType.TYPE_MASK_CLASS,var=info.inputType&InputType.TYPE_MASK_VARIATION;
         protectedField=(cls==InputType.TYPE_CLASS_TEXT&&(var==InputType.TYPE_TEXT_VARIATION_PASSWORD||var==InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD||var==InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD))||(cls==InputType.TYPE_CLASS_NUMBER&&var==InputType.TYPE_NUMBER_VARIATION_PASSWORD);
         refresh();
     }
     @Override public void onStartInputView(EditorInfo info,boolean restarting){super.onStartInputView(info,restarting);if(!getPackageName().equals(info.packageName)&&Draft.edited){lastText=Draft.text==null?"":Draft.text;pending=!lastText.trim().isEmpty();if(preview!=null)preview.setText(lastText);Draft.clear();}refresh();}
-    @Override public void onFinishInputView(boolean finishingInput){generation++;cancelRecording();super.onFinishInputView(finishingInput);}
-    @Override public void onFinishInput(){generation++;cancelRecording();super.onFinishInput();}
+    @Override public void onFinishInputView(boolean finishingInput){generation++;clearUndo();cancelRecording();super.onFinishInputView(finishingInput);}
+    @Override public void onFinishInput(){generation++;clearUndo();cancelRecording();super.onFinishInput();}
     private void refresh() {
         if(mic==null)return;
         AppConfig active=AppConfig.load(this);
-        if(!active.sameSession(sessionConfig)){sessionConfig=active;pending=false;lastText="";Draft.clear();preview.setText("");}
+        if(!active.sameSession(sessionConfig)){sessionConfig=active;pending=false;lastText="";lastRawText="";clearUndo();Draft.clear();preview.setText("");}
         retained=PendingAudio.exists(this,AppConfig.load(this));
         AppConfig chosen=recordingNow&&recordingConfig!=null?recordingConfig:active;boolean translating=chosen.mode.equals("translate");
         modeButton.setText(chosen.modeLabel()+" ▾");modeButton.setEnabled(!busy&&!recordingNow&&!pending&&!retained);
         mic.setContentDescription(recordingNow?(translating?"停止並翻譯":"停止並整理"):busy?(translating?"正在翻譯…":"正在整理…"):pending?"插入文字":retained?"重試上一段":"開始說話");mic.setText(recordingNow?"停止":busy?"處理中":pending?"插入":retained?"重試":"說話");mic.setEnabled(!busy&&!protectedField);
+        if(undo!=null)undo.setVisibility(!pending&&!busy&&!recordingNow&&!protectedField&&undoEnd>=0&&generation==undoGeneration?View.VISIBLE:View.GONE);
         if(editRow!=null)editRow.setVisibility(pending?View.VISIBLE:View.GONE);
         if(resultArea!=null)resultArea.setVisibility(pending?View.VISIBLE:View.GONE);
         if(discard!=null)discard.setEnabled(pending&&!busy&&!recordingNow);
+        if(restore!=null)restore.setEnabled(pending&&!protectedField&&!busy&&!recordingNow&&!lastRawText.isEmpty()&&!lastRawText.equals(lastText));
         if(edit!=null)edit.setEnabled(pending&&!protectedField&&!busy&&!recordingNow);
         if(getCurrentInputEditorInfo()!=null&&getPackageName().equals(getCurrentInputEditorInfo().packageName)){mic.setEnabled(false);if(edit!=null)edit.setEnabled(false);status.setText("請切換 Gboard 修改；完成後回到原 App 插入。");return;}
         if(recordingNow)return;
@@ -182,7 +193,7 @@ public final class VoiceIme extends InputMethodService {
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);recorder.setAudioSamplingRate(16000);recorder.setAudioEncodingBitRate(64000);
             recorder.setOutputFile(recording.getAbsolutePath());recorder.prepare();recorder.start();
-            recordingConfig=config;began=SystemClock.elapsedRealtime();recordingNow=true;pending=false;lastText="";Draft.clear();preview.setText("");refresh();main.post(tick);
+            recordingConfig=config;began=SystemClock.elapsedRealtime();recordingNow=true;pending=false;lastText="";lastRawText="";clearUndo();Draft.clear();preview.setText("");refresh();main.post(tick);
         } catch(Exception e){cancelRecording();refresh();status.setText("無法錄音，請確認麥克風權限或其他 App 是否正在使用麥克風。");}
     }
     private void finishRecording() {
@@ -223,7 +234,7 @@ public final class VoiceIme extends InputMethodService {
                 if(destroyed)return;busy=false;
                 if(!AppConfig.load(this).sameSession(config)){refresh();status.setText("帳號已切換，上一筆結果已清除。");return;}
                 if(problem!=null){refresh();status.setText(problem+(retained?" 錄音已加密保留，可按重試或從「更多」刪除。":""));return;}
-                lastText=done.text;pending=!lastText.trim().isEmpty();preview.setText(lastText);refresh();
+                lastRawText=done.rawText;lastText=done.text;pending=!lastText.trim().isEmpty();preview.setText(lastText);refresh();
                 boolean inserted=false;
                 if(audio!=null&&pending&&config.autoInsert&&generation==expected&&isInputViewShown()&&!protectedField)inserted=insertPending();
                 String timing=String.format(Locale.TAIWAN,"%.1f 秒",(SystemClock.elapsedRealtime()-start)/1000.0);
@@ -236,7 +247,30 @@ public final class VoiceIme extends InputMethodService {
         if(!pending||protectedField)return false;
         if(!AppConfig.load(this).sameSession(sessionConfig)){refresh();status.setText("登入或連線已變更，上一筆文字已清除。");return false;}
         InputConnection c=getCurrentInputConnection();if(c==null)return false;
-        if(c.commitText(lastText,1)){pending=false;Draft.clear();refresh();status.setText("已插入，可以繼續說話。");return true;}return false;
+        ExtractedText before=c.getExtractedText(new ExtractedTextRequest(),0);
+        CharSequence replaced=c.getSelectedText(0);
+        clearUndo();
+        if(c.commitText(lastText,1)){
+            if(before!=null&&(before.selectionStart==before.selectionEnd||replaced!=null)){
+                undoEnd=before.startOffset+Math.min(before.selectionStart,before.selectionEnd)+lastText.length();
+                undoText=lastText;undoReplaced=replaced==null?"":replaced.toString();undoGeneration=generation;
+            }
+            pending=false;Draft.clear();refresh();status.setText("已插入，可以繼續說話。");return true;
+        }return false;
+    }
+    private void clearUndo(){undoText="";undoReplaced="";undoEnd=-1;}
+    private void undoInsertion(){
+        if(pending||busy||recordingNow||protectedField||undoEnd<0||generation!=undoGeneration||!AppConfig.load(this).sameSession(sessionConfig))return;
+        InputConnection c=getCurrentInputConnection();if(c==null)return;
+        ExtractedText current=c.getExtractedText(new ExtractedTextRequest(),0);
+        CharSequence preceding=c.getTextBeforeCursor(undoText.length(),0);
+        if(current==null||current.selectionStart!=current.selectionEnd||current.startOffset+current.selectionEnd!=undoEnd||preceding==null||!undoText.contentEquals(preceding)){
+            clearUndo();refresh();status.setText("游標或文字已改變，請用退格修改。");return;
+        }
+        // Select only the exact, unchanged insertion; commit restores any replaced selection.
+        if(c.setSelection(undoEnd-undoText.length(),undoEnd)&&c.commitText(undoReplaced,1)){
+            lastText=undoText;pending=true;clearUndo();Draft.clear();preview.setText(lastText);refresh();status.setText("已復原剛才輸入，文字仍保留，可還原原文或修改。");
+        }
     }
     private void cancelRecording(){closeLanguages();main.removeCallbacks(holdLanguage);main.removeCallbacks(repeatDelete);deleteHeld=false;languageGesture=false;main.removeCallbacks(tick);recordingNow=false;recordingConfig=null;if(recorder!=null){try{recorder.stop();}catch(Exception ignored){}recorder.release();recorder=null;}if(recording!=null){recording.delete();recording=null;}}
     @Override public void onDestroy(){destroyed=true;cancelRecording();worker.shutdownNow();main.removeCallbacksAndMessages(null);super.onDestroy();}

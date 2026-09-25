@@ -8,11 +8,11 @@
 
 > 0.8.0 封閉試用版：已加入帳號、個人設定同步、排隊與管理介面。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
 
-## 最新測試版：0.9.8
+## 最新測試版：0.9.9
 
-[下載 0.9.8 測試 APK](https://github.com/DreamOne09/DreamType/releases/download/v0.9.8-rc1/DreamType-0.9.8.apk) · [Pixel 9 驗收步驟](docs/PIXEL9_ACCEPTANCE.md) · [目前上線缺口](docs/LAUNCH_STATUS.md)
+[下載 0.9.9 測試 APK](https://github.com/DreamOne09/DreamType/releases/download/v0.9.9-rc1/DreamType-0.9.9.apk) · [Pixel 9 驗收步驟](docs/PIXEL9_ACCEPTANCE.md) · [目前上線缺口](docs/LAUNCH_STATUS.md)
 
-0.9.8 固定每段錄音開始時的語言與設定，並核對帳號及服務網址，避免舊結果串入新登入。保留 0.9.7 的中央大圓鈕錄音／停止，右側直接退格（長按連刪）；長按圓鈕往上滑選翻譯語言，放開開始說話。另修正帳號切換後舊回覆覆蓋設定的問題。[鍵盤操作與驗證](docs/KEYBOARD_INTERACTION.md)。此為預覽版，尚未完成 Pixel 9 原生驗收；上方「下載 Android APK」仍指向穩定頻道。若舊版有未完成錄音，請先取回上一筆再更新；不要先解除安裝。
+0.9.9 修正口述要求被當成代寫指令，新增「還原原文」「取消修改」及「復原剛才輸入」。原生模擬器已驗證撤回與選取文字還原，詳見 [語音輸入與復原](docs/DICTATION_ONLY.md)。保留 0.9.8 固定每段錄音開始時的語言與設定，並核對帳號及服務網址，避免舊結果串入新登入。保留 0.9.7 的中央大圓鈕錄音／停止，右側直接退格（長按連刪）；長按圓鈕往上滑選翻譯語言，放開開始說話。另修正帳號切換後舊回覆覆蓋設定的問題。[鍵盤操作與驗證](docs/KEYBOARD_INTERACTION.md)。此為預覽版，尚未完成 Pixel 9 原生驗收；上方「下載 Android APK」仍指向穩定頻道。若舊版有未完成錄音，請先取回上一筆再更新；不要先解除安裝。
 
 ## 0.8.0：說中文，翻成需要的語言
 

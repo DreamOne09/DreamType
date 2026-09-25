@@ -73,7 +73,20 @@ public final class ImeInstrumentation extends Instrumentation {
   screenshot("ime-preview");click("插入文字");
   final String[] value={""};deadline=SystemClock.uptimeMillis()+5000;
   do{runOnMainSync(()->value[0]=((EditText)activity.findViewById(101)).getText().toString());
-   if("明天下午四點半到板橋。".equals(value[0])){waitForIdleSync();SystemClock.sleep(750);screenshot("ime-inserted");return;}
+   if("明天下午四點半到板橋。".equals(value[0])){waitForIdleSync();SystemClock.sleep(750);screenshot("ime-inserted");
+    click("復原剛才輸入");SystemClock.sleep(500);
+    if(!"".equals(editorText(activity)))throw new AssertionError("Undo did not remove exact insertion");
+    setEditor(activity,"原文",0,2);
+    click("插入文字");SystemClock.sleep(500);
+    if(!"明天下午四點半到板橋。".equals(editorText(activity)))throw new AssertionError("Undo lost pending result");
+    click("復原剛才輸入");SystemClock.sleep(500);
+    if(!"原文".equals(editorText(activity)))throw new AssertionError("Undo lost replaced selection");
+    setEditor(activity,"",0,0);
+    click("插入文字");SystemClock.sleep(500);
+    setEditor(activity,"明天下午四點半到板橋。補充",13,13);
+    if(find("復原剛才輸入")!=null)click("復原剛才輸入");SystemClock.sleep(300);
+    if(!"明天下午四點半到板橋。補充".equals(editorText(activity)))throw new AssertionError("Undo changed edited text");
+    return;}
    SystemClock.sleep(100);
   }while(SystemClock.uptimeMillis()<deadline);
   throw new AssertionError("External editor did not receive exact Traditional Chinese response");

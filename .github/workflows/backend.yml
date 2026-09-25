@@ -9,7 +9,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install fastapi==0.141.1 httpx==0.28.1 python-multipart==0.0.32 cryptography==50.0.1
-      - run: python -m unittest test_beta test_backup test_durability test_maintenance test_translation test_operations test_session_race test_crash_recovery test_literal_preservation
+      - run: python -m unittest test_beta test_backup test_durability test_maintenance test_translation test_operations test_session_race test_crash_recovery test_literal_preservation test_dictation_guard
         working-directory: outputs/local_voice
 
   android-contracts:

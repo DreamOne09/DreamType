@@ -29,11 +29,17 @@ public final class EditActivity extends Activity {
   editor=new EditText(this);editor.setText(retained==null?original:retained.text);editor.setTextColor(Ui.INK);editor.setTextSize(18);editor.setGravity(Gravity.TOP);editor.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE|android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);editor.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);editor.setSaveEnabled(false);editor.setContentDescription("要修改的文字");p.addView(editor,new LinearLayout.LayoutParams(-1,0,1));
   if(retained!=null)editor.setSelection(Math.max(0,Math.min(retained.start,editor.length())),Math.max(0,Math.min(retained.end,editor.length())));
   button(p,"切換打字鍵盤",v->((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showInputMethodPicker());
-  button(p,"復原這次修改",v->editor.setText(original));
-  Button done=button(p,"完成修改",v->{
+  LinearLayout restoreRow=new LinearLayout(this);p.addView(restoreRow);
+  Button restoreEdit=button(restoreRow,"復原這次修改",v->editor.setText(original));restoreEdit.setLayoutParams(new LinearLayout.LayoutParams(0,dp(52),1));
+  if(Draft.rawText!=null&&!Draft.rawText.isEmpty()){Button restoreRaw=button(restoreRow,"還原辨識原文",v->{
+   if(draftRevision==Draft.revision&&sessionKey.equals(AppConfig.load(this).key))editor.setText(Draft.rawText);
+  });restoreRaw.setLayoutParams(new LinearLayout.LayoutParams(0,dp(52),1));}
+  LinearLayout doneRow=new LinearLayout(this);p.addView(doneRow);
+  Button cancel=button(doneRow,"取消修改",v->finish());cancel.setLayoutParams(new LinearLayout.LayoutParams(0,dp(52),1));
+  Button done=button(doneRow,"完成修改",v->{
    if(Draft.text==null||draftRevision!=Draft.revision||!sessionKey.equals(AppConfig.load(this).key)){Toast.makeText(this,"登入或暫存已變更，這次修改未保存。",Toast.LENGTH_LONG).show();finish();return;}
    Draft.text=editor.getText().toString();Draft.edited=true;Toast.makeText(this,"已保存暫存文字。回原 App 切回 DreamType，按插入。",Toast.LENGTH_LONG).show();finish();});
-  Ui.button(done,true);
+  done.setLayoutParams(new LinearLayout.LayoutParams(0,dp(52),1));Ui.button(done,true);
  }
  @Override public Object onRetainNonConfigurationInstance(){
   return editor==null?null:new EditorState(original,editor.getText().toString(),sessionKey,editor.getSelectionStart(),editor.getSelectionEnd(),draftRevision);
