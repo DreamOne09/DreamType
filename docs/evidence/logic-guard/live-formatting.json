@@ -1,0 +1,50 @@
+[
+  {
+    "source": "明天上午先到板橋拿文件，不要取消下午四點半的預約。",
+    "result": "明天上午先到板橋拿文件，不要取消下午四點半的預約。",
+    "fallback": false,
+    "seconds": 0.78
+  },
+  {
+    "source": "如果客戶同意，明天才安排出貨，否則先等我通知。",
+    "result": "如果客戶同意，明天才安排出貨，否則先等我通知。",
+    "fallback": false,
+    "seconds": 0.26
+  },
+  {
+    "source": "我只負責整理資料，確認之後才寄信給客戶。",
+    "result": "我只負責整理資料，確認之後才寄信給客戶。",
+    "fallback": false,
+    "seconds": 0.23
+  },
+  {
+    "source": "第一，不要取消預約。第二，只有收到款項才能出貨。",
+    "result": "• 不要取消預約。  \n• 只有收到款項才能出貨。",
+    "fallback": false,
+    "seconds": 0.32
+  },
+  {
+    "source": "請不要取消板喬的預約。",
+    "result": "請不要取消板喬的預約。",
+    "fallback": false,
+    "seconds": 0.18
+  },
+  {
+    "source": "不要取消，不對，是要取消明天板橋的預約。",
+    "result": "不要取消，不對，是要取消明天板橋的預約。",
+    "fallback": true,
+    "seconds": 0.2
+  },
+  {
+    "source": "嗯明天明天上午去板橋拿文件就好了。",
+    "result": "明天上午去板橋拿文件就好了。",
+    "fallback": false,
+    "seconds": 0.17
+  },
+  {
+    "source": "不不不要取消明天的預約。",
+    "result": "不要取消明天的預約。",
+    "fallback": false,
+    "seconds": 0.55
+  }
+]

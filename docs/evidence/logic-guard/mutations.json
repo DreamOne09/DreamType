@@ -1,0 +1,24 @@
+{
+  "scope": "Synthetic corrupted output, not an observed live model omission",
+  "baseline": "f423680",
+  "cases": [
+    {
+      "source": "明天上午先到板橋拿文件，不要取消下午四點半的預約。",
+      "simulated_model_output": "明天上午先到板橋拿文件，要取消下午四點半的預約。",
+      "before_accepted": true,
+      "after_accepted": false
+    },
+    {
+      "source": "如果客戶同意，明天才安排出貨，否則先等我通知。",
+      "simulated_model_output": "客戶同意，明天安排出貨，先等我通知。",
+      "before_accepted": true,
+      "after_accepted": false
+    },
+    {
+      "source": "我只負責整理資料，確認之後才寄信給客戶。",
+      "simulated_model_output": "我負責整理資料，確認之後寄信給客戶。",
+      "before_accepted": true,
+      "after_accepted": false
+    }
+  ]
+}
