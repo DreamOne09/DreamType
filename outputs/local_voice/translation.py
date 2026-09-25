@@ -96,13 +96,17 @@ async def translate_text(text,target,key,source='zh'):
             types.append(marker+' is a '+kind)
         hints='\nCopy ONLY the protected tokens listed here exactly once, unchanged, in their original order and context. Do not invent tokens. Protected data types: '+ '; '.join(types)+'. Translate the surrounding action using these types: 打 a telephone means call, not enter/type. 寄信到 an email address means email, not send a postal letter. A standalone 訂單 TOKEN label means Order number TOKEN; write Order number, never the imperative Order TOKEN. Preserve order-number labels as noun labels, never as instructions to place an order.\n'
     async with httpx.AsyncClient(timeout=90) as client:
-        # A specialist translates requests as text; a chat model can answer
-        # them instead. Keep one English bridge for the existing target pairs.
-        if source!='en':
-            protected=await gemma(client,protected,source,'en',key,hints)
-            if not isinstance(protected,str) or not protected.strip():raise ValueError('Empty translation bridge')
-            validate_marker_output(text,restore_identifiers(protected,identifiers,prefix))
-        result=protected if target=='en' else await gemma(client,protected,'en',target,key,hints)
+        # Taiwan Chinese -> Japanese has a tested direct route: the English
+        # bridge dropped conditions and changed weekdays in the regression set.
+        if source=='zh-TW' and target=='ja':
+            result=await gemma(client,protected,source,target,key,hints)
+        else:
+            # Keep the established English pairs for other source/target pairs.
+            if source!='en':
+                protected=await gemma(client,protected,source,'en',key,hints)
+                if not isinstance(protected,str) or not protected.strip():raise ValueError('Empty translation bridge')
+                validate_marker_output(text,restore_identifiers(protected,identifiers,prefix))
+            result=protected if target=='en' else await gemma(client,protected,'en',target,key,hints)
     result=restore_identifiers(result,identifiers,prefix)
     validate_marker_output(text,result)
     validate_identifiers(text,result)
