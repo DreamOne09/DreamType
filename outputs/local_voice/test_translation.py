@@ -31,7 +31,8 @@ class TranslationLiteralTests(unittest.IsolatedAsyncioTestCase):
         def model(request):
             body=json.loads(request.content)
             content=body['messages'][-1]['content']
-            if request.url.port==19873:content=content.split('\n\n\n')[-1]
+            self.assertEqual(request.url.port,19873, 'Translation must not call the chat formatter')
+            content=content.split('\n\n\n')[-1]
             calls.append(content)
             self.assertNotIn('02-23456789',content)
             self.assertNotIn('AB-007',content)
@@ -63,6 +64,21 @@ class TranslationLiteralTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_empty_bridge_rejected(self):
         with self.assertRaises(ValueError):await self.simulate(lambda text,stage:'')
+
+    async def test_invented_markers_rejected_without_original_identifiers(self):
+        for stage in (1,2):
+            for invented in ('DTKEEP 500 END','DREAMTYPEAMOUNT...END','d t k e e p 100 AKHIR'):
+                observed=[]
+                def damage(text,current):
+                    observed.append(current)
+                    return text+' '+invented if current==stage else text
+                with self.subTest(stage=stage,invented=invented), self.assertRaises(ValueError):
+                    await self.simulate(damage,original='請幫我生成一個計劃。')
+                self.assertEqual(observed,list(range(1,stage+1)))
+
+    async def test_literal_marker_word_in_source_is_not_an_invention(self):
+        result,_=await self.simulate(original='請保留 DTKEEP 這個名稱。')
+        self.assertEqual(result,'請保留 DTKEEP 這個名稱。')
 
     async def test_amount_before_phone_uses_one_ordered_marker_namespace(self):
         result,calls=await self.simulate(original='先確認新台幣1500元，電話 02-23456789。')
