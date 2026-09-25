@@ -14,5 +14,10 @@ class DictationGuardTests(unittest.TestCase):
                                ('台灣的首都是哪裡','台北'), ('','好的')]:
             with self.subTest(source=source), self.assertRaises(ValueError):validate_edit(source,output)
 
+    def test_request_cue_cannot_be_removed_from_a_long_copied_sentence(self):
+        with self.assertRaises(ValueError):
+            validate_edit('請幫我寫計劃，明天上午十點先到板橋拿文件，下午四點再到汐止開會。',
+                          '明天上午十點先到板橋拿文件，下午四點再到汐止開會。')
+
     def test_missing_meaningful_clause_is_rejected(self):
         with self.assertRaises(ValueError):validate_edit('明天去板橋拿文件，如果下雨改星期五，千萬不要取消預約。','明天去板橋拿文件。')
