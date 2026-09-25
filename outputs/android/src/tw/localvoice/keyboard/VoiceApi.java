@@ -15,6 +15,7 @@ final class VoiceApi {
     }
     static final class Result {
         final String text,warning,id,mode,targetLanguage;
+        String rawText="";
         final double computerSeconds;
         Result(String t,String w,double s,String id,String mode,String target){text=t;warning=w;computerSeconds=s;this.id=id;this.mode=mode;targetLanguage=target;}
     }
@@ -125,7 +126,10 @@ final class VoiceApi {
         for(int i=0;i<text.length();){int cp=text.codePointAt(i);i+=Character.charCount(cp);if(!Character.isWhitespace(cp)&&!Character.isSpaceChar(cp)){visible=true;break;}}
         if(!visible)throw new IOException("沒有收到有效文字，請重試或取回上一筆。");
         String warning=body.isNull("warning")?"":body.optString("warning","");JSONObject timings=body.optJSONObject("timings");
-        return new Result(text,warning,timings==null?0:timings.optDouble("total_seconds",0),body.optString("id",""),body.optString("mode","organize"),body.optString("target_language","zh-TW"));
+        Result parsed=new Result(text,warning,timings==null?0:timings.optDouble("total_seconds",0),body.optString("id",""),body.optString("mode","organize"),body.optString("target_language","zh-TW"));
+        Object original=body.opt("raw_text");
+        if(original instanceof String)parsed.rawText=(String)original;
+        return parsed;
     }
     static JSONObject json(AppConfig config,String method,String path,JSONObject body) throws Exception {
         HttpURLConnection c=connection(config,path);

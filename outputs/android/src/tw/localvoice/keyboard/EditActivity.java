@@ -30,6 +30,10 @@ public final class EditActivity extends Activity {
   if(retained!=null)editor.setSelection(Math.max(0,Math.min(retained.start,editor.length())),Math.max(0,Math.min(retained.end,editor.length())));
   button(p,"切換打字鍵盤",v->((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showInputMethodPicker());
   button(p,"復原這次修改",v->editor.setText(original));
+  if(Draft.rawText!=null&&!Draft.rawText.isEmpty())button(p,"還原辨識原文",v->{
+   if(draftRevision==Draft.revision&&sessionKey.equals(AppConfig.load(this).key))editor.setText(Draft.rawText);
+  });
+  button(p,"取消修改",v->finish());
   Button done=button(p,"完成修改",v->{
    if(Draft.text==null||draftRevision!=Draft.revision||!sessionKey.equals(AppConfig.load(this).key)){Toast.makeText(this,"登入或暫存已變更，這次修改未保存。",Toast.LENGTH_LONG).show();finish();return;}
    Draft.text=editor.getText().toString();Draft.edited=true;Toast.makeText(this,"已保存暫存文字。回原 App 切回 DreamType，按插入。",Toast.LENGTH_LONG).show();finish();});

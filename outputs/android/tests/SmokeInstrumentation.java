@@ -76,7 +76,7 @@ public final class SmokeInstrumentation extends Instrumentation {
  }
  private void editorChecks(Context context)throws Exception{
   new AppConfig("https://example.invalid","synthetic-editor-token",false).save(context);
-  Draft.begin("明天到板橋。");Activity first=open(EditActivity.class);
+  Draft.begin("明天到板橋。","明天到板橋");Activity first=open(EditActivity.class);
   runOnMainSync(()->{EditText field=input(first.getWindow().getDecorView());field.setText("明天下午到汐止。");field.setSelection(2,4);});
   ActivityMonitor monitor=addMonitor(EditActivity.class.getName(),null,false);
   runOnMainSync(()->first.recreate());Activity recreated=waitForMonitorWithTimeout(monitor,5000);removeMonitor(monitor);
@@ -87,10 +87,15 @@ public final class SmokeInstrumentation extends Instrumentation {
    if(field.isSaveEnabled())throw new AssertionError("Editor text may enter saved instance state");
    find(recreated.getWindow().getDecorView(),"復原這次修改").performClick();
    if(!"明天到板橋。".equals(field.getText().toString()))throw new AssertionError("Restore lost original text");
+   find(recreated.getWindow().getDecorView(),"還原辨識原文").performClick();
+   if(!"明天到板橋".equals(field.getText().toString()))throw new AssertionError("Raw transcript restore failed");
    field.setText("明天下午到汐止。");
   });
   screenshot("editor-recreated");runOnMainSync(()->find(recreated.getWindow().getDecorView(),"完成修改").performClick());waitForIdleSync();
   if(!Draft.edited||!"明天下午到汐止。".equals(Draft.text))throw new AssertionError("Edited handoff missing");
+  Draft.begin("取消前的文字。");Activity cancelled=open(EditActivity.class);
+  runOnMainSync(()->{input(cancelled.getWindow().getDecorView()).setText("不保存的修改");find(cancelled.getWindow().getDecorView(),"取消修改").performClick();});waitForIdleSync();
+  if(Draft.edited||!"取消前的文字。".equals(Draft.text))throw new AssertionError("Cancel saved changes");
   Draft.begin("舊的文字。");Activity stale=open(EditActivity.class);
   runOnMainSync(()->{Draft.begin("新的文字。");find(stale.getWindow().getDecorView(),"完成修改").performClick();});waitForIdleSync();
   if(Draft.edited||!"新的文字。".equals(Draft.text))throw new AssertionError("Old editor overwrote new draft");
