@@ -1,0 +1,20 @@
+{
+  "external_editor": true,
+  "ime_visible": true,
+  "password_voice_disabled": true,
+  "normal_field_reenabled": true,
+  "microphone_recording_tested": true,
+  "text_insertion_tested": true,
+  "pixel9_tested": false,
+  "response_source": "synthetic HTTP fixture; no speech recognition",
+  "speech_recognition_tested": false,
+  "uploaded_audio_bytes": [
+    30880
+  ],
+  "mode": "private",
+  "queue_polling_tested": false,
+  "receipts": 0,
+  "delivered_recording_cleanup_tested": false,
+  "login_ui_tested": false,
+  "real_backend_tested": false
+}

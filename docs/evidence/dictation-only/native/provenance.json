@@ -1,0 +1,15 @@
+{
+  "run": "https://github.com/DreamOne09/DreamType/actions/runs/36151841720",
+  "native_source": "e424025",
+  "release_source": "c20618a461bc55abfd8fa8aaf901366a2888cdd5",
+  "android_source_changed_after_native_run": false,
+  "scope": "Android API 36 emulator; synthetic AI provider; real beta API and SQLite in isolated HTTPS fixture; Pixel 9 untested",
+  "assertions": [
+    "original transcript restore in editor",
+    "cancel discards edits",
+    "undo removes unchanged insertion",
+    "undo restores replaced selection",
+    "input changes invalidate or refuse undo",
+    "four recording/network routes"
+  ]
+}

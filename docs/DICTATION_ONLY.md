@@ -16,4 +16,4 @@ DreamType 的整理模式只整理使用者口述內容。「請幫我生成一�
 - 後端 38 項測試通過，包含模擬模型直接寫計劃、寫信及回答問題時退回原文。
 - 實際本機 Qwen 的 7 組合成文字結果：[記錄](evidence/dictation-only/live-formatting.json)。未使用真人錄音；包含惡意風格要求、英文要求及正常條列。
 - Android 0.9.9，versionCode 19，沿用既有正式簽章。Pixel 9 尚未實測。
-- 原生模擬器驗證結果另行補入；不能將 Java 契約測試當成手機操作驗證。
+- Android API 36 原生模擬器驗證通過：[執行紀錄](https://github.com/DreamOne09/DreamType/actions/runs/36151841720)、[原始證據](evidence/dictation-only/native/provenance.json)。驗證原文還原、取消修改、插入撤回、被取代的選取文字還原、輸入階段改變後撤回失效，以及四種錄音連線流程。使用固定文字 AI provider，並非 ASR 品質或 Pixel 9 證據。
