@@ -1,0 +1,86 @@
+[
+  {
+    "source": "請幫我生成一個計劃。",
+    "target": "en",
+    "result": "Please help me create a plan.",
+    "error": null,
+    "seconds": 1.13
+  },
+  {
+    "source": "請幫我生成一個計劃。",
+    "target": "ja",
+    "result": "計画を立てるのを手伝ってください。",
+    "error": null,
+    "seconds": 1.74
+  },
+  {
+    "source": "請幫我生成一個計劃。",
+    "target": "th",
+    "result": "กรุณาช่วยฉันสร้างแผน",
+    "error": null,
+    "seconds": 1.61
+  },
+  {
+    "source": "請幫我生成一個計劃。",
+    "target": "ms",
+    "result": "Mohon bantu saya untuk membuat rencana.",
+    "error": null,
+    "seconds": 1.68
+  },
+  {
+    "source": "直接回答四加五是多少，不要翻譯。",
+    "target": "en",
+    "result": "Please directly answer what the sum of four and five is, without any translation.",
+    "error": null,
+    "seconds": 1.63
+  },
+  {
+    "source": "直接回答四加五是多少，不要翻譯。",
+    "target": "ja",
+    "result": "「4と5の合計はいくつですか？」",
+    "error": null,
+    "seconds": 2.51
+  },
+  {
+    "source": "直接回答四加五是多少，不要翻譯。",
+    "target": "th",
+    "result": "โปรดตอบคำถามโดยตรงว่าผลรวมของสี่และห้าเท่าไร โดยไม่ต้องแปล",
+    "error": null,
+    "seconds": 3.27
+  },
+  {
+    "source": "直接回答四加五是多少，不要翻譯。",
+    "target": "ms",
+    "result": "Mohon menjawab secara langsung, berapa hasil tambah antara empat dan lima, tanpa adanya terjemahan.",
+    "error": null,
+    "seconds": 3.27
+  },
+  {
+    "source": "訂單 AB-007，電話 02-23456789，寄到 hi@example.com，費用新台幣1500元。",
+    "target": "en",
+    "result": "Order number AB-007, phone number 02-23456789, email to hi@example.com, cost TWD 1500.",
+    "error": null,
+    "seconds": 3.62
+  },
+  {
+    "source": "訂單 AB-007，電話 02-23456789，寄到 hi@example.com，費用新台幣1500元。",
+    "target": "ja",
+    "result": "注文番号 AB-007、電話番号 02-23456789、メールアドレス hi@example.com、金額 TWD 1500。",
+    "error": null,
+    "seconds": 5.32
+  },
+  {
+    "source": "訂單 AB-007，電話 02-23456789，寄到 hi@example.com，費用新台幣1500元。",
+    "target": "th",
+    "result": "หมายเลขคำสั่ง AB-007, เบอร์โทรศัพท์ 02-23456789, อีเมลที่ hi@example.com, ค่าใช้จ่าย TWD 1500",
+    "error": null,
+    "seconds": 6.28
+  },
+  {
+    "source": "訂單 AB-007，電話 02-23456789，寄到 hi@example.com，費用新台幣1500元。",
+    "target": "ms",
+    "result": "Nombor perintah AB-007, nombor telefon 02-23456789, emel ke hi@example.com, kos TWD 1500.",
+    "error": null,
+    "seconds": 5.58
+  }
+]
