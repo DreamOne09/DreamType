@@ -135,23 +135,23 @@ public final class VoiceIme extends InputMethodService {
             lastText=lastRawText;Draft.clear();preview.setText(lastText);refresh();status.setText("已還原辨識原文，確認後按插入。");
         },2f);
         restore.setContentDescription("還原辨識原文");
-        discard=button(editRow,"捨棄",v->{pending=false;lastText="";lastRawText="";undoText="";undoEnd=-1;Draft.clear();preview.setText("");refresh();},1f);
+        discard=button(editRow,"捨棄",v->{pending=false;lastText="";lastRawText="";clearUndo();Draft.clear();preview.setText("");refresh();},1f);
         undo=button(root,"復原剛才輸入",v->undoInsertion(),1f);
         undo.setLayoutParams(new LinearLayout.LayoutParams(-1,dp(48)));
         preview.setText(lastText);refresh();return root;
     }
-    @Override public void onStartInput(EditorInfo info,boolean restarting){super.onStartInput(info,restarting);generation++;cancelRecording();
+    @Override public void onStartInput(EditorInfo info,boolean restarting){super.onStartInput(info,restarting);generation++;clearUndo();cancelRecording();
         int cls=info.inputType&InputType.TYPE_MASK_CLASS,var=info.inputType&InputType.TYPE_MASK_VARIATION;
         protectedField=(cls==InputType.TYPE_CLASS_TEXT&&(var==InputType.TYPE_TEXT_VARIATION_PASSWORD||var==InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD||var==InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD))||(cls==InputType.TYPE_CLASS_NUMBER&&var==InputType.TYPE_NUMBER_VARIATION_PASSWORD);
         refresh();
     }
     @Override public void onStartInputView(EditorInfo info,boolean restarting){super.onStartInputView(info,restarting);if(!getPackageName().equals(info.packageName)&&Draft.edited){lastText=Draft.text==null?"":Draft.text;pending=!lastText.trim().isEmpty();if(preview!=null)preview.setText(lastText);Draft.clear();}refresh();}
-    @Override public void onFinishInputView(boolean finishingInput){generation++;cancelRecording();super.onFinishInputView(finishingInput);}
-    @Override public void onFinishInput(){generation++;cancelRecording();super.onFinishInput();}
+    @Override public void onFinishInputView(boolean finishingInput){generation++;clearUndo();cancelRecording();super.onFinishInputView(finishingInput);}
+    @Override public void onFinishInput(){generation++;clearUndo();cancelRecording();super.onFinishInput();}
     private void refresh() {
         if(mic==null)return;
         AppConfig active=AppConfig.load(this);
-        if(!active.sameSession(sessionConfig)){sessionConfig=active;pending=false;lastText="";lastRawText="";undoText="";undoEnd=-1;Draft.clear();preview.setText("");}
+        if(!active.sameSession(sessionConfig)){sessionConfig=active;pending=false;lastText="";lastRawText="";clearUndo();Draft.clear();preview.setText("");}
         retained=PendingAudio.exists(this,AppConfig.load(this));
         AppConfig chosen=recordingNow&&recordingConfig!=null?recordingConfig:active;boolean translating=chosen.mode.equals("translate");
         modeButton.setText(chosen.modeLabel()+" ▾");modeButton.setEnabled(!busy&&!recordingNow&&!pending&&!retained);
@@ -193,7 +193,7 @@ public final class VoiceIme extends InputMethodService {
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);recorder.setAudioSamplingRate(16000);recorder.setAudioEncodingBitRate(64000);
             recorder.setOutputFile(recording.getAbsolutePath());recorder.prepare();recorder.start();
-            recordingConfig=config;began=SystemClock.elapsedRealtime();recordingNow=true;pending=false;lastText="";lastRawText="";undoText="";undoEnd=-1;Draft.clear();preview.setText("");refresh();main.post(tick);
+            recordingConfig=config;began=SystemClock.elapsedRealtime();recordingNow=true;pending=false;lastText="";lastRawText="";clearUndo();Draft.clear();preview.setText("");refresh();main.post(tick);
         } catch(Exception e){cancelRecording();refresh();status.setText("無法錄音，請確認麥克風權限或其他 App 是否正在使用麥克風。");}
     }
     private void finishRecording() {
@@ -249,7 +249,7 @@ public final class VoiceIme extends InputMethodService {
         InputConnection c=getCurrentInputConnection();if(c==null)return false;
         ExtractedText before=c.getExtractedText(new ExtractedTextRequest(),0);
         CharSequence replaced=c.getSelectedText(0);
-        undoEnd=-1;undoText="";
+        clearUndo();
         if(c.commitText(lastText,1)){
             if(before!=null&&(before.selectionStart==before.selectionEnd||replaced!=null)){
                 undoEnd=before.startOffset+Math.min(before.selectionStart,before.selectionEnd)+lastText.length();
@@ -258,17 +258,18 @@ public final class VoiceIme extends InputMethodService {
             pending=false;Draft.clear();refresh();status.setText("已插入，可以繼續說話。");return true;
         }return false;
     }
+    private void clearUndo(){undoText="";undoReplaced="";undoEnd=-1;}
     private void undoInsertion(){
         if(pending||busy||recordingNow||protectedField||undoEnd<0||generation!=undoGeneration||!AppConfig.load(this).sameSession(sessionConfig))return;
         InputConnection c=getCurrentInputConnection();if(c==null)return;
         ExtractedText current=c.getExtractedText(new ExtractedTextRequest(),0);
         CharSequence preceding=c.getTextBeforeCursor(undoText.length(),0);
         if(current==null||current.selectionStart!=current.selectionEnd||current.startOffset+current.selectionEnd!=undoEnd||preceding==null||!undoText.contentEquals(preceding)){
-            undoEnd=-1;undoText="";refresh();status.setText("游標或文字已改變，請用退格修改。");return;
+            clearUndo();refresh();status.setText("游標或文字已改變，請用退格修改。");return;
         }
         // Select only the exact, unchanged insertion; commit restores any replaced selection.
         if(c.setSelection(undoEnd-undoText.length(),undoEnd)&&c.commitText(undoReplaced,1)){
-            lastText=undoText;pending=true;undoEnd=-1;undoText="";Draft.clear();preview.setText(lastText);refresh();status.setText("已復原剛才輸入，文字仍保留，可還原原文或修改。");
+            lastText=undoText;pending=true;clearUndo();Draft.clear();preview.setText(lastText);refresh();status.setText("已復原剛才輸入，文字仍保留，可還原原文或修改。");
         }
     }
     private void cancelRecording(){closeLanguages();main.removeCallbacks(holdLanguage);main.removeCallbacks(repeatDelete);deleteHeld=false;languageGesture=false;main.removeCallbacks(tick);recordingNow=false;recordingConfig=null;if(recorder!=null){try{recorder.stop();}catch(Exception ignored){}recorder.release();recorder=null;}if(recording!=null){recording.delete();recording=null;}}
