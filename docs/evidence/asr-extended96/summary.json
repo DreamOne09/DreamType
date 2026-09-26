@@ -1,0 +1,805 @@
+{
+  "same_corpus_and_settings": true,
+  "cases": 96,
+  "totals": [
+    {
+      "model": "mobiuslabsgmbh/faster-whisper-large-v3-turbo",
+      "revision": "0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf",
+      "errors": 98,
+      "reference_chars": 670,
+      "cer": 0.14626865671641792,
+      "exact_cases": 61,
+      "empty_cases": 0,
+      "cpu_median_seconds": 5.2855,
+      "cpu_total_seconds": 529.729
+    },
+    {
+      "model": "shdennlin/breeze-asr-25-ct2",
+      "revision": "70660216b01a6f6b7b8c5690767a4763df61755f",
+      "errors": 40,
+      "reference_chars": 670,
+      "cer": 0.05970149253731343,
+      "exact_cases": 73,
+      "empty_cases": 0,
+      "cpu_median_seconds": 11.016,
+      "cpu_total_seconds": 1060.166
+    }
+  ],
+  "improved_cases": 21,
+  "regressed_cases": 8,
+  "equal_error_cases": 67,
+  "changed_cases": [
+    {
+      "index": 36,
+      "reference": "每一位公民",
+      "reference_chars": 5,
+      "before": "每一位公民。",
+      "after": "每一位公民",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 38,
+      "reference": "請求指揮官支援",
+      "reference_chars": 7,
+      "before": "請求指揮官支援。",
+      "after": "請求指揮官支援",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 39,
+      "reference": "申報網站",
+      "reference_chars": 4,
+      "before": "Sembāvangzann",
+      "after": "申報網站",
+      "before_errors": 13,
+      "after_errors": 0,
+      "error_delta": -13
+    },
+    {
+      "index": 40,
+      "reference": "所以做這項調查",
+      "reference_chars": 7,
+      "before": "所以做執行調查。",
+      "after": "所以做這項調查",
+      "before_errors": 2,
+      "after_errors": 0,
+      "error_delta": -2
+    },
+    {
+      "index": 41,
+      "reference": "取得大眾信任",
+      "reference_chars": 6,
+      "before": "取得大眾受贈。",
+      "after": "取得大功的俗稱",
+      "before_errors": 2,
+      "after_errors": 4,
+      "error_delta": 2
+    },
+    {
+      "index": 42,
+      "reference": "對於東海及南海問題",
+      "reference_chars": 9,
+      "before": "One, two, three, four, five, my, Tarlles。",
+      "after": "對於東海和南海問題",
+      "before_errors": 28,
+      "after_errors": 1,
+      "error_delta": -27
+    },
+    {
+      "index": 44,
+      "reference": "彌陀漁民活動中心",
+      "reference_chars": 8,
+      "before": "彌陀愚民活動中心",
+      "after": "彌陀漁民活動中心",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 45,
+      "reference": "他們聚在一起",
+      "reference_chars": 6,
+      "before": "他們就在一起。",
+      "after": "他們住在一起",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 46,
+      "reference": "學海無涯，回頭是岸",
+      "reference_chars": 8,
+      "before": "學海無涯回頭是岸。",
+      "after": "學害無涯 回頭是岸",
+      "before_errors": 0,
+      "after_errors": 1,
+      "error_delta": 1
+    },
+    {
+      "index": 47,
+      "reference": "八卦完畢，開動！",
+      "reference_chars": 6,
+      "before": "八卦完畢。開動。",
+      "after": "八卦完畢 開動",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 48,
+      "reference": "裡面並沒有什麼追蹤器",
+      "reference_chars": 10,
+      "before": "裡面並沒有什麼追蹤器。",
+      "after": "裡面並沒有什麼追蹤器",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 49,
+      "reference": "高雄大學社科院西側",
+      "reference_chars": 9,
+      "before": "高雄大學社科院西特",
+      "after": "高雄大學社科院 T 特",
+      "before_errors": 1,
+      "after_errors": 2,
+      "error_delta": 1
+    },
+    {
+      "index": 50,
+      "reference": "我不算老",
+      "reference_chars": 4,
+      "before": "我不算了。",
+      "after": "我不算了",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 51,
+      "reference": "介壽先鋒路口東南側",
+      "reference_chars": 9,
+      "before": "接受先鋒入口、東南側。",
+      "after": "接受先鋒入口東南側",
+      "before_errors": 3,
+      "after_errors": 3,
+      "error_delta": 0
+    },
+    {
+      "index": 55,
+      "reference": "那些句子中的字意義相同？",
+      "reference_chars": 11,
+      "before": "哪些句子中的字意義相同?",
+      "after": "哪些句子中的字意義相同",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 56,
+      "reference": "剛剛想問",
+      "reference_chars": 4,
+      "before": "剛剛想問。",
+      "after": "剛剛想問",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 57,
+      "reference": "台南市中華南路",
+      "reference_chars": 7,
+      "before": "臺南市、中華南路。",
+      "after": "臺南市中華南路",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 58,
+      "reference": "中壢轉接道交流道",
+      "reference_chars": 8,
+      "before": "中立轉接到交流到",
+      "after": "中壢轉接道交流道",
+      "before_errors": 3,
+      "after_errors": 0,
+      "error_delta": -3
+    },
+    {
+      "index": 59,
+      "reference": "縣府第二辦公大樓",
+      "reference_chars": 8,
+      "before": "獻服第二辦公大樓。",
+      "after": "縣府第二辦公大樓",
+      "before_errors": 2,
+      "after_errors": 0,
+      "error_delta": -2
+    },
+    {
+      "index": 60,
+      "reference": "害怕批評",
+      "reference_chars": 4,
+      "before": "HIPOCEPA",
+      "after": "害怕 TPU",
+      "before_errors": 8,
+      "after_errors": 3,
+      "error_delta": -5
+    },
+    {
+      "index": 61,
+      "reference": "然後放心遺忘",
+      "reference_chars": 6,
+      "before": "然後放心遺忘。",
+      "after": "然後放心遺忘",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 64,
+      "reference": "裡面應該不會有人類",
+      "reference_chars": 9,
+      "before": "裡面應該不會有人類。",
+      "after": "裡面應該不會有人類",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 65,
+      "reference": "臺灣道路",
+      "reference_chars": 4,
+      "before": "臺灣道路。",
+      "after": "臺灣道路",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 66,
+      "reference": "板橋地政事務所",
+      "reference_chars": 7,
+      "before": "板橋地震事務所。",
+      "after": "板橋地政事務所",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 67,
+      "reference": "高榮新榮交流道",
+      "reference_chars": 7,
+      "before": "高榮新榮交流道。",
+      "after": "高榮興龍交流道",
+      "before_errors": 0,
+      "after_errors": 2,
+      "error_delta": 2
+    },
+    {
+      "index": 68,
+      "reference": "檨仔林埤濕地公園",
+      "reference_chars": 8,
+      "before": "奢仔鱗皮 濕地公園",
+      "after": "車仔林皮濕地公園",
+      "before_errors": 3,
+      "after_errors": 2,
+      "error_delta": -1
+    },
+    {
+      "index": 69,
+      "reference": "橫貫臺灣中部的省道",
+      "reference_chars": 9,
+      "before": "橫灌臺灣中部的神道。",
+      "after": "橫貫臺灣中部的省道",
+      "before_errors": 2,
+      "after_errors": 0,
+      "error_delta": -2
+    },
+    {
+      "index": 71,
+      "reference": "香港好令人擔心",
+      "reference_chars": 7,
+      "before": "香港好令人擔心。",
+      "after": "香港好令人擔心",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 72,
+      "reference": "在游泳池中水下拍攝",
+      "reference_chars": 9,
+      "before": "在游泳池中水下拍攝。",
+      "after": "在游泳池中水下拍攝",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 73,
+      "reference": "一句話",
+      "reference_chars": 3,
+      "before": "一句話。",
+      "after": "一句話",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 74,
+      "reference": "你慢慢看",
+      "reference_chars": 4,
+      "before": "你慢慢看。",
+      "after": "你慢慢看",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 75,
+      "reference": "表達的意見未經深思熟慮",
+      "reference_chars": 11,
+      "before": "表達的意見未經心思熟慮。",
+      "after": "表達的意見未經深思熟慮",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 76,
+      "reference": "大雅系統交流道",
+      "reference_chars": 7,
+      "before": "大亞西從交流道",
+      "after": "大雅西從交流道",
+      "before_errors": 3,
+      "after_errors": 2,
+      "error_delta": -1
+    },
+    {
+      "index": 77,
+      "reference": "要是路燈能自動感應行人",
+      "reference_chars": 11,
+      "before": "要是路燈能自動感應行人。",
+      "after": "要是路燈能自動感應行人",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 80,
+      "reference": "發現一流企業的長相",
+      "reference_chars": 9,
+      "before": "發現一流器件的長相。",
+      "after": "發現一流企業的長相",
+      "before_errors": 2,
+      "after_errors": 0,
+      "error_delta": -2
+    },
+    {
+      "index": 81,
+      "reference": "同時著地",
+      "reference_chars": 4,
+      "before": "同時著地。",
+      "after": "同時著地",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 83,
+      "reference": "繞回公車站",
+      "reference_chars": 5,
+      "before": "繞回公車站。",
+      "after": "繞回公車站",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 85,
+      "reference": "美麗之島",
+      "reference_chars": 4,
+      "before": "美麗之島。",
+      "after": "美麗之島",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 86,
+      "reference": "沒想到很不一樣",
+      "reference_chars": 7,
+      "before": "沒想到很不一樣。",
+      "after": "沒想到很不一樣",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 87,
+      "reference": "漢字順序不影響閱讀",
+      "reference_chars": 9,
+      "before": "漢字順序不影響閱讀。",
+      "after": "漢字順序不影響閱讀",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 88,
+      "reference": "勞動底層",
+      "reference_chars": 4,
+      "before": "好,動地。",
+      "after": "勞動地",
+      "before_errors": 3,
+      "after_errors": 2,
+      "error_delta": -1
+    },
+    {
+      "index": 89,
+      "reference": "也是一種作法",
+      "reference_chars": 6,
+      "before": "也是一種做法。",
+      "after": "也是一種做法",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 90,
+      "reference": "中共主張的和平統一就是一國兩府",
+      "reference_chars": 15,
+      "before": "中共主張的和平統一就是一國兩府。",
+      "after": "中共主張的和平統一就是一國兩府",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 91,
+      "reference": "長年經驗",
+      "reference_chars": 4,
+      "before": "長年經驗。",
+      "after": "長年經驗",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 92,
+      "reference": "不那麼新的新創",
+      "reference_chars": 7,
+      "before": "不那麼新的新章。",
+      "after": "不那麼新的新創",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 93,
+      "reference": "週二我就不去上班了",
+      "reference_chars": 9,
+      "before": "週二我就不去上班了。",
+      "after": "週二我就不去上班了",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 94,
+      "reference": "留職停薪復職者",
+      "reference_chars": 7,
+      "before": "留職停心、復職者。",
+      "after": "留職停薪復職者",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 95,
+      "reference": "房地產專家張金鶚",
+      "reference_chars": 8,
+      "before": "房地產專家張金鶯。",
+      "after": "房地產專家張金二",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 97,
+      "reference": "不只可以存發票",
+      "reference_chars": 7,
+      "before": "不只可以存發票。",
+      "after": "不只可以存發票",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 98,
+      "reference": "音樂劇版獅子王好像也不錯",
+      "reference_chars": 12,
+      "before": "音樂劇版《獅子王》好像也不錯。",
+      "after": "音樂劇版獅子王好像也不錯",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 100,
+      "reference": "身心俱疲卻渾然不覺",
+      "reference_chars": 9,
+      "before": "身心俱疲卻渾然不覺。",
+      "after": "身心俱疲卻渾然不覺",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 101,
+      "reference": "有若干事項需要討論",
+      "reference_chars": 9,
+      "before": "有若干事項需要討論。",
+      "after": "有若干事項需要討論",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 102,
+      "reference": "不去和他們聊天嗎？",
+      "reference_chars": 8,
+      "before": "不去和他們聊天嗎?",
+      "after": "不去和他們聊天嗎",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 103,
+      "reference": "大唐雙龍傳",
+      "reference_chars": 5,
+      "before": "大唐雙龍轉",
+      "after": "大唐商農卷",
+      "before_errors": 1,
+      "after_errors": 3,
+      "error_delta": 2
+    },
+    {
+      "index": 104,
+      "reference": "每天一杯咖啡的錢",
+      "reference_chars": 8,
+      "before": "每天一杯咖啡的錢。",
+      "after": "每天一杯咖啡的錢",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 105,
+      "reference": "我好擔心",
+      "reference_chars": 4,
+      "before": "我好擔心。",
+      "after": "我好擔心",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 106,
+      "reference": "不知道怎麼停止直播",
+      "reference_chars": 9,
+      "before": "不知道怎麼停止直播。",
+      "after": "不知道怎麼停止直播",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 107,
+      "reference": "依憲法增修條文規定",
+      "reference_chars": 9,
+      "before": "依憲法徵修條文規定。",
+      "after": "依憲法徵修條文規定",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 108,
+      "reference": "大雅路二段",
+      "reference_chars": 5,
+      "before": "大雅入二段",
+      "after": "大雅路二段",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 109,
+      "reference": "整合所有環境元件",
+      "reference_chars": 8,
+      "before": "整合所有環境元件。",
+      "after": "整合所有環境元件",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 110,
+      "reference": "衛福部桃園醫院",
+      "reference_chars": 7,
+      "before": "衛福部桃園醫院。",
+      "after": "衛福部桃園醫院",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 112,
+      "reference": "擬定並使用",
+      "reference_chars": 5,
+      "before": "擬定並使用。",
+      "after": "擬訂並使用",
+      "before_errors": 0,
+      "after_errors": 1,
+      "error_delta": 1
+    },
+    {
+      "index": 113,
+      "reference": "發現他們採用了「監督式學習」的技術",
+      "reference_chars": 15,
+      "before": "發現他們採用了監督室學習的技術。",
+      "after": "發現他們採用了監督式學習的技術",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 114,
+      "reference": "何者正確？",
+      "reference_chars": 4,
+      "before": "何者正確?",
+      "after": "合作正確",
+      "before_errors": 0,
+      "after_errors": 2,
+      "error_delta": 2
+    },
+    {
+      "index": 115,
+      "reference": "隆重入港",
+      "reference_chars": 4,
+      "before": "隆重入港。",
+      "after": "隆重入港",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 116,
+      "reference": "一直逼車",
+      "reference_chars": 4,
+      "before": "一直B車",
+      "after": "一隻 b 車",
+      "before_errors": 1,
+      "after_errors": 2,
+      "error_delta": 1
+    },
+    {
+      "index": 117,
+      "reference": "不過好像沒有專案",
+      "reference_chars": 8,
+      "before": "不過好像沒有專案。",
+      "after": "不過好像沒有專案",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 118,
+      "reference": "目前全臺水管漏水率",
+      "reference_chars": 9,
+      "before": "目前全臺水管漏水率。",
+      "after": "目前全臺水管漏水率",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 119,
+      "reference": "芬草交流道",
+      "reference_chars": 5,
+      "before": "分草交流道。",
+      "after": "分草交流道",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 122,
+      "reference": "再讓子彈飛一會兒",
+      "reference_chars": 8,
+      "before": "再讓子彈飛一會兒。",
+      "after": "再讓子彈飛一會兒",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 123,
+      "reference": "我曾經以為是拿鐵咖啡加紅茶",
+      "reference_chars": 13,
+      "before": "我曾經以為是拿鐵咖啡加紅茶。",
+      "after": "我曾經以為是拿鐵咖啡加紅茶",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 124,
+      "reference": "冬天還是可以去",
+      "reference_chars": 7,
+      "before": "冬天還是可以去。",
+      "after": "冬天還是可以去",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 127,
+      "reference": "安心享受老年生活",
+      "reference_chars": 8,
+      "before": "安心享受努力生活。",
+      "after": "安心享受老年生活",
+      "before_errors": 2,
+      "after_errors": 0,
+      "error_delta": -2
+    },
+    {
+      "index": 128,
+      "reference": "分享貼文",
+      "reference_chars": 4,
+      "before": "分享帖文。",
+      "after": "分享貼文",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 129,
+      "reference": "只是先給開會通知",
+      "reference_chars": 8,
+      "before": "只是先給開會通知。",
+      "after": "只是先給開會通知",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 130,
+      "reference": "遠東巨城購物中心",
+      "reference_chars": 8,
+      "before": "遠東聚城購物中心。",
+      "after": "遠東巨城購物中心",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 131,
+      "reference": "真是不錯的設計",
+      "reference_chars": 7,
+      "before": "真是不錯的設計。",
+      "after": "真是不錯的設計",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    }
+  ],
+  "phone_or_home_gpu_latency_test": false,
+  "independent_blind_test": false
+}
