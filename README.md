@@ -6,11 +6,13 @@
 
 [下載 Android APK](https://github.com/DreamOne09/DreamType/releases/latest/download/DreamType.apk) · [安裝步驟](docs/INSTALL.md) · [試用驗收與限制](docs/BETA_ACCEPTANCE.md)
 
-> 目前建議下載 0.9.10 測試版：已加入帳號、個人設定同步、排隊、原文還原與插入撤回。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
+> 目前建議下載 0.9.11 測試版：已加入帳號、個人設定同步、排隊、原文還原與插入撤回。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
 
-## 最新測試版：0.9.10
+## 最新測試版：0.9.11
 
-[下載 0.9.10 測試 APK](https://github.com/DreamOne09/DreamType/releases/download/v0.9.10-rc1/DreamType-0.9.10.apk) · [Pixel 9 驗收步驟](docs/PIXEL9_ACCEPTANCE.md) · [目前上線缺口](docs/LAUNCH_STATUS.md)
+[下載 0.9.11 測試 APK](https://github.com/DreamOne09/DreamType/releases/download/v0.9.11-rc1/DreamType-0.9.11.apk) · [Pixel 9 驗收步驟](docs/PIXEL9_ACCEPTANCE.md) · [目前上線缺口](docs/LAUNCH_STATUS.md)
+
+0.9.11 新增啟動時清理遺留明文錄音暫存，原生跨程序測試確認加密保留錄音及原本語言仍可恢復，登出會清除。詳見 [原生驗證與限制](docs/ANDROID_NATIVE_CI.md)。
 
 0.9.10 補強「取回上一筆」首次查詢的有限重連，不重送錄音；七組 JVM 合約測試及 CI 通過，仍待 Pixel 9 驗收。
 
