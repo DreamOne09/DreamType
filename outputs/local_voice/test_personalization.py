@@ -8,6 +8,14 @@ import server
 from personalization import formatting_prompt, speech_hint, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint
 
 class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_apk_download_redirects_to_published_release_without_local_build(self):
+        with patch.object(server,'verified_apk',return_value=None):
+            response=await self.client.get('/download/localvoice.apk',follow_redirects=False)
+        self.assertEqual(response.status_code,307)
+        self.assertEqual(response.headers['location'],server.APK_URL)
+        self.assertEqual(response.headers['cache-control'],'no-store')
+        self.assertEqual(response.headers['referrer-policy'],'no-referrer')
+
     async def test_explicit_repair_keeps_raw_transcript_for_restore(self):
         client_type=httpx.AsyncClient
         original='明天下午三點，不對，是四點半，不要取消。'

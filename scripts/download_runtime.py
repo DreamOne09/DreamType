@@ -3,10 +3,13 @@ from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
+import sys
 import urllib.request
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1] / 'work'
+sys.path.insert(0,str(ROOT.parent/'outputs/local_voice'))
+from android_release import download_apk
 ROOT.mkdir(exist_ok=True)
 os.environ['HF_HOME'] = str(ROOT / 'hf-cache')
 os.environ['HF_HUB_DISABLE_XET'] = '1'
@@ -46,6 +49,4 @@ with ThreadPoolExecutor(max_workers=3) as pool:
 
 cloud=ROOT/'cloudflared.exe'
 urllib.request.urlretrieve('https://github.com/cloudflare/cloudflared/releases/download/2026.9.1/cloudflared-windows-amd64.exe',cloud)
-apk=ROOT.parent/'outputs/android/DreamType-0.8.0.apk'
-urllib.request.urlretrieve('https://github.com/DreamOne09/DreamType/releases/download/v0.8.0/DreamType.apk',apk)
-if hashlib.sha256(apk.read_bytes()).hexdigest() != '5151c0d999c31f5acca78f5a3895f0c8eb3c5317aa13716ee5849685d0569938':raise RuntimeError('APK checksum mismatch')
+download_apk(ROOT.parent/'outputs/android')
