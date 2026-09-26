@@ -33,6 +33,11 @@ jobs:
             adb install -t work/emulator-probe/probe.apk
             adb shell am instrument -w tw.localvoice.keyboard/.SmokeInstrumentation | tee work/emulator-probe/result.txt
             grep -q 'dreamtype=passed' work/emulator-probe/result.txt
+            adb shell am instrument -w -e pending_restart seed tw.localvoice.keyboard/.SmokeInstrumentation | tee work/emulator-probe/restart-seed.txt
+            grep -q 'pending_restart=seeded' work/emulator-probe/restart-seed.txt
+            adb shell am force-stop tw.localvoice.keyboard
+            adb shell am instrument -w -e pending_restart verify tw.localvoice.keyboard/.SmokeInstrumentation | tee work/emulator-probe/restart-verify.txt
+            grep -q 'pending_restart=passed' work/emulator-probe/restart-verify.txt
             adb pull /sdcard/Android/data/tw.localvoice.keyboard/files work/emulator-probe/screenshots
             adb shell am force-stop tw.localvoice.keyboard
             adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n tw.localvoice.keyboard/.HomeActivity
@@ -48,6 +53,7 @@ jobs:
           name: native-probe-evidence
           path: |
             work/emulator-probe/result.txt
+            work/emulator-probe/restart-*.txt
             work/emulator-probe/ime-result.json
             work/emulator-probe/ime-instrumentation.txt
             work/emulator-probe/account-ime-result.json
