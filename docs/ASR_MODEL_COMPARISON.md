@@ -16,8 +16,34 @@
 - 資料是既有 CC0 test split 索引 0–35，36 段公開音檔。下載時核對每段參考文字及 SHA-256；內容變更就停止，不悄悄換資料。只保存公開參考／辨識文字，音檔、模型與說話者資料不進 Git 或 Actions artifact。
 - CER 與既有基準相同：NFKC、小寫、忽略標點與空白、臺→台。這不是完整語意分數。
 
-已在本機完成 36 段下載來源與雜湊核對；首次模型運算的實際結果仍須以 Actions 報告為準。工作流程每段完成就保存報告，只有全部完成才有 `complete: true`，失敗或超時不算通過。
+工作流程每段完成就保存報告，只有全部完成才有 `complete: true`，失敗或超時不算通過。
+
+## 首次完成結果（2026-09-26）
+
+[Actions 36212997788](https://github.com/DreamOne09/DreamType/actions/runs/36212997788) 的兩個模型均完成全部 36 段；來源提交為 `575f05fb30d6e832000e0b3bc74ee347a751c5da`。完整公開輸出保存於 [Turbo 報告](evidence/asr-model-comparison/turbo-report.json)、[Breeze 報告](evidence/asr-model-comparison/breeze-report.json)，不依賴七天後會過期的 Actions artifact。
+
+| 指標 | Turbo | Breeze |
+|---|---:|---:|
+| 參考字元 | 247 | 247 |
+| 字元錯誤數 | 30 | 27 |
+| CER | 12.15% | 10.93% |
+| 正規化後完全相符 | 18 / 36 | 23 / 36 |
+| 空白辨識 | 1 / 36 | 1 / 36 |
+| 單段 CPU 中位數 | 9.513 秒 | 3.725 秒 |
+| 全部辨識 CPU 耗時 | 333.844 秒 | 131.800 秒 |
+
+逐段比較有 9 段錯誤數下降、5 段上升、22 段相同。Breeze 正確辨識「臺灣海峽」「文山內湖線」「老坑交流道」，但「常常拿著這份文件」變成「整天拿著這份文件」，「觀音區棒壘球場」變成「歡迎去幫你修長」。兩者對「旗六公路」皆輸出空白。錯誤數相同也不代表意思相同，例如「而且各站都停」在 Breeze 多出「了」。
+
+**決策：保留現有 Turbo，不自動部署 Breeze。** 少三個錯字不足以證明整體更好，新增或改變意思的錯誤仍可能造成實際損失。下一輪應先固定未用於調整的新錄音集，增加長口述、中英夾雜、地名與含否定／數字的內容，再看整體與各類退步，不以這 36 段反覆調參後的高分作為上線依據。
+
+兩個工作跑在不同 GitHub CPU runner，硬體與排程未控制；表中的秒數只記錄這次運算，不能證明 Breeze 在家中 GPU 或手機上比較快。此測試未包含網路、排隊、文字整理與翻譯。
+
+[比較摘要](evidence/asr-model-comparison/summary.json) 由下列命令重算；腳本會核對完整 36 段、逐段參考／雜湊／時長與設定，並重新計算錯誤數，而非信任報告的總計欄位：
+
+```powershell
+python scripts/summarize_asr_comparison.py --before docs/evidence/asr-model-comparison/turbo-report.json --after docs/evidence/asr-model-comparison/breeze-report.json --output work/asr-summary.json
+```
 
 ## 決策界線
 
-這批資料已用於先前診斷，現在是比較／回歸集，不能再稱獨立盲測。它只是連續短句便利抽樣，沒有長口述、中英夾雜的代表性覆盖，也沒有 Typeless 同音檔對照。CPU runner 的秒數不能當成 Pixel 9 或家中 GPU 的實際延遲。只有品質確實有改善後，才值得評估家用 GPU 記憶體、速度與中文／其他語言路由；本次不自動部署候選模型。
+這批資料已用於先前診斷，現在是比較／回歸集，不能再稱獨立盲測。它只是連續短句便利抽樣，沒有長口述、中英夾雜的代表性覆蓋，也沒有 Typeless 同音檔對照。CPU runner 的秒數不能當成 Pixel 9 或家中 GPU 的實際延遲。只有品質確實有改善後，才值得評估家用 GPU 記憶體、速度與中文／其他語言路由；本次不自動部署候選模型。

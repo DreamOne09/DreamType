@@ -1,0 +1,285 @@
+{
+  "same_corpus_and_settings": true,
+  "cases": 36,
+  "totals": [
+    {
+      "model": "mobiuslabsgmbh/faster-whisper-large-v3-turbo",
+      "revision": "0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf",
+      "errors": 30,
+      "reference_chars": 247,
+      "cer": 0.1214574898785425,
+      "exact_cases": 18,
+      "empty_cases": 1,
+      "cpu_median_seconds": 9.513,
+      "cpu_total_seconds": 333.844
+    },
+    {
+      "model": "shdennlin/breeze-asr-25-ct2",
+      "revision": "70660216b01a6f6b7b8c5690767a4763df61755f",
+      "errors": 27,
+      "reference_chars": 247,
+      "cer": 0.10931174089068826,
+      "exact_cases": 23,
+      "empty_cases": 1,
+      "cpu_median_seconds": 3.725,
+      "cpu_total_seconds": 131.8
+    }
+  ],
+  "improved_cases": 9,
+  "regressed_cases": 5,
+  "equal_error_cases": 22,
+  "changed_cases": [
+    {
+      "index": 0,
+      "reference": "我們的人口結構急速老化",
+      "reference_chars": 11,
+      "before": "我們的人口結構極速老化。",
+      "after": "我們的人口結構急速老化",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 2,
+      "reference": "則正確的說明了星球的大小",
+      "reference_chars": 12,
+      "before": "則正確地說明瞭星球的大小。",
+      "after": "則正確的說明瞭星球的大小",
+      "before_errors": 2,
+      "after_errors": 1,
+      "error_delta": -1
+    },
+    {
+      "index": 4,
+      "reference": "東華大學聯外道路",
+      "reference_chars": 8,
+      "before": "東華大學連外道路。",
+      "after": "東華大學聯外道路",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 5,
+      "reference": "我今天和明天都要上課",
+      "reference_chars": 10,
+      "before": "我今天和明天都要上課。",
+      "after": "我今天和明天都要上課",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 6,
+      "reference": "是內建的瀏覽器功能",
+      "reference_chars": 9,
+      "before": "室內建的瀏覽器功能。",
+      "after": "室內建的瀏覽器功能",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 7,
+      "reference": "土地認養案例",
+      "reference_chars": 6,
+      "before": "土地任養案例",
+      "after": "土地認養案例",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 9,
+      "reference": "華頓商學院最受歡迎的談判課",
+      "reference_chars": 13,
+      "before": "華頓山學院最受歡迎的談判課",
+      "after": "華頓商學院最受歡迎的談判課",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 11,
+      "reference": "你等我模擬",
+      "reference_chars": 5,
+      "before": "你等我模擬。",
+      "after": "你等我模擬",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 14,
+      "reference": "老坑交流道",
+      "reference_chars": 5,
+      "before": "老坑交流到",
+      "after": "老坑交流道",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 16,
+      "reference": "勉強自己和別人好",
+      "reference_chars": 8,
+      "before": "勉強自己和別人好。",
+      "after": "勉強自己和別人好",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 17,
+      "reference": "常常拿著這份文件",
+      "reference_chars": 8,
+      "before": "常常拿著這份文件",
+      "after": "整天拿著這份文件",
+      "before_errors": 0,
+      "after_errors": 2,
+      "error_delta": 2
+    },
+    {
+      "index": 18,
+      "reference": "追分至成功站間的鐵路幹線",
+      "reference_chars": 12,
+      "before": "追分至成功戰監的鐵路幹線。",
+      "after": "J分製成工站間的鐵路幹線",
+      "before_errors": 2,
+      "after_errors": 3,
+      "error_delta": 1
+    },
+    {
+      "index": 19,
+      "reference": "應以公平分配為首",
+      "reference_chars": 8,
+      "before": "因已公平分配為首。",
+      "after": "因應公平分配為所",
+      "before_errors": 2,
+      "after_errors": 3,
+      "error_delta": 1
+    },
+    {
+      "index": 20,
+      "reference": "準備吃午餐",
+      "reference_chars": 5,
+      "before": "準備吃午餐。",
+      "after": "準備吃午餐",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 21,
+      "reference": "七賢自強路口東北側",
+      "reference_chars": 9,
+      "before": "西閑自強入口東北側",
+      "after": "七賢至強路口東北側",
+      "before_errors": 3,
+      "after_errors": 1,
+      "error_delta": -2
+    },
+    {
+      "index": 22,
+      "reference": "觀音區棒壘球場",
+      "reference_chars": 7,
+      "before": "歡迎去棒雷球場",
+      "after": "歡迎去幫你修長",
+      "before_errors": 4,
+      "after_errors": 7,
+      "error_delta": 3
+    },
+    {
+      "index": 23,
+      "reference": "多納高吊橋",
+      "reference_chars": 5,
+      "before": "多拿高吊橋。",
+      "after": "多拿高吊橋",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 24,
+      "reference": "謝謝主席的說明",
+      "reference_chars": 7,
+      "before": "謝謝主席的說明。",
+      "after": "謝謝主席的說明",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 26,
+      "reference": "花的雄蕊產生花粉粒",
+      "reference_chars": 9,
+      "before": "花的雄蕊產生花粉粒。",
+      "after": "花的雄瑞產生花粉粒",
+      "before_errors": 0,
+      "after_errors": 1,
+      "error_delta": 1
+    },
+    {
+      "index": 27,
+      "reference": "臺灣海峽",
+      "reference_chars": 4,
+      "before": "臺灣海鮮。",
+      "after": "臺灣海峽",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 28,
+      "reference": "文山內湖線",
+      "reference_chars": 5,
+      "before": "文山內浮縣",
+      "after": "文山內湖線",
+      "before_errors": 2,
+      "after_errors": 0,
+      "error_delta": -2
+    },
+    {
+      "index": 29,
+      "reference": "叫做天佑花蓮",
+      "reference_chars": 6,
+      "before": "叫做天有花蓮。",
+      "after": "叫做天有花蓮",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 32,
+      "reference": "王田交流道",
+      "reference_chars": 5,
+      "before": "王田交流道。",
+      "after": "王田交流道",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 33,
+      "reference": "而且各站都停",
+      "reference_chars": 6,
+      "before": "而且各站都挺",
+      "after": "而且各站都停了",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 34,
+      "reference": "民國元年",
+      "reference_chars": 4,
+      "before": "民國元年。",
+      "after": "民國元年",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    }
+  ],
+  "phone_or_home_gpu_latency_test": false,
+  "independent_blind_test": false
+}
