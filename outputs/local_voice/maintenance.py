@@ -1,5 +1,6 @@
 """One bounded maintenance pass; intended for Windows Task Scheduler every five minutes."""
 import json
+import argparse
 import shutil
 import subprocess
 import sys
@@ -24,7 +25,7 @@ def copy_encrypted(source,target):
     finally:
         temporary.unlink(missing_ok=True)
 
-def run(root=ROOT):
+def run(root=ROOT,force_backup=False):
     work=root/'work';state_path=work/'maintenance-status.json'
     try:state=json.loads(state_path.read_text())
     except (OSError,ValueError):state={}
@@ -53,10 +54,12 @@ def run(root=ROOT):
             state['last_tunnel_restart']=now;state['phone_url_may_have_changed']=True
         except Exception:state['errors'].append('tunnel_restart_failed')
     # Create the snapshot first: create() also refreshes the local ledger.
-    if now-state.get('last_backup',0)>86400:
+    if force_backup or now-state.get('last_backup',0)>86400:
         try:
             archive=create(root)
             state['last_backup']=now;state['backup_file']=archive.name
+            # create() returns only after a real isolated restore succeeds.
+            state['last_backup_verified']=now;state['backup_verified_file']=archive.name
             config=work/'backup-config.json'
             if config.exists():
                 target=Path(json.loads(config.read_text())['sync_directory'])
@@ -83,4 +86,7 @@ def run(root=ROOT):
     return state
 
 if __name__=='__main__':
-    result=run();print(json.dumps(result,indent=2));sys.exit(1 if result['errors'] else 0)
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--backup-now',action='store_true',help='Create and restore-verify a fresh backup during this maintenance pass')
+    args=parser.parse_args()
+    result=run(force_backup=args.backup_now);print(json.dumps(result,indent=2));sys.exit(1 if result['errors'] else 0)

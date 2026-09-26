@@ -2,10 +2,42 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 from beta_store import Store,StoreError
-from backup import create,restore,export_deletions
+from backup import create,restore,export_deletions,verify
 
 class BackupTests(unittest.TestCase):
+    def test_create_verifies_restore_and_removes_temporary_plaintext(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';store=Store(work/'beta/accounts.sqlite3')
+            (work/'beta/admin.key').write_text('a'*43);(work/'local-voice.key').write_text('b'*43)
+            uid=store.create('alice','test-password-12345')
+            token=store.login('alice','test-password-12345')['token']
+            with patch('backup.restore',wraps=restore) as called:
+                archive=create(root)
+                self.assertEqual(called.call_count,1)
+                self.assertNotEqual(called.call_args.args[0],root)
+            self.assertEqual(store.authenticate(token)['id'],uid)
+            before=(work/'beta/accounts.sqlite3').read_bytes()
+            report=verify(root,archive,work/'backup-recovery.key')
+            self.assertEqual(set(report),{'verified','scope','archive'})
+            self.assertTrue(report['verified'])
+            self.assertEqual(before,(work/'beta/accounts.sqlite3').read_bytes())
+            self.assertEqual(list(work.glob('restore-check-*')),[])
+            damaged=bytearray(archive.read_bytes());damaged[-1]^=1;archive.write_bytes(damaged)
+            with self.assertRaises(Exception):verify(root,archive,work/'backup-recovery.key')
+            self.assertEqual(list(work.glob('restore-check-*')),[])
+            self.assertEqual(store.authenticate(token)['id'],uid)
+
+    def test_create_does_not_report_success_when_restore_verification_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';Store(work/'beta/accounts.sqlite3')
+            (work/'beta/admin.key').write_text('a'*43);(work/'local-voice.key').write_text('b'*43)
+            with patch('backup.verify',side_effect=ValueError('restore check failed')):
+                with self.assertRaisesRegex(ValueError,'restore check failed'):create(root)
+            self.assertEqual(list((work/'backups').glob('*.dtbackup')),[])
+            self.assertEqual(list((work/'backups').glob('*.verifying')),[])
+
     def test_restore_rejects_ledger_exported_before_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)/'source';work=root/'work';Store(work/'beta/accounts.sqlite3')

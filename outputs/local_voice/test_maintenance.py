@@ -6,6 +6,32 @@ from unittest.mock import patch,Mock
 from maintenance import run,copy_encrypted
 
 class MaintenanceTests(unittest.TestCase):
+    def test_explicit_backup_now_runs_even_with_recent_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';work.mkdir()
+            archive=work/'new.dtbackup';ledger=work/'latest-deletions.dtledger'
+            (work/'maintenance-status.json').write_text(json.dumps({'last_backup':100}))
+            with patch('maintenance.time.time',return_value=110), \
+                    patch('maintenance.httpx.get',return_value=Mock(status_code=200,json=lambda:{'status':'ready'})), \
+                    patch('maintenance.create',return_value=archive) as create, \
+                    patch('maintenance.export_deletions',return_value=ledger):
+                run(root);create.assert_not_called()
+                state=run(root,force_backup=True);create.assert_called_once_with(root)
+            self.assertEqual(state['last_backup_verified'],110)
+
+    def test_failed_verified_create_is_not_copied_or_marked_verified(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';work.mkdir();cloud=root/'sync';cloud.mkdir()
+            (work/'backup-config.json').write_text(json.dumps({'sync_directory':str(cloud)}))
+            ledger=work/'latest-deletions.dtledger';ledger.write_bytes(b'DTD1 encrypted')
+            with patch('maintenance.httpx.get',return_value=Mock(status_code=200,json=lambda:{'status':'ready'})), \
+                    patch('maintenance.create',side_effect=ValueError('verification failed')), \
+                    patch('maintenance.export_deletions',return_value=ledger):
+                state=run(root)
+            self.assertIn('backup_or_copy_failed',state['errors'])
+            self.assertNotIn('last_backup_verified',state)
+            self.assertEqual(list(cloud.glob('*.dtbackup')),[])
+
     def test_failed_copy_preserves_previous_complete_ledger(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);target=root/'sync';target.mkdir()
@@ -46,6 +72,8 @@ class MaintenanceTests(unittest.TestCase):
             with patch('maintenance.export_deletions',return_value=ledger),patch('maintenance.httpx.get',return_value=Mock(status_code=200,json=lambda:{'status':'ready'})),patch('maintenance.create',return_value=archive),patch('maintenance.subprocess.run') as process:
                 state=run(root);process.assert_not_called()
             self.assertEqual(state['errors'],[]);self.assertEqual(sorted(p.name for p in cloud.iterdir()),['latest-deletions.dtledger','test.dtbackup'])
+            self.assertEqual(state['backup_verified_file'],archive.name)
+            self.assertEqual(state['last_backup_verified'],state['last_backup'])
     def test_host_restart_waits_for_two_failures(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);(root/'work').mkdir()

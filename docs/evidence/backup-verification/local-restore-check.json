@@ -1,0 +1,11 @@
+{
+  "local_backup_created": true,
+  "isolated_restore_verified": true,
+  "second_verify_passed": true,
+  "elapsed_seconds": 0.157,
+  "temporary_restore_directories_remaining": 0,
+  "live_database_replaced": false,
+  "offsite_verified": false,
+  "cloud_upload_performed": false,
+  "account_data_in_report": false
+}

@@ -19,10 +19,19 @@ class OperationsTests(unittest.TestCase):
     def test_sync_copy_is_never_cloud_verification(self):
         state={key:100 for key in ('checked_at','last_backup','last_deletion_export','last_backup_copy','last_deletion_copy')}
         state.update(ready=True,tunnel_ready=True,errors=[],disk_free_bytes=10*1024**3)
+        state.update(last_backup_verified=100,backup_file='a.dtbackup',backup_verified_file='a.dtbackup')
         report=summarize(state,True,now=110)
         self.assertEqual(self.states(report)['offsite'],'unverified')
         self.assertTrue(report['needs_attention'])
         self.assertTrue(all(item['state']=='ok' for item in report['checks'] if item['code']!='offsite'))
+
+    def test_old_verification_cannot_certify_a_new_backup(self):
+        state={'last_backup':100,'last_backup_verified':100,'backup_file':'new.dtbackup',
+               'backup_verified_file':'old.dtbackup'}
+        self.assertEqual(self.states(summarize(state,now=110))['backup_restore'],'attention')
+        state['backup_verified_file']='new.dtbackup'
+        self.assertEqual(self.states(summarize(state,now=110))['backup_restore'],'ok')
+        self.assertEqual(self.states(summarize(state,now=150000))['backup_restore'],'attention')
 
     def test_malformed_missing_future_and_old_backup_remain_attention(self):
         for value in (None,[],{'checked_at':float('nan')},{'checked_at':True},
