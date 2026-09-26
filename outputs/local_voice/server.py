@@ -20,7 +20,8 @@ for directory in (WORK / 'venv/Lib/site-packages/nvidia').glob('*/bin'):
 import httpx
 import numpy as np
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form, Depends
-from fastapi.responses import PlainTextResponse, FileResponse
+from fastapi.responses import PlainTextResponse, FileResponse, RedirectResponse
+from android_release import APK_NAME, APK_URL, verified_apk
 from faster_whisper import WhisperModel
 from faster_whisper.audio import decode_audio
 from opencc import OpenCC
@@ -68,12 +69,13 @@ async def test_page():
 
 @app.get('/download/localvoice.apk')
 async def android_apk():
-    apk = Path(__file__).parent.parent / 'android/DreamType-0.8.0.apk'
-    if not apk.exists():
-        raise HTTPException(404, 'Android package is not ready')
-    return FileResponse(apk, filename='DreamType-0.8.0.apk',
+    headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'}
+    apk = await asyncio.to_thread(verified_apk, Path(__file__).parent.parent / 'android')
+    if apk is None:
+        return RedirectResponse(APK_URL,status_code=307,headers=headers)
+    return FileResponse(apk, filename=APK_NAME,
         media_type='application/vnd.android.package-archive',
-        headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
+        headers=headers)
 
 @app.on_event('startup')
 async def load_model():
