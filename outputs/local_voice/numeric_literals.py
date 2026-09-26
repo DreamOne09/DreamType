@@ -23,7 +23,7 @@ def strip_list_labels(text):
     return text
 
 
-_UNIT = re.compile(r'(?:公斤|公升|公尺|公分|公里|毫升|個|人|次|件|份|元)')
+_UNIT = re.compile(r'(?:公斤|公升|公尺|公分|公里|毫升|個|人|次|件|份|元|杯|張|盒|瓶)')
 
 
 def _scan(text):
