@@ -13,8 +13,39 @@ import java.util.Arrays;
 public final class SmokeInstrumentation extends Instrumentation {
  private boolean configureVoice,accountVoice,verifyDelivered;
  private String loginPassword="";
+ private String pendingRestart="";
  private String voiceToken="synthetic-emulator-token";
- @Override public void onCreate(Bundle args){super.onCreate(args);configureVoice=args!=null&&"true".equals(args.getString("configure_voice"));accountVoice=args!=null&&"true".equals(args.getString("account_voice"));verifyDelivered=args!=null&&"true".equals(args.getString("verify_delivered"));if(args!=null){voiceToken=args.getString("voice_token",voiceToken);loginPassword=args.getString("login_password","");}start();}
+ @Override public void onCreate(Bundle args){super.onCreate(args);configureVoice=args!=null&&"true".equals(args.getString("configure_voice"));accountVoice=args!=null&&"true".equals(args.getString("account_voice"));verifyDelivered=args!=null&&"true".equals(args.getString("verify_delivered"));if(args!=null){voiceToken=args.getString("voice_token",voiceToken);loginPassword=args.getString("login_password","");pendingRestart=args.getString("pending_restart","");}start();}
+ private void pendingRestartCheck(Context context,Bundle result)throws Exception{
+  SharedPreferences probe=context.getSharedPreferences("restart-probe",0);
+  byte[] sample="synthetic recording retained across process restart".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+  File stored=new File(context.getNoBackupFilesDir(),"pending-recording.bin");
+  if("seed".equals(pendingRestart)){
+   AppConfig.clearSession(context);
+   AppConfig config=new AppConfig("https://example.invalid","synthetic-restart-token",false,"","",true,true,"translate","ja","zh-TW");
+   config.save(context);
+   File audio=new File(context.getCacheDir(),"restart-synthetic.bin");
+   try{
+    Files.write(audio.toPath(),sample);
+    EncryptedRecording.Entry entry=PendingAudio.prepare(context,config,audio);
+    if(!probe.edit().putString("id",entry.id).putInt("pid",android.os.Process.myPid()).commit())throw new AssertionError("Seed metadata not saved");
+   }finally{audio.delete();}
+   // A later preference change must not alter the retained recording's target.
+   if(!context.getSharedPreferences("style",0).edit().putString("mode","organize").putString("target_language","en").commit())throw new AssertionError("Preference change not saved");
+   if(!stored.isFile())throw new AssertionError("Encrypted recording not retained");
+   result.putString("pending_restart","seeded");return;
+  }
+  if(!"verify".equals(pendingRestart))throw new AssertionError("Unknown restart phase");
+  if(probe.getInt("pid",-1)==android.os.Process.myPid())throw new AssertionError("Process did not restart");
+  AppConfig active=AppConfig.load(context);
+  if(!active.accountMode||!active.key.equals("synthetic-restart-token")||!active.mode.equals("organize"))throw new AssertionError("Keystore session or changed preference lost");
+  EncryptedRecording.Entry recovered=PendingAudio.read(context,active);
+  AppConfig retry=recovered.requestConfig(active);
+  if(!recovered.id.equals(probe.getString("id",""))||!Arrays.equals(sample,recovered.audio)||!retry.mode.equals("translate")||!retry.targetLanguage.equals("ja")||!retry.sourceLanguage.equals("zh-TW"))throw new AssertionError("Retained recording identity, bytes or language changed");
+  AppConfig.clearSession(context);
+  if(stored.exists()||new File(stored.getPath()+".tmp").exists()||!AppConfig.load(context).key.isEmpty())throw new AssertionError("Logout did not remove restarted session and recording");
+  probe.edit().clear().commit();result.putString("pending_restart","passed");
+ }
  private TextView find(View v,String text){
   if(v instanceof TextView&&text.equals(((TextView)v).getText().toString()))return (TextView)v;
   if(v instanceof ViewGroup){ViewGroup group=(ViewGroup)v;for(int i=0;i<group.getChildCount();i++){TextView result=find(group.getChildAt(i),text);if(result!=null)return result;}}
@@ -114,6 +145,7 @@ public final class SmokeInstrumentation extends Instrumentation {
   Bundle result=new Bundle();
   try{
    Context context=getTargetContext();
+   if(!pendingRestart.isEmpty()){pendingRestartCheck(context,result);finish(Activity.RESULT_OK,result);return;}
    if(verifyDelivered){
     if(!AppConfig.load(context).accountMode)throw new AssertionError("Account mode was not used");
     if(new File(context.getNoBackupFilesDir(),"pending-recording.bin").exists())throw new AssertionError("Delivered recording still retained");

@@ -156,3 +156,10 @@ Android 錄音 28,320 bytes，PyAV 解碼 3.136 秒；資料庫只有一筆 done
 [私人模式](evidence/android-0.9.10/ime-result.json) · [帳號 fixture](evidence/android-0.9.10/account-ime-result.json) · [正式隔離後端](evidence/android-0.9.10/backend-ime-result.json) · [回應遺失](evidence/android-0.9.10/interrupted-backend-ime-result.json) · [原生安全與首頁](evidence/android-0.9.10/result.txt) · [鍵盤操作](evidence/android-0.9.10/ime-instrumentation.txt)。
 
 這輪原生測試沒有新增「首次 latest-dictation 查詢 503」的故障注入；0.9.10 該修正由七組 JVM 合約中的 HTTP 故障測試驗證。原生回歸證明既有流程未在此次執行退步，不能冒充新增分支已在手機驗證。所有 AI 回應仍為固定文字，Pixel 9、真實辨識、長時間離線與 Surfshark 行動網路仍未驗收。
+
+
+## 待驗證：保留錄音跨程序重啟
+
+原生工作流程新增兩階段測試：先以真實 Android Keystore 儲存合成帳號憑證及保留錄音，改變目前模式／語言後強制停止 App，再啟動新的 instrumentation 程序。第二階段要求 PID 已改變、憑證可解密、音訊與請求 ID 相同，且重試仍使用錄音原本的日文目標及 zh-TW 來源；最後登出，直接檢查保留檔案與憑證已清除。
+
+此檢查僅放在可拋棄測試 APK，沒有加入發布 APK。當前已通過本機 Android 36 SDK 編譯，原生執行結果待確認。它驗證完整寫入後的跨程序保存，不模擬寫到一半遭終止、裝置重開機、伺服器未完成工作恢復或長時間離線，也不使用真人錄音。
