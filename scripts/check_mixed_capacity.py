@@ -77,6 +77,8 @@ async def run(args):
     with tempfile.TemporaryDirectory(prefix='dreamtype-capacity-') as directory:
         app = FastAPI()
         beta = install_beta(app, Path(directory), provider, audio_duration)
+        if args.queue_policy == 'fifo':
+            beta.queue = asyncio.Queue(maxsize=8)
         await beta.start()
         try:
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://probe') as client:
@@ -154,7 +156,8 @@ async def run(args):
                     results.extend(batch)
         finally:
             await beta.stop()
-    return {'simultaneous_accounts': 3, 'rounds': 2, 'database': 'isolated temporary SQLite, removed after test',
+    return {'simultaneous_accounts': 3, 'rounds': 2, 'queue_policy': args.queue_policy,
+        'database': 'isolated temporary SQLite, removed after test',
         'transport': 'in-process account ASGI to localhost HTTP inference',
         'audio': 'hash-verified public manifest audio concatenated and cut to 5/30/60 seconds',
         'submission_order_seconds': [[5, 30, 60], [60, 30, 5]],
@@ -167,6 +170,8 @@ def main():
     parser.add_argument('--runtime-root', type=Path, required=True)
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--queue-policy', choices=('production', 'fifo'), default='production',
+                        help='FIFO is an isolated benchmark baseline; never changes the live queue')
     args = parser.parse_args()
     report = asyncio.run(run(args))
     args.output.parent.mkdir(parents=True, exist_ok=True)

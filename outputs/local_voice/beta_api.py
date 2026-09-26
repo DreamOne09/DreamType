@@ -1,4 +1,4 @@
-"""Invitation-only multi-user API. One process owns a bounded FIFO inference queue."""
+"""Invitation-only multi-user API. One process owns a bounded fair inference queue."""
 import asyncio
 import hashlib
 import json
@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from beta_store import Store, StoreError
 from personalization import validate_preferences
 from translation import validate_translation
+from inference_queue import InferenceQueue
 
 def audio_duration(data):
     """Decode frames incrementally; stop long/compressed recordings before allocating PCM."""
@@ -55,8 +56,15 @@ class Beta:
         path=work/'beta/admin.key'
         if not path.exists():path.write_text(secrets.token_urlsafe(32),encoding='ascii')
         self.admin=path.read_text().strip()
-        self.queue=asyncio.Queue(maxsize=8);self.results={};self.tasks=[];self.logins=deque()
+        self.queue=self.new_queue();self.results={};self.tasks=[];self.logins=deque()
         self.login_slots=asyncio.Semaphore(2)
+    def new_queue(self):
+        def short_dictation(job):
+            uid,jid,_,prefs=job
+            if prefs.get('mode','organize')!='organize':return False
+            try:return self.store.job(uid,jid)['seconds']<=15
+            except StoreError:return False
+        return InferenceQueue(maxsize=8,is_short=short_dictation)
     async def start(self):
         self.store.cleanup()
         self.store.recover()
@@ -66,7 +74,7 @@ class Beta:
         for task in self.tasks:task.cancel()
         await asyncio.gather(*self.tasks,return_exceptions=True)
         self.store.recover();self.results.clear()
-        self.queue=asyncio.Queue(maxsize=8)
+        self.queue=self.new_queue()
     def workers_ready(self):
         # Both inference consumption and retention cleanup are required. An
         # empty/partially started task list must not count as a healthy service.

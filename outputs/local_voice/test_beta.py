@@ -15,6 +15,38 @@ class Provider:
         return {'text':'整理完成','timings':{'total_seconds':0.1}}
 
 class BetaTests(unittest.IsolatedAsyncioTestCase):
+    async def test_short_dictation_priority_uses_decoded_duration_and_mode(self):
+        self.beta.decoder=lambda audio:float(audio)
+        self.provider.gate.clear()
+        users=[await self.account('priority-'+str(i)) for i in range(5)]
+        await self.upload(users[0][1],audio=b'60')
+        async def started():
+            while not self.provider.calls:await asyncio.sleep(.01)
+        await asyncio.wait_for(started(),2)
+        await self.upload(users[1][1],audio=b'30')
+        await self.upload({**users[2][1],'X-DreamType-Mode':'translate','X-DreamType-Target':'en'},audio=b'5')
+        await self.upload(users[3][1],audio=b'15')
+        await self.upload(users[4][1],audio=b'15.1')
+        self.provider.gate.set()
+        await asyncio.wait_for(self.beta.queue.join(),3)
+        self.assertEqual([call[0] for call in self.provider.calls],[b'60',b'15',b'30',b'5',b'15.1'])
+        for (uid,_),seconds in zip(users,(60,30,5,15,16)):
+            self.assertEqual(self.beta.store.me(uid)['used_seconds'],seconds)
+
+    async def test_recovered_jobs_keep_snapshot_and_short_priority(self):
+        self.beta.decoder=lambda audio:float(audio)
+        users=[await self.account('recover-priority-'+str(i)) for i in range(3)]
+        await self.beta.stop()
+        await self.upload(users[0][1],audio=b'30')
+        await self.upload({**users[1][1],'X-DreamType-Mode':'translate','X-DreamType-Target':'ja'},audio=b'5')
+        await self.upload(users[2][1],audio=b'10')
+        await self.beta.stop()
+        await self.beta.start()
+        await asyncio.wait_for(self.beta.queue.join(),3)
+        self.assertEqual([call[0] for call in self.provider.calls],[b'10',b'30',b'5'])
+        self.assertEqual(self.provider.calls[-1][1]['target_language'],'ja')
+        self.assertTrue(self.beta.workers_ready())
+
     async def test_full_queue_rejects_without_reserving_and_accepts_later(self):
         first,a=await self.account();second,b=await self.account('bob');third,c=await self.account('charlie')
         # Keep the production worker, but use one waiting slot to reach capacity quickly.
