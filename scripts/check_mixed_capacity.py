@@ -138,11 +138,11 @@ async def run(args):
                         'cross_account_denied': True, 'used_seconds': me.json()['used_seconds'],
                         'duplicate_receipt_no_extra_charge': True}
 
-                for round_number in range(2):
+                for round_number in range(args.rounds):
                     provider.events.clear()
                     # Reverse round two so short dictation also waits behind
                     # long translation; short-first alone hides head-of-line delay.
-                    order = range(3) if round_number == 0 else reversed(range(3))
+                    order = range(3) if round_number % 2 == 0 else reversed(range(3))
                     tasks = []
                     for i in order:
                         accepted = asyncio.Event()
@@ -154,13 +154,15 @@ async def run(args):
                     if any(isinstance(row, BaseException) for row in batch):
                         raise RuntimeError('Mixed probe failed; all submissions settled before cleanup')
                     results.extend(batch)
+                    print(json.dumps({'round_completed': round_number + 1,
+                                      'jobs_completed': len(results)}), flush=True)
         finally:
             await beta.stop()
-    return {'simultaneous_accounts': 3, 'rounds': 2, 'queue_policy': args.queue_policy,
+    return {'simultaneous_accounts': 3, 'rounds': args.rounds, 'queue_policy': args.queue_policy,
         'database': 'isolated temporary SQLite, removed after test',
         'transport': 'in-process account ASGI to localhost HTTP inference',
         'audio': 'hash-verified public manifest audio concatenated and cut to 5/30/60 seconds',
-        'submission_order_seconds': [[5, 30, 60], [60, 30, 5]],
+        'submission_order_seconds': [[5, 30, 60] if i % 2 == 0 else [60, 30, 5] for i in range(args.rounds)],
         'quality_evaluated': False, 'native_device_test': False, 'capacity_guarantee': False,
         'live_queue_locked': False, 'results': results}
 
@@ -170,6 +172,8 @@ def main():
     parser.add_argument('--runtime-root', type=Path, required=True)
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--rounds', type=int, choices=range(1,11), default=2,
+                        help='Bounded repeated load, up to ten rounds within each test account quota')
     parser.add_argument('--queue-policy', choices=('production', 'fifo'), default='production',
                         help='FIFO is an isolated benchmark baseline; never changes the live queue')
     args = parser.parse_args()
