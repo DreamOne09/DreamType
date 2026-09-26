@@ -58,7 +58,7 @@ def run(root=ROOT,force_backup=False):
         try:
             archive=create(root)
             state['last_backup']=now;state['backup_file']=archive.name
-            # create() returns only after a real isolated restore succeeds.
+            # create() validates the shared restore preparation in memory.
             state['last_backup_verified']=now;state['backup_verified_file']=archive.name
             config=work/'backup-config.json'
             if config.exists():

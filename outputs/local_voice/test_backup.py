@@ -1,12 +1,33 @@
 import tempfile
 import unittest
 import zipfile
+import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import patch
 from beta_store import Store,StoreError
 from backup import create,restore,export_deletions,verify
 
 class BackupTests(unittest.TestCase):
+    def test_abrupt_exit_during_snapshot_and_verification_leaves_no_plaintext_copy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';Store(work/'beta/accounts.sqlite3')
+            (work/'beta/admin.key').write_text('a'*43);(work/'local-voice.key').write_text('b'*43)
+            archive=create(root)
+            original={p.relative_to(root):p.read_bytes() for p in root.rglob('*') if p.is_file()}
+            scripts=[
+                "import backup,os,sys; from pathlib import Path; backup.encrypt=lambda *a:os._exit(73); backup.create(Path(sys.argv[1]))",
+                "import backup,os,sys; from pathlib import Path; backup._check_restored=lambda *a:os._exit(73); backup.verify(Path(sys.argv[1]),Path(sys.argv[2]),Path(sys.argv[1])/'work/backup-recovery.key')",
+            ]
+            for script in scripts:
+                process=subprocess.run([sys.executable,'-c',script,str(root),str(archive)],
+                    cwd=Path(__file__).resolve().parent,capture_output=True,timeout=30)
+                self.assertEqual(process.returncode,73,process.stderr.decode(errors='replace'))
+                current={p.relative_to(root):p.read_bytes() for p in root.rglob('*') if p.is_file()}
+                self.assertEqual(current,original)
+                self.assertEqual(list(work.glob('restore-check-*')),[])
+                self.assertFalse(any(p.is_dir() for p in (work/'backups').iterdir()))
+
     def test_create_verifies_restore_and_removes_temporary_plaintext(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);work=root/'work';store=Store(work/'beta/accounts.sqlite3')

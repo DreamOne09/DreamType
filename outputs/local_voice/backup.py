@@ -3,7 +3,6 @@ import argparse
 import json
 import secrets
 import sqlite3
-import tempfile
 import zipfile
 import io
 import hashlib
@@ -60,17 +59,17 @@ def create(root):
     contents={name:p.read_bytes() for name,p in keys.items()}
     target=work/'backups';target.mkdir(exist_ok=True)
     archive=target/('beta-'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+secrets.token_hex(3)+'.dtbackup')
-    with tempfile.TemporaryDirectory(dir=target) as temp:
-        copy=Path(temp)/'accounts.sqlite3'
-        with closing(sqlite3.connect(database)) as source,closing(sqlite3.connect(copy)) as destination:source.backup(destination)
-        with closing(sqlite3.connect(copy)) as db,db:
+    with closing(sqlite3.connect(':memory:')) as db:
+        with closing(sqlite3.connect(database)) as source:source.backup(db)
+        db.execute('PRAGMA temp_store=MEMORY')
+        with db:
             tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             if 'receipts' in tables:
                 db.execute("UPDATE jobs SET state='failed' WHERE state='done' AND EXISTS (SELECT 1 FROM receipts r WHERE r.uid=jobs.uid AND r.id=jobs.id AND r.confirmed=0)")
             for table in ('results','sessions','reset_codes','receipts','pending_audio'):
                 if table in tables:db.execute('DELETE FROM '+table)
-        with closing(sqlite3.connect(copy)) as db:db.execute('VACUUM')
-        contents['accounts.sqlite3']=copy.read_bytes()
+        db.execute('VACUUM')
+        contents['accounts.sqlite3']=db.serialize()
     contents['manifest.json']=json.dumps({'format':1,'snapshot_completed_at':time.time(),'contains_secrets':True,'audio_included':False,'transcripts_included':False}).encode()
     buffer=io.BytesIO()
     with zipfile.ZipFile(buffer,'w',zipfile.ZIP_DEFLATED) as package:
@@ -85,7 +84,7 @@ def create(root):
         pending.unlink(missing_ok=True)
     return archive
 
-def restore(root,archive,recovery_key=None,deletion_ledger=None):
+def restore(root,archive,recovery_key=None,deletion_ledger=None,*,_verify_only=False):
     work=root/'work';beta=work/'beta';key=work/'local-voice.key'
     if beta.exists() and any(beta.iterdir()):raise ValueError('Refusing to overwrite existing work/beta. Restore only to a new host directory before starting it.')
     if archive.stat().st_size>256*1024*1024:raise ValueError('Backup exceeds supported size.')
@@ -108,10 +107,16 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None):
     ledger=Path(deletion_ledger) if deletion_ledger else archive.parent/'latest-deletions.dtledger'
     if not ledger.is_file():raise ValueError('Restore requires the latest deletion ledger; export it on the source host and supply --deletion-ledger.')
     deletions=read_deletions(ledger,recovery_key,contents['local-voice.key'],snapshot_time)
-    work.mkdir(parents=True,exist_ok=True)
-    with tempfile.TemporaryDirectory(dir=work) as temp:
-        path=Path(temp)/'accounts.sqlite3';path.write_bytes(contents['accounts.sqlite3'])
-        with closing(sqlite3.connect(path)) as db,db:
+    with closing(sqlite3.connect(':memory:')) as db:
+        # SQLite cannot deserialize a WAL-mode header without its original WAL.
+        # Snapshots are self-contained; use rollback format in this memory copy.
+        image=bytearray(contents['accounts.sqlite3'])
+        if len(image)<100 or image[:16]!=b'SQLite format 3\x00' or image[18:20] not in (b'\x01\x01',b'\x02\x02'):
+            raise ValueError('Invalid database header.')
+        image[18:20]=b'\x01\x01'
+        db.deserialize(bytes(image))
+        db.execute('PRAGMA temp_store=MEMORY')
+        with db:
             db.execute('PRAGMA foreign_keys=ON')
             if db.execute('PRAGMA user_version').fetchone()[0]>4:raise ValueError('Backup database is newer than this restore tool.')
             if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('Invalid database.')
@@ -126,34 +131,41 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None):
                 db.execute('DELETE FROM users WHERE id=?',(uid,))
                 if has_audit:db.execute('DELETE FROM audit WHERE uid=?',(uid,))
             db.execute('PRAGMA user_version=4')
-        with closing(sqlite3.connect(path)) as db:db.execute('VACUUM')
+        db.execute('VACUUM')
+        if _verify_only:
+            _check_restored(db)
+            return
+        work.mkdir(parents=True,exist_ok=True)
         beta.mkdir(exist_ok=True)
         # Targets are known filenames in a new host directory; never extract arbitrary ZIP paths.
-        (beta/'accounts.sqlite3').write_bytes(path.read_bytes())
+        (beta/'accounts.sqlite3').write_bytes(db.serialize())
         (beta/'admin.key').write_bytes(contents['admin.key'])
         key.write_bytes(contents['local-voice.key'])
     return beta
 
 
+def _check_restored(db):
+    tables={row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    for table in ('sessions','results','reset_codes','receipts','pending_audio'):
+        if table in tables and db.execute('SELECT count(*) FROM '+table).fetchone()[0]:
+            raise ValueError('Restored snapshot contains transient private data.')
+    if db.execute("SELECT count(*) FROM jobs WHERE state IN ('queued','running')").fetchone()[0]:
+        raise ValueError('Restored snapshot contains active jobs.')
+    if db.execute('SELECT count(*) FROM users u JOIN deletions d ON d.uid=u.id').fetchone()[0]:
+        raise ValueError('Restored snapshot resurrected deleted accounts.')
+
+
 def verify(root,archive,recovery_key=None,deletion_ledger=None):
-    """Exercise real restore in a temporary host, never the live database.
+    """Exercise restore preparation in memory without writing plaintext copies.
 
     This proves local decrypt/restore at this moment, not offsite durability,
     source completeness, or that a separately supplied ledger is the latest.
     """
-    work=root/'work';work.mkdir(parents=True,exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix='restore-check-',dir=work) as directory:
-        restored=restore(Path(directory),archive,recovery_key,deletion_ledger)
-        with closing(sqlite3.connect((restored/'accounts.sqlite3').resolve().as_uri()+'?mode=ro',uri=True)) as db:
-            tables={row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-            for table in ('sessions','results','reset_codes','receipts','pending_audio'):
-                if table in tables and db.execute('SELECT count(*) FROM '+table).fetchone()[0]:
-                    raise ValueError('Restored snapshot contains transient private data.')
-            if db.execute("SELECT count(*) FROM jobs WHERE state IN ('queued','running')").fetchone()[0]:
-                raise ValueError('Restored snapshot contains active jobs.')
-            if db.execute('SELECT count(*) FROM users u JOIN deletions d ON d.uid=u.id').fetchone()[0]:
-                raise ValueError('Restored snapshot resurrected deleted accounts.')
-    return {'verified':True,'scope':'local isolated restore','archive':archive.name}
+    # No directory is created: this name is only an unused destination for the
+    # common restore validation path, which returns before installing files.
+    destination=root/'work'/('restore-check-'+secrets.token_hex(16))
+    restore(destination,archive,recovery_key,deletion_ledger,_verify_only=True)
+    return {'verified':True,'scope':'in-memory restore validation','archive':archive.name}
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
