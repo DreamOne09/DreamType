@@ -1,0 +1,115 @@
+{
+  "simultaneous_accounts": 3,
+  "rounds": 2,
+  "database": "isolated temporary SQLite, removed after test",
+  "transport": "in-process account ASGI to localhost HTTP inference",
+  "audio": "hash-verified public manifest audio concatenated and cut to 5/30/60 seconds",
+  "submission_order_seconds": [
+    [
+      5,
+      30,
+      60
+    ],
+    [
+      60,
+      30,
+      5
+    ]
+  ],
+  "quality_evaluated": false,
+  "native_device_test": false,
+  "capacity_guarantee": false,
+  "live_queue_locked": false,
+  "results": [
+    {
+      "round": 1,
+      "audio_seconds": 5,
+      "mode": "organize",
+      "target": "zh-TW",
+      "total_seconds": 0.729,
+      "wait_before_provider_seconds": 0.03,
+      "provider_seconds": 0.66,
+      "provider_order": 1,
+      "warning_present": false,
+      "output_chars": 12,
+      "cross_account_denied": true,
+      "used_seconds": 5,
+      "duplicate_receipt_no_extra_charge": true
+    },
+    {
+      "round": 1,
+      "audio_seconds": 30,
+      "mode": "translate",
+      "target": "ja",
+      "total_seconds": 4.915,
+      "wait_before_provider_seconds": 0.62,
+      "provider_seconds": 4.197,
+      "provider_order": 2,
+      "warning_present": false,
+      "output_chars": 80,
+      "cross_account_denied": true,
+      "used_seconds": 30,
+      "duplicate_receipt_no_extra_charge": true
+    },
+    {
+      "round": 1,
+      "audio_seconds": 60,
+      "mode": "translate",
+      "target": "en",
+      "total_seconds": 13.268,
+      "wait_before_provider_seconds": 4.788,
+      "provider_seconds": 8.409,
+      "provider_order": 3,
+      "warning_present": false,
+      "output_chars": 407,
+      "cross_account_denied": true,
+      "used_seconds": 60,
+      "duplicate_receipt_no_extra_charge": true
+    },
+    {
+      "round": 2,
+      "audio_seconds": 60,
+      "mode": "translate",
+      "target": "en",
+      "total_seconds": 7.781,
+      "wait_before_provider_seconds": 0.069,
+      "provider_seconds": 7.562,
+      "provider_order": 1,
+      "warning_present": false,
+      "output_chars": 407,
+      "cross_account_denied": true,
+      "used_seconds": 120,
+      "duplicate_receipt_no_extra_charge": true
+    },
+    {
+      "round": 2,
+      "audio_seconds": 30,
+      "mode": "translate",
+      "target": "ja",
+      "total_seconds": 12.144,
+      "wait_before_provider_seconds": 7.551,
+      "provider_seconds": 4.463,
+      "provider_order": 2,
+      "warning_present": false,
+      "output_chars": 80,
+      "cross_account_denied": true,
+      "used_seconds": 60,
+      "duplicate_receipt_no_extra_charge": true
+    },
+    {
+      "round": 2,
+      "audio_seconds": 5,
+      "mode": "organize",
+      "target": "zh-TW",
+      "total_seconds": 12.654,
+      "wait_before_provider_seconds": 11.98,
+      "provider_seconds": 0.604,
+      "provider_order": 3,
+      "warning_present": false,
+      "output_chars": 12,
+      "cross_account_denied": true,
+      "used_seconds": 10,
+      "duplicate_receipt_no_extra_charge": true
+    }
+  ]
+}
