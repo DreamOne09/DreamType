@@ -77,7 +77,15 @@ final class VoiceApi {
     static Result recover(AppConfig config,Progress progress) throws Exception {
         if(!config.accountMode)throw new IOException("取回結果需要使用帳號登入。");
         progress.update("正在尋找上一筆錄音…");
-        return awaitResult(config,json(config,"GET","/v2/me/latest-dictation",null),progress,false);
+        JSONObject latest;
+        for(int failures=0;;){
+            try{latest=json(config,"GET","/v2/me/latest-dictation",null);break;}
+            catch(IOException error){
+                if(!retryable(error)||++failures>3)throw error;
+                progress.update("網路暫時中斷，正在重新連接…");Thread.sleep(failures*1000L);
+            }
+        }
+        return awaitResult(config,latest,progress,false);
     }
     static boolean retryable(IOException error) {
         return !(error instanceof ApiError)||((ApiError)error).code>=500;
