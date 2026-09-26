@@ -20,12 +20,16 @@ from translation import validate_translation
 def audio_duration(data):
     """Decode frames incrementally; stop long/compressed recordings before allocating PCM."""
     import av
-    seconds=0
+    samples_by_rate={}
     with av.open(io.BytesIO(data)) as container:
         for frame in container.decode(audio=0):
-            seconds+=frame.samples/frame.sample_rate
+            # Sum integer samples before dividing. Repeated floating additions
+            # can turn exactly 5 seconds into 5.000000000000004 and bill 6.
+            rate=frame.sample_rate
+            samples_by_rate[rate]=samples_by_rate.get(rate,0)+frame.samples
+            seconds=math.fsum(samples/rate for rate,samples in samples_by_rate.items())
             if seconds>120:return seconds
-    return seconds
+    return math.fsum(samples/rate for rate,samples in samples_by_rate.items())
 
 async def object_body(request):
     try:body=await request.json()

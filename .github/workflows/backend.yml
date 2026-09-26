@@ -8,8 +8,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install fastapi==0.141.1 httpx==0.28.1 python-multipart==0.0.32 cryptography==50.0.1
-      - run: python -m unittest test_beta test_backup test_durability test_maintenance test_translation test_operations test_session_race test_crash_recovery test_literal_preservation test_dictation_guard
+      - run: pip install fastapi==0.141.1 httpx==0.28.1 python-multipart==0.0.32 cryptography==50.0.1 av==18.1.0
+      - run: python -m unittest test_beta test_backup test_durability test_maintenance test_translation test_operations test_session_race test_crash_recovery test_literal_preservation test_dictation_guard test_audio_duration
         working-directory: outputs/local_voice
 
   android-contracts:
