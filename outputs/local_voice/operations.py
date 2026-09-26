@@ -28,6 +28,11 @@ def summarize(maintenance, sync_configured=False, now=None):
         '最近一次通道檢查正常', '需要確認連線通道；重新啟動後網址可能改變')
     add('backup', '本機加密備份', recent('last_backup', 129600),
         '最近 36 小時內有成功備份紀錄', '超過 36 小時未成功備份或尚無紀錄，請檢查備份工作')
+    verified = (recent('last_backup_verified',129600) and isinstance(state.get('backup_file'),str) and bool(state.get('backup_file'))
+                and state.get('backup_verified_file')==state.get('backup_file'))
+    add('backup_restore','備份還原驗證',verified,
+        '這份備份已在本機隔離目錄成功還原；尚不代表雲端可恢復',
+        '尚無這份備份的近期還原驗證，不能只憑檔案存在判定可恢復')
     add('deletions', '刪除紀錄', recent('last_deletion_export', 900),
         '最近 15 分鐘內有成功匯出紀錄', '刪除紀錄未更新，還原前務必取得最新紀錄')
     free=state.get('disk_free_bytes')

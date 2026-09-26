@@ -75,8 +75,14 @@ def create(root):
     buffer=io.BytesIO()
     with zipfile.ZipFile(buffer,'w',zipfile.ZIP_DEFLATED) as package:
         for name,data in contents.items():package.writestr(name,data)
-    archive.write_bytes(b'DTB1'+encrypt(key_file(work/'backup-recovery.key'),buffer.getvalue(),b'DreamType backup v1'))
-    export_deletions(root)
+    pending=archive.with_suffix('.verifying')
+    try:
+        pending.write_bytes(b'DTB1'+encrypt(key_file(work/'backup-recovery.key'),buffer.getvalue(),b'DreamType backup v1'))
+        export_deletions(root)
+        verify(root,pending,work/'backup-recovery.key')
+        pending.replace(archive)
+    finally:
+        pending.unlink(missing_ok=True)
     return archive
 
 def restore(root,archive,recovery_key=None,deletion_ledger=None):
@@ -128,11 +134,35 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None):
         key.write_bytes(contents['local-voice.key'])
     return beta
 
+
+def verify(root,archive,recovery_key=None,deletion_ledger=None):
+    """Exercise real restore in a temporary host, never the live database.
+
+    This proves local decrypt/restore at this moment, not offsite durability,
+    source completeness, or that a separately supplied ledger is the latest.
+    """
+    work=root/'work';work.mkdir(parents=True,exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='restore-check-',dir=work) as directory:
+        restored=restore(Path(directory),archive,recovery_key,deletion_ledger)
+        with closing(sqlite3.connect((restored/'accounts.sqlite3').resolve().as_uri()+'?mode=ro',uri=True)) as db:
+            tables={row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            for table in ('sessions','results','reset_codes','receipts','pending_audio'):
+                if table in tables and db.execute('SELECT count(*) FROM '+table).fetchone()[0]:
+                    raise ValueError('Restored snapshot contains transient private data.')
+            if db.execute("SELECT count(*) FROM jobs WHERE state IN ('queued','running')").fetchone()[0]:
+                raise ValueError('Restored snapshot contains active jobs.')
+            if db.execute('SELECT count(*) FROM users u JOIN deletions d ON d.uid=u.id').fetchone()[0]:
+                raise ValueError('Restored snapshot resurrected deleted accounts.')
+    return {'verified':True,'scope':'local isolated restore','archive':archive.name}
+
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action',choices=['create','restore','export-deletions']);parser.add_argument('--archive',type=Path);parser.add_argument('--recovery-key',type=Path);parser.add_argument('--deletion-ledger',type=Path)
+    parser.add_argument('action',choices=['create','restore','verify','export-deletions']);parser.add_argument('--archive',type=Path);parser.add_argument('--recovery-key',type=Path);parser.add_argument('--deletion-ledger',type=Path)
     args=parser.parse_args();root=Path(__file__).resolve().parents[2]
-    if args.action=='restore' and not args.archive:parser.error('restore requires --archive')
+    if args.action in ('restore','verify') and not args.archive:parser.error(args.action+' requires --archive')
+    if args.action=='verify':
+        print(json.dumps(verify(root,args.archive,args.recovery_key,args.deletion_ledger)))
+        raise SystemExit(0)
     result=create(root) if args.action=='create' else export_deletions(root) if args.action=='export-deletions' else restore(root,args.archive,args.recovery_key,args.deletion_ledger)
     print(str(result))
     if args.action=='export-deletions':
