@@ -28,14 +28,17 @@ MODELS = {
 DATASET = 'OpenFormosa/common_voice_25_zh-TW'
 
 
-def prepare_audio(destination):
+def prepare_audio(destination, corpus='regression36'):
     rows = []
-    for name in ('public-taiwan-speech.json', 'public-taiwan-speech-holdout.json'):
+    names = ('public-taiwan-speech.json', 'public-taiwan-speech-holdout.json') if corpus=='regression36' else ('public-taiwan-speech-extended.json',)
+    for name in names:
         rows.extend(json.loads((REPO / 'tests/quality' / name).read_text(encoding='utf-8')))
+    expected = list(range(36)) if corpus=='regression36' else list(range(36,132))
+    if [row['index'] for row in rows]!=expected:raise ValueError('Unexpected corpus indices')
     destination.mkdir(parents=True, exist_ok=True)
     with httpx.Client(timeout=60, follow_redirects=True) as client:
         response = client.get('https://datasets-server.huggingface.co/rows', params={
-            'dataset': DATASET, 'config': 'default', 'split': 'test', 'offset': 0, 'length': len(rows)})
+            'dataset': DATASET, 'config': 'default', 'split': 'test', 'offset': expected[0], 'length': len(rows)})
         response.raise_for_status()
         public_rows = {row['row_idx']: row['row'] for row in response.json()['rows']}
         for expected in rows:
@@ -62,9 +65,10 @@ def main():
     parser.add_argument('--model', choices=MODELS, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--prepare-only', action='store_true')
+    parser.add_argument('--corpus', choices=('regression36','extended96'), default='regression36')
     args = parser.parse_args()
     work = REPO / 'work/asr-comparison'
-    rows = prepare_audio(work / 'audio')
+    rows = prepare_audio(work / 'audio', args.corpus)
     if args.prepare_only:
         print(json.dumps({'audio_files_verified': len(rows), 'private_data_used': False}))
         return
@@ -88,7 +92,8 @@ def main():
     args.output.parent.mkdir(parents=True, exist_ok=True)
     report = {'model': model_id, 'revision': revision, 'converted_subdirectory': subdirectory,
         'device': 'CPU', 'compute_type': 'int8', 'threads': threads, 'load_seconds': round(load_seconds, 3),
-        'dataset': DATASET, 'license': 'CC0-1.0', 'split': 'test', 'selection': 'existing sequential rows 0-35',
+        'dataset': DATASET, 'license': 'CC0-1.0', 'split': 'test', 'corpus': args.corpus,
+        'selection': 'fixed sequential rows '+str(rows[0]['index'])+'-'+str(rows[-1]['index']),
         'beam_size': 1, 'vad_min_silence_ms': 350, 'condition_on_previous_text': False,
         'prompt': prompt, 'reference_in_prompt': False, 'llm_formatting': False,
         'phone_latency_test': False, 'private_data_used': False, 'complete': False, 'results': results}
