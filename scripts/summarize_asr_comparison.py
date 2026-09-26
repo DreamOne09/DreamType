@@ -7,12 +7,16 @@ from check_public_speech import normalized, distance
 
 
 def summarize(first, second):
+    corpus=first.get('corpus','regression36')
+    if corpus not in ('regression36','extended96') or second.get('corpus','regression36')!=corpus:
+        raise ValueError('Different or unknown corpus')
+    indices=set(range(36)) if corpus=='regression36' else set(range(36,132))
     for report in (first, second):
         if report.get('complete') is not True:
             raise ValueError('Incomplete benchmark is not a completed comparison')
         rows=report['results']
-        if len(rows)!=36 or {r['index'] for r in rows}!=set(range(36)):
-            raise ValueError('Expected the same complete 36-case corpus')
+        if len(rows)!=len(indices) or {r['index'] for r in rows}!=indices:
+            raise ValueError('Expected the same complete frozen corpus')
     for field in ('dataset','split','device','compute_type','threads','beam_size','vad_min_silence_ms',
                   'condition_on_previous_text','prompt','reference_in_prompt','llm_formatting'):
         if first[field]!=second[field]:

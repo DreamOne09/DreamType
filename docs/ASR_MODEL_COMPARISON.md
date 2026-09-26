@@ -47,3 +47,18 @@ python scripts/summarize_asr_comparison.py --before docs/evidence/asr-model-comp
 ## 決策界線
 
 這批資料已用於先前診斷，現在是比較／回歸集，不能再稱獨立盲測。它只是連續短句便利抽樣，沒有長口述、中英夾雜的代表性覆蓋，也沒有 Typeless 同音檔對照。CPU runner 的秒數不能當成 Pixel 9 或家中 GPU 的實際延遲。只有品質確實有改善後，才值得評估家用 GPU 記憶體、速度與中文／其他語言路由；本次不自動部署候選模型。
+
+
+## 擴充比較集：先固定，再推論
+
+新增 `extended96`：同一 CC0 test split 的固定連續索引 36–131，共 96 段、384.672 秒，每段 1.584～8.064 秒。以 `scripts/prepare_extended_asr.py` 在任何本輪模型推論前固定參考文字與 SHA-256；不依模型結果挑選或排除案例，不保存說話者、人口資料或帶簽章的音檔 URL。錄音只放在被 Git 忽略的 work 目錄。與既有 36 段無相同錄音雜湊或參考句。
+
+這不是代表性隨機抽樣，仍是同資料集的短句；也不知道模型訓練是否包含這些公開資料，因此不稱獨立盲測。沒有透過這批新句子改寫提示或建立地名替換規則。固定 manifest 為 `tests/quality/public-taiwan-speech-extended.json`。完成 96 段來源、參考與錄音雜湊的二次核對；尚未產生模型比較結果。
+
+手動工作流程新增 corpus 選項，預設保留 `regression36`；選 `extended96` 會讓兩個隔離 runner 使用完全相同的新 manifest，模型 revision 與辨識參數保持原樣。`summarize_asr_comparison.py` 分別要求完整的 36 或 96 個預定索引，拒絕混用語料或缺段的報告。舊報告沒有 corpus 欄位時，僅按原有 36 段解讀。
+
+本機只準備錄音，不下載或載入候選模型：
+
+```powershell
+python scripts/compare_public_asr.py --model turbo --corpus extended96 --prepare-only --output work/unused.json
+```
