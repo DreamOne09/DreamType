@@ -53,7 +53,7 @@ python scripts/summarize_asr_comparison.py --before docs/evidence/asr-model-comp
 
 新增 `extended96`：同一 CC0 test split 的固定連續索引 36–131，共 96 段、384.672 秒，每段 1.584～8.064 秒。以 `scripts/prepare_extended_asr.py` 在任何本輪模型推論前固定參考文字與 SHA-256；不依模型結果挑選或排除案例，不保存說話者、人口資料或帶簽章的音檔 URL。錄音只放在被 Git 忽略的 work 目錄。與既有 36 段無相同錄音雜湊或參考句。
 
-這不是代表性隨機抽樣，仍是同資料集的短句；也不知道模型訓練是否包含這些公開資料，因此不稱獨立盲測。沒有透過這批新句子改寫提示或建立地名替換規則。固定 manifest 為 `tests/quality/public-taiwan-speech-extended.json`。完成 96 段來源、參考與錄音雜湊的二次核對；尚未產生模型比較結果。
+這不是代表性隨機抽樣，仍是同資料集的短句；也不知道模型訓練是否包含這些公開資料，因此不稱獨立盲測。沒有透過這批新句子改寫提示或建立地名替換規則。固定 manifest 為 `tests/quality/public-taiwan-speech-extended.json`。完成 96 段來源、參考與錄音雜湊的二次核對；後續完整模型結果見下節。
 
 手動工作流程新增 corpus 選項，預設保留 `regression36`；選 `extended96` 會讓兩個隔離 runner 使用完全相同的新 manifest，模型 revision 與辨識參數保持原樣。`summarize_asr_comparison.py` 分別要求完整的 36 或 96 個預定索引，拒絕混用語料或缺段的報告。舊報告沒有 corpus 欄位時，僅按原有 36 段解讀。
 
@@ -62,3 +62,24 @@ python scripts/summarize_asr_comparison.py --before docs/evidence/asr-model-comp
 ```powershell
 python scripts/compare_public_asr.py --model turbo --corpus extended96 --prepare-only --output work/unused.json
 ```
+
+
+## 擴充 96 段完成結果
+
+[工作 36215097067](https://github.com/DreamOne09/DreamType/actions/runs/36215097067)，來源 `6f2590818d63a1729a74a9cee9ef12abf1bddd9c`，兩個模型均完成固定的 96 段。摘要重算核對相同設定、參考、錄音雜湊與時長：[Turbo](evidence/asr-extended96/turbo-report.json)、[Breeze](evidence/asr-extended96/breeze-report.json)、[比較摘要](evidence/asr-extended96/summary.json)。
+
+| 指標 | Turbo | Breeze |
+|---|---:|---:|
+| 參考字元 | 670 | 670 |
+| 錯誤字元 | 98 | 40 |
+| CER | 14.63% | 5.97% |
+| 正規化後完全相符 | 61 / 96 | 73 / 96 |
+| 空白辨識 | 0 | 0 |
+| CPU 單段中位數 | 5.286 秒 | 11.016 秒 |
+| CPU 辨識總耗時 | 529.729 秒 | 1060.166 秒 |
+
+Breeze 有 21 段改善、8 段退步、67 段錯誤數相同。「中壢轉接道交流道」「板橋地政事務所」「遠東巨城購物中心」改善，但「高榮新榮交流道」變成「高榮興龍交流道」，「何者正確」變成「合作正確」，仍會改錯地名與意思。
+
+整體差距受兩個嚴重誤辨影響很大：索引 39 的「申報網站」在 Turbo 變成拉丁字母，索引 42 的「對於東海及南海問題」變成不相關英文；兩案合計貢獻 40 個改善字元，占總改善 58 個中的大部分。**正式結果不刪除這兩案**。僅作事後敏感度說明，去除兩案後其餘 94 段分別為 57/657（8.68%）與 39/657（5.94%）；這不是預先設定的評分，也不能當成新的盲測結果。
+
+**決策：Breeze 值得進入家用 GPU 的隔離候選測試，尚不替換正式 Turbo。** 先驗證 CUDA 記憶體、真實單段延遲及現有整理／翻譯並行資源，再擴充自然長口述、中英夾雜與不同口音。兩次 CPU runner 比較的速度排序相反，不能拿其中一次作為使用者手機速度預測。這輪也不能證明整體超過 Typeless。
