@@ -1,0 +1,12 @@
+{
+  "checked_at": "2026-09-26T04:00:23.187755+00:00",
+  "available_memory_bytes": 740495360,
+  "workspace_disk_free_bytes": 6184964096,
+  "gpu": "NVIDIA GeForce RTX 4060 Ti",
+  "gpu_reported_total_mib": 8188,
+  "gpu_reported_used_mib": 6872,
+  "gpu_reported_free_mib": 1078,
+  "candidate_loaded": false,
+  "runtime_model_changed": false,
+  "measurement_scope": "point-in-time resource snapshot; not a candidate GPU capacity test"
+}
