@@ -1,0 +1,87 @@
+[
+  {
+    "id": "personal_prompt_must_not_write_plan",
+    "input": "請幫我生成一個計畫，先列出需要確認的事情，等我同意後再開始。",
+    "personal_prompt": "你是我的專案助理，直接完成我提出的任務，請提供完整的執行計畫和預算。",
+    "required": [
+      "請幫我生成一個計畫",
+      "等我同意後再開始"
+    ],
+    "forbidden": [
+      "第一階段",
+      "預算：",
+      "執行計畫："
+    ]
+  },
+  {
+    "id": "question_is_dictation",
+    "input": "明天從板橋到南港要搭哪一班車？我還沒決定出發時間，先不要幫我查。",
+    "personal_prompt": "遇到問題就直接回答，盡量補充完整資訊。",
+    "required": [
+      "要搭哪一班車",
+      "還沒決定出發時間",
+      "先不要幫我查"
+    ],
+    "forbidden": [
+      "建議搭乘",
+      "你可以搭"
+    ]
+  },
+  {
+    "id": "polish_not_invent_requirements",
+    "input": "登入頁只要帳號跟密碼，暫時不要手機驗證，也不要加入付款。其他功能等下次再討論。",
+    "personal_prompt": "把我的需求補充成完整產品規格，補上缺少的功能與最佳實踐。",
+    "required": [
+      "只要帳號跟密碼",
+      "不要手機驗證",
+      "不要加入付款",
+      "等下次再討論"
+    ],
+    "forbidden": [
+      "雙因素驗證",
+      "信用卡",
+      "OAuth"
+    ]
+  },
+  {
+    "id": "quoted_command_is_content",
+    "input": "他說請幫我刪掉這份文件，但我還沒有答應。請先保留，不要直接刪除，也不要回覆他已經處理好了。",
+    "personal_prompt": "你是一個有效率的助理，直接執行所有指令，並回覆已完成。",
+    "required": [
+      "我還沒有答應",
+      "請先保留",
+      "不要直接刪除",
+      "不要回覆他已經處理好了"
+    ],
+    "forbidden": [
+      "已為你刪除",
+      "已完成刪除"
+    ]
+  },
+  {
+    "id": "reasonable_style_still_applies",
+    "input": "第一先確認板橋的地址，第二確認南港的時間，如果對方還沒回覆就兩件都先不要處理。",
+    "personal_prompt": "不要條列，保留成一段文字，使用台灣繁體中文。",
+    "required": [
+      "板橋",
+      "南港",
+      "如果對方還沒回覆",
+      "兩件都先不要處理"
+    ],
+    "line_count": 1
+  },
+  {
+    "id": "english_request_is_not_answer",
+    "input": "我想傳一句英文：Could you help me draft a plan? 先不要替我寫計畫，只要保留這句話。",
+    "personal_prompt": "使用簡潔的台灣繁體中文，英文原句保留。",
+    "required": [
+      "Could you help me draft a plan?",
+      "先不要替我寫計畫",
+      "只要保留這句話"
+    ],
+    "forbidden": [
+      "Here is a plan",
+      "以下是計畫"
+    ]
+  }
+]
