@@ -145,3 +145,14 @@ Android 錄音 28,320 bytes，PyAV 解碼 3.136 秒；資料庫只有一筆 done
 [故障組完整結果](evidence/android-36-response-loss/interrupted-backend-ime-result.json) · [正常組](evidence/android-36-response-loss/backend-ime-result.json) · [原生文字插入](evidence/android-36-response-loss/interrupted-backend-ime-instrumentation.txt) · [手機錄音清除](evidence/android-36-response-loss/interrupted-backend-delivered.txt)。
 
 這是原生 Android 在兩次 TLS 回應遺失後恢復的證據，不涵蓋飛航模式、長時間離線、程序被系統終止、Pixel 9／Surfshark 行動網路切換。AI 仍回傳固定文字，不是辨識品質測試。測試沒有改動 0.9.8 的產品程式碼。
+
+
+## 0.9.10 回歸：2026-09-26
+
+[工作 36214794454](https://github.com/DreamOne09/DreamType/actions/runs/36214794454) 在來源 `d39cab5be9bab3b2d6b948063a038d6cea7c5645` 完成。四條原生流程通過：私人模式、合成帳號 HTTP、正式帳號 API／SQLite 隔離 HTTPS，以及相同 HTTPS 流程遺失查詢與回執回應各一次。測試 APK 從此提交建立，並非直接安裝 GitHub 的維護者簽署 APK。
+
+原生首頁登入導向、Keystore 憑證與錄音、登出清除、離線隱私頁、密碼欄位保護、大圓鈕、選取／emoji 退格、長按連刪、長按上滑翻譯、錄音與固定繁中文字插入通過。故障組只有一次錄音上傳、一次 provider 呼叫、一次完成工作；兩次回執請求沒有重複計費，3.008 秒錄音計入 4 秒。
+
+[私人模式](evidence/android-0.9.10/ime-result.json) · [帳號 fixture](evidence/android-0.9.10/account-ime-result.json) · [正式隔離後端](evidence/android-0.9.10/backend-ime-result.json) · [回應遺失](evidence/android-0.9.10/interrupted-backend-ime-result.json) · [原生安全與首頁](evidence/android-0.9.10/result.txt) · [鍵盤操作](evidence/android-0.9.10/ime-instrumentation.txt)。
+
+這輪原生測試沒有新增「首次 latest-dictation 查詢 503」的故障注入；0.9.10 該修正由七組 JVM 合約中的 HTTP 故障測試驗證。原生回歸證明既有流程未在此次執行退步，不能冒充新增分支已在手機驗證。所有 AI 回應仍為固定文字，Pixel 9、真實辨識、長時間離線與 Surfshark 行動網路仍未驗收。
