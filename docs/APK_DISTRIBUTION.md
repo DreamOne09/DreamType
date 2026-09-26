@@ -6,10 +6,10 @@
 
 `scripts/download_runtime.py` 使用同一份版本紀錄；先下載到暫存目錄、核對雜湊，再發布到本機 APK 路徑。中斷或檔案不符不會覆蓋既有檔案，也不會重新下載已符合雜湊的檔案。
 
-目前為 `v0.9.9-rc1` / `DreamType-0.9.9.apk`，SHA-256：
+目前為 `v0.9.10-rc1` / `DreamType-0.9.10.apk`，SHA-256：
 
 ```
-c92dd0a442cc22b22dc94d71b42fbe3ea13d98fb4e5f57a9b40ae71ad7d4b963
+f92eeb87d52f9ec9e5f34a4e96ee3457931f4162392fc21ea5c9e4b086153ebb
 ```
 
 這是測試版入口。GitHub 的正式 stable channel 仍是 0.8.0，沒有把尚未實機驗收的版本改稱正式上線。
