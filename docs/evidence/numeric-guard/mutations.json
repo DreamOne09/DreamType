@@ -1,0 +1,24 @@
+{
+  "baseline": "f190ebb",
+  "scope": "Three synthetic corruptions; live observed corruption is recorded separately",
+  "cases": [
+    {
+      "source": "今天的測量結果是 -1.5，請照原本的數字記錄。",
+      "simulated_output": "今天的測量結果是 15，請照原本的數字記錄。",
+      "before_accepted": true,
+      "after_accepted": false
+    },
+    {
+      "source": "這次的比例是 5%，請先給我確認。",
+      "simulated_output": "這次的比例是 5，請先給我確認。",
+      "before_accepted": true,
+      "after_accepted": false
+    },
+    {
+      "source": "明天下午一共會有 12 人出席，請預留座位。",
+      "simulated_output": "明天下午一共會有 13 人出席，請預留座位。",
+      "before_accepted": true,
+      "after_accepted": false
+    }
+  ]
+}

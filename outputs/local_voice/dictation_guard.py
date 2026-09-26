@@ -4,6 +4,7 @@ This checks textual drift, not semantic equivalence; it is deliberately fail-clo
 import re
 import unicodedata
 from difflib import SequenceMatcher
+from numeric_literals import validate_numeric_literals, canonical_numeric_text
 
 
 # Literal guard, not a semantic parser. Conservative rejection intentionally
@@ -24,7 +25,8 @@ def normalized(text):
 
 
 def validate_edit(source, edited):
-    before, after = (REPEATED_LOGIC.sub(r'\1', normalized(value)) for value in (source, edited))
+    validate_numeric_literals(source, edited)
+    before, after = (REPEATED_LOGIC.sub(r'\1', normalized(canonical_numeric_text(value))) for value in (source, edited))
     if not before:
         if after: raise ValueError('Formatting invented content')
         return
