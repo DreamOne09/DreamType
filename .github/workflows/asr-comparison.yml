@@ -1,0 +1,31 @@
+name: Public Taiwan ASR comparison
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [turbo, breeze]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      HF_HUB_DISABLE_XET: '1'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      OMP_NUM_THREADS: '4'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install faster-whisper==1.2.1 ctranslate2==4.8.2 huggingface-hub==1.32.0 av==18.1.0 httpx==0.28.1 opencc-python-reimplemented==0.1.7
+      - run: python scripts/compare_public_asr.py --model "${{ matrix.model }}" --output "work/asr-comparison/${{ matrix.model }}-report.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: asr-${{ matrix.model }}
+          path: work/asr-comparison/*-report.json
+          if-no-files-found: warn
+          retention-days: 7
