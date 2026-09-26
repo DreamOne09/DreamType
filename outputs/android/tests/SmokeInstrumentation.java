@@ -33,10 +33,15 @@ public final class SmokeInstrumentation extends Instrumentation {
    // A later preference change must not alter the retained recording's target.
    if(!context.getSharedPreferences("style",0).edit().putString("mode","organize").putString("target_language","en").commit())throw new AssertionError("Preference change not saved");
    if(!stored.isFile())throw new AssertionError("Encrypted recording not retained");
+   Files.write(new File(context.getCacheDir(),"voice-orphan-probe.m4a").toPath(),sample);
+   Files.write(new File(context.getCacheDir(),"unrelated-probe.txt").toPath(),sample);
    result.putString("pending_restart","seeded");return;
   }
   if(!"verify".equals(pendingRestart))throw new AssertionError("Unknown restart phase");
   if(probe.getInt("pid",-1)==android.os.Process.myPid())throw new AssertionError("Process did not restart");
+  if(new File(context.getCacheDir(),"voice-orphan-probe.m4a").exists())throw new AssertionError("Abandoned plaintext recording survived startup");
+  File unrelated=new File(context.getCacheDir(),"unrelated-probe.txt");
+  if(!unrelated.isFile())throw new AssertionError("Startup removed unrelated cache file");
   AppConfig active=AppConfig.load(context);
   if(!active.accountMode||!active.key.equals("synthetic-restart-token")||!active.mode.equals("organize"))throw new AssertionError("Keystore session or changed preference lost");
   EncryptedRecording.Entry recovered=PendingAudio.read(context,active);
@@ -44,7 +49,7 @@ public final class SmokeInstrumentation extends Instrumentation {
   if(!recovered.id.equals(probe.getString("id",""))||!Arrays.equals(sample,recovered.audio)||!retry.mode.equals("translate")||!retry.targetLanguage.equals("ja")||!retry.sourceLanguage.equals("zh-TW"))throw new AssertionError("Retained recording identity, bytes or language changed");
   AppConfig.clearSession(context);
   if(stored.exists()||new File(stored.getPath()+".tmp").exists()||!AppConfig.load(context).key.isEmpty())throw new AssertionError("Logout did not remove restarted session and recording");
-  probe.edit().clear().commit();result.putString("pending_restart","passed");
+  unrelated.delete();probe.edit().clear().commit();result.putString("pending_restart","passed");
  }
  private TextView find(View v,String text){
   if(v instanceof TextView&&text.equals(((TextView)v).getText().toString()))return (TextView)v;
