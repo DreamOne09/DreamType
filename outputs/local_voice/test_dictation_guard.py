@@ -51,3 +51,31 @@ class DictationGuardTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_edit('不要取消明天板橋的預約，也不要寄出尚未確認的文件。',
                           '不要取消明天板橋的預約，也寄出尚未確認的文件。')
+
+    def test_numeric_value_sign_decimal_and_scale_cannot_change(self):
+        for before,after in [('-1.5','15'),('5%','5'),('12','13'),('負百分之5','百分之5'),('5萬','5'),('1.50','1.5')]:
+            with self.subTest(before=before), self.assertRaises(ValueError):
+                validate_edit('這次記錄的數值是 '+before+'，請先給我確認。','這次記錄的數值是 '+after+'，請先給我確認。')
+
+    def test_equivalent_numeric_typography_is_allowed(self):
+        for before,after in [('１，５００','1,500'),('1500','1,500'),('−1.5','-1.5'),('負100','-100'),('百分之5','5%')]:
+            with self.subTest(before=before):
+                validate_edit('這次記錄的數值是 '+before+'，請先給我確認。','這次記錄的數值是 '+after+'，請先給我確認。')
+
+    def test_numbered_list_layout_does_not_invent_quantities(self):
+        validate_edit('第一，明天拿文件。第二，下午開會。','1. 明天拿文件。\n2. 下午開會。')
+        with self.assertRaises(ValueError):validate_edit('第一，有12人。第二，有15人。','1. 有15人。\n2. 有12人。')
+
+    def test_new_numbers_and_precision_changes_are_rejected(self):
+        with self.assertRaises(ValueError):validate_edit('請幫我寫明天的計劃。','請幫我寫明天的3個計劃。')
+        with self.assertRaises(ValueError):validate_edit('明天測試值是1.5','明天測試值是15')
+
+    def test_spoken_chinese_quantities_can_change_spelling_not_value(self):
+        validate_edit('總共1500元，分成3次付款，每次500元。','總共1,500元，分成三次付款，每次500元。')
+        validate_edit('一千五百元','1500元')
+        validate_edit('比例是百分之五','比例是5%')
+        with self.assertRaises(ValueError):validate_edit('總共有十二人出席，請先安排座位。','總共有13人出席，請先安排座位。')
+        with self.assertRaises(ValueError):validate_edit('金額是一千五元','金額是1500元')
+
+    def test_ordinary_chinese_words_are_not_numeric_quantities(self):
+        validate_edit('千萬不要取消三重的預約','千萬不要取消三重的預約。')

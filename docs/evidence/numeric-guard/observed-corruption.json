@@ -1,0 +1,17 @@
+{
+  "source": "總共 1500 元，分成 3 次付款，每次 500 元。",
+  "candidate": "總共 1500 元，分成 3 次付款，每次 50及元。",
+  "source_numbers": [
+    "1500",
+    "3",
+    "500"
+  ],
+  "candidate_numbers": [
+    "1500",
+    "3",
+    "50"
+  ],
+  "result": "總共 1500 元，分成 3 次付款，每次 500 元。",
+  "fallback": true,
+  "reason": "Formatting changed a numeric literal"
+}

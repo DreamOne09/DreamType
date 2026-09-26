@@ -1,0 +1,51 @@
+[
+  {
+    "source": "今天的測量結果是 -1.5，請照原本的數字記錄。",
+    "style": "",
+    "result": "今天的測量結果是 -1.5，請照原本的數字記錄。",
+    "fallback": false,
+    "seconds": 0.55
+  },
+  {
+    "source": "這次的比例是 5%，請先給我確認。",
+    "style": "",
+    "result": "這次的比例是 5%，請先給我確認。",
+    "fallback": false,
+    "seconds": 0.21
+  },
+  {
+    "source": "明天下午一共會有 12 人出席，請預留座位。",
+    "style": "",
+    "result": "明天下午一共會有 12 人出席，請預留座位。",
+    "fallback": false,
+    "seconds": 0.27
+  },
+  {
+    "source": "總共 1500 元，分成 3 次付款，每次 500 元。",
+    "style": "",
+    "result": "總共 1500 元，分成 3 次付款，每次 500 元。",
+    "fallback": true,
+    "seconds": 0.36
+  },
+  {
+    "source": "第一，明天拿文件。第二，下午開會。",
+    "style": "請用數字編號列出清單。",
+    "result": "1. 明天拿文件。  \n2. 下午開會。",
+    "fallback": false,
+    "seconds": 0.27
+  },
+  {
+    "source": "明天下午四點半到板橋。",
+    "style": "",
+    "result": "明天下午四點半到板橋。",
+    "fallback": false,
+    "seconds": 0.18
+  },
+  {
+    "source": "不是 12 人，是 13 人，請更新出席名單。",
+    "style": "",
+    "result": "不是 12 人，是 13 人，請更新出席名單。",
+    "fallback": false,
+    "seconds": 0.3
+  }
+]
