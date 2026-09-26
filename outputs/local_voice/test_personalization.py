@@ -8,6 +8,19 @@ import server
 from personalization import formatting_prompt, speech_hint, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint
 
 class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_explicit_repair_keeps_raw_transcript_for_restore(self):
+        client_type=httpx.AsyncClient
+        original='明天下午三點，不對，是四點半，不要取消。'
+        edited='明天下午四點半，不要取消。'
+        def engine(request):
+            return httpx.Response(200,json={'choices':[{'finish_reason':'stop','message':{'content':edited}}]})
+        with patch.object(server.httpx,'AsyncClient',lambda **kwargs:client_type(transport=httpx.MockTransport(engine))), patch.object(server,'decode_audio',lambda *a,**k:[0]*16000), patch.object(server,'recognize',lambda *a:(original,'zh')):
+            response=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('test.wav',b'fake')})
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.json()['text'],edited)
+        self.assertEqual(response.json()['raw_text'],original)
+        self.assertFalse(response.json()['warning'])
+
     async def test_answer_or_expansion_returns_original_audio_transcript(self):
         client_type=httpx.AsyncClient
         cases=[('今天測量值是 -1.5，請先確認。','今天測量值是 15，請先確認。'),
@@ -192,12 +205,12 @@ class PromptTests(unittest.TestCase):
             self.assertIn('• ', explicit_list_hint(text))
             self.assertEqual(explicit_list_hint(text, '用完整段落，不要條列'), '')
         for text in ('第一銀行今天有開，第二天再去郵局，第三天才去台中。',
-                     '第一名是陳怡君，第二名是林奕辰。',
                      '第一天去台北，第二天去台中。',
                      '第一百名領獎，第二百名不用。',
                      '第一買牛奶，第三拿藥。', '第二買牛奶，第三拿藥。',
                      '那是我的第一選擇，第二選擇還沒決定。'):
             self.assertEqual(explicit_list_hint(text), '', text)
+        self.assertIn('不是口述列舉標記', explicit_list_hint('第一名是陳怡君，第二名是林奕辰。'))
 
     def test_identifier_markers_require_exact_order_and_count(self):
         original = '寄到 hi@example.com，電話 0912-003-456，訂單 AB-007。'

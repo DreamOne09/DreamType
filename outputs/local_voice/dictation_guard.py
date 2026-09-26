@@ -5,10 +5,11 @@ import re
 import unicodedata
 from difflib import SequenceMatcher
 from numeric_literals import validate_numeric_literals, canonical_numeric_text
+from spoken_corrections import comparison_source, validate_repair_values
 
 
 # Literal guard, not a semantic parser. Conservative rejection intentionally
-# keeps the original when a synonym or explicit self-correction touches these.
+# keeps the original when a synonym or unsupported self-correction touches these.
 LOGIC = re.compile('除非|否則|如果|只有|只要|必須|不得|不能|不要|不會|不是|沒有|尚未|未經|之前|之後|不|沒|勿|僅|只|若|才')
 REPEATED_LOGIC = re.compile('(' + LOGIC.pattern + r')\1+')
 
@@ -25,6 +26,18 @@ def normalized(text):
 
 
 def validate_edit(source, edited):
+    try:
+        _validate_edit(source, edited)
+    except ValueError:
+        replacements = []
+        repaired = comparison_source(source, replacements)
+        if repaired == source:
+            raise
+        validate_repair_values(repaired, edited, replacements)
+        _validate_edit(repaired, edited)
+
+
+def _validate_edit(source, edited):
     validate_numeric_literals(source, edited)
     before, after = (REPEATED_LOGIC.sub(r'\1', normalized(canonical_numeric_text(value))) for value in (source, edited))
     if not before:

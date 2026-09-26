@@ -107,8 +107,18 @@ def explicit_list_hint(text, personal_prompt=''):
     """
     if personal_prompt.strip():
         return ''
+    if '第一名' in text and '第二名' in text:
+        return '\n這段原文的「第一名、第二名」是名次，不是口述列舉標記。保留名次，不要加圓點或數字清單。\n'
     matches = re.findall(r'(?:^|[，,。；;！？!?\n])\s*第([一二三四五六七八九])'
         r'(?![一二三四五六七八九十百千萬名天日週周年月季屆次位個組隊排列頁章節步階線航銀行])', text)
     if len(matches) < 2 or matches != list('一二三四五六七八九'[:len(matches)]):
         return ''
     return '\n原文包含明確列舉。請把每項列舉標記改成「• 」並分行，保留每項完整內容，共用條件另起一行。不要保留「第一、第二」標記，也不要添加標題。\n'
+
+
+def apply_explicit_layout(text, personal_prompt=''):
+    """Honor a clear one-paragraph preference using whitespace only."""
+    if re.search('如果|除非|不要使用|不要用|不想用|不使用|不要寫成|不要整理成|不可寫成|再換行|分段', personal_prompt):
+        return text
+    single = re.search(r'(?:寫成|整理成|使用|用)(?:一個|單一|一)(?:完整)?段落|整段不可換行|不要換行', personal_prompt)
+    return re.sub(r'[ \t]*\r?\n[ \t]*', ' ', text).strip() if single else text

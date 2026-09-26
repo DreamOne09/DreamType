@@ -24,7 +24,7 @@ from fastapi.responses import PlainTextResponse, FileResponse
 from faster_whisper import WhisperModel
 from faster_whisper.audio import decode_audio
 from opencc import OpenCC
-from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint
+from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint, apply_explicit_layout
 from translation import validate_translation, translate_text
 from beta_api import install_beta, LocalProvider, audio_duration
 
@@ -133,6 +133,7 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
         if not isinstance(content, str) or not content.strip():
             raise ValueError('Empty formatting result')
         edited = restore_identifiers(converter.convert(content.strip()), identifiers, marker_prefix)
+        edited = apply_explicit_layout(edited, personal_prompt)
         validate_edit(converter.convert(text), edited)
         validate_identifiers(text, edited)
         return edited
