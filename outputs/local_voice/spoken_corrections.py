@@ -8,6 +8,10 @@ import re
 NUMBER = r'[0-9零〇一二兩三四五六七八九十百千萬]+'
 CUE = r'[，,]\s*(?:(?:啊\s*)?不對|啊\s*不是)[，,]?\s*(?:(?:是|改成)\s*)?'
 START = r'(?<![0-9零〇一二兩三四五六七八九十百千萬億負正+−\-.,．點点])'
+PERIOD_TIME = re.compile(
+    rf'(?:凌晨|早上|上午|中午|下午|傍晚|晚上){NUMBER}(?P<unit>點|時)(?:半)?'
+    rf'{CUE}(?P<replacement>(?:凌晨|早上|上午|中午|下午|傍晚|晚上){NUMBER}(?P=unit)(?:半)?)'
+    rf'(?![0-9零〇一二兩三四五六七八九十百千萬億半])')
 ADJACENT = re.compile(
     START +
     rf'(?P<old>{NUMBER})(?P<unit>點|時|分|杯|份|個|張|盒|瓶|件|元)'
@@ -37,7 +41,11 @@ def comparison_source(text, replacements=None):
         if re.search('不|沒|如果|但是|然後|再|或|還|才|只', match['context']):
             return match.group(0)
         return adjacent(match) + match['context']
-    repaired = REPEATED_PLACE.sub(repeated_place, text)
+    def period_time(match):
+        replacements.append(match['replacement'])
+        return match['replacement']
+    repaired = PERIOD_TIME.sub(period_time, text)
+    repaired = REPEATED_PLACE.sub(repeated_place, repaired)
     repaired = ADJACENT.sub(adjacent, repaired)
 
     def order(match):
