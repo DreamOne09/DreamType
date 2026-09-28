@@ -9,7 +9,8 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[2]
-WORK = ROOT / 'work'
+WORK = Path(os.environ.get('DREAMTYPE_WORK_DIR', str(ROOT / 'work'))).resolve()
+WORK.mkdir(parents=True, exist_ok=True)
 # Windows NVIDIA wheel DLLs must be visible before CTranslate2 is imported.
 DLL_HANDLES = []
 for directory in (WORK / 'venv/Lib/site-packages/nvidia').glob('*/bin'):
@@ -21,7 +22,6 @@ import numpy as np
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form, Depends
 from fastapi.responses import PlainTextResponse, FileResponse, RedirectResponse
 from android_release import APK_NAME, APK_URL, verified_apk
-from faster_whisper import WhisperModel
 from opencc import OpenCC
 from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_formatting_literals, restore_identifiers, explicit_list_hint, apply_explicit_layout
 from taiwan_typography import normalize_taiwan_typography
@@ -85,6 +85,7 @@ async def android_apk():
 
 @app.on_event('startup')
 async def load_model():
+    from faster_whisper import WhisperModel
     global model
     model = await asyncio.to_thread(WhisperModel, str(SPEECH_MODEL_PATH),
         device='cuda', compute_type='int8_float16', cpu_threads=4, num_workers=1, local_files_only=True)

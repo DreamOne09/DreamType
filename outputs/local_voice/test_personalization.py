@@ -4,10 +4,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import unittest
 from unittest.mock import patch
 import httpx
-import server
+import os
+import tempfile
+
+# Import the real gateway against disposable state, never the owner's accounts.
+_gateway_state = tempfile.TemporaryDirectory(prefix='dreamtype-gateway-test-')
+with patch.dict(os.environ, {'DREAMTYPE_WORK_DIR': _gateway_state.name}):
+    import server
+
+
+def tearDownModule():
+    _gateway_state.cleanup()
+
 from personalization import formatting_prompt, speech_hint, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint
 
 class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_gateway_state_is_disposable_and_model_not_loaded(self):
+        self.assertEqual(server.WORK,Path(_gateway_state.name).resolve())
+        self.assertIsNone(server.model)
+        self.assertTrue(server.KEY_PATH.is_relative_to(server.WORK))
+
     async def test_apk_download_redirects_to_published_release_without_local_build(self):
         with patch.object(server,'verified_apk',return_value=None):
             response=await self.client.get('/download/localvoice.apk',follow_redirects=False)
