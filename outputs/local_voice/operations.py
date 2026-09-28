@@ -42,6 +42,14 @@ def summarize(maintenance, sync_configured=False, now=None):
                     if valid_space else '尚無近期磁碟空間紀錄，請檢查主機')
     add('storage','主機儲存空間',storage_ok,
         '可用空間至少 5 GB，仍需留意模型與備份成長',storage_detail)
+    files=state.get('backup_inventory')
+    fields=('encrypted_archive_files','legacy_zip_files','incomplete_files','total_bytes','skipped_links','read_errors')
+    valid_files=(fresh and isinstance(files,dict) and all(type(files.get(key)) is int and 0<=files[key]<2**63 for key in fields))
+    file_detail=('本機 %d 份備份，合計約 %.1f MB；舊版 ZIP %d、未完成檔 %d、略過連結 %d、讀取錯誤 %d。盤點不會刪除檔案，也不代表內容已驗證' %
+        (files['encrypted_archive_files'],files['total_bytes']/1024**2,files['legacy_zip_files'],files['incomplete_files'],files['skipped_links'],files['read_errors'])
+        if valid_files else '尚無近期有效備份盤點，請等待維護工作或檢查主機')
+    file_ok=(valid_files and files['encrypted_archive_files']>0 and all(files[key]==0 for key in ('legacy_zip_files','incomplete_files','skipped_links','read_errors')))
+    add('backup_files','備份檔案盤點',file_ok,file_detail,file_detail)
     copied = sync_configured and recent('last_backup_copy', 129600) and recent('last_deletion_copy', 900)
     copy_verified = (copied and recent('last_backup_copy_verified',129600)
         and state.get('last_backup_copy_verified')==state.get('last_backup_copy')
