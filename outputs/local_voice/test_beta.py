@@ -178,6 +178,22 @@ class BetaTests(unittest.IsolatedAsyncioTestCase):
         r=await self.client.patch('/v2/me/preferences',headers=a,json={'personal_prompt':'x'*2001})
         self.assertEqual(r.status_code,400)
         r=await self.client.post('/v2/login',json=[]);self.assertEqual(r.status_code,400)
+    async def test_word_replacements_are_explicit_scoped_and_preserved_for_old_clients(self):
+        _,a=await self.account();_,b=await self.account('bob')
+        value='夢想型態→DreamType\n 汐只 → 汐止 '
+        r=await self.client.post('/v2/me/preferences',headers=a,json={'word_replacements':value})
+        self.assertEqual(r.status_code,200,r.text)
+        self.assertEqual(r.json()['word_replacements'],'夢想型態 → DreamType\n汐只 → 汐止')
+        self.assertNotIn('word_replacements',(await self.client.get('/v2/me',headers=b)).json()['preferences'])
+        r=await self.client.post('/v2/me/preferences',headers=a,json={'personal_prompt':'使用條列'})
+        self.assertIn('DreamType',r.json()['word_replacements'])
+        for invalid in (None,{},'沒有箭頭','a → a','a → b\na → c','a → b → c','a → '+('字'*41),'a\tb → b', '\n'.join(f'a{i} → b' for i in range(21))):
+            r=await self.client.post('/v2/me/preferences',headers=a,json={'word_replacements':invalid})
+            self.assertEqual(r.status_code,400,repr(invalid))
+        self.assertIn('DreamType',(await self.client.get('/v2/me',headers=a)).json()['preferences']['word_replacements'])
+        r=await self.client.post('/v2/me/preferences',headers=a,json={'word_replacements':''})
+        self.assertEqual(r.json()['word_replacements'],'')
+
     async def test_receipt_is_account_scoped_and_idempotent(self):
         uid,a=await self.account();_,b=await self.account('bob')
         await self.upload({**a,'X-DreamType-Receipt':'1'});await asyncio.wait_for(self.beta.queue.join(),2)

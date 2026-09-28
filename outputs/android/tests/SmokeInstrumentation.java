@@ -189,6 +189,30 @@ public final class SmokeInstrumentation extends Instrumentation {
   if(!"新的一段。".equals(Draft.text))throw new AssertionError("Stale suggestion overwrote new draft");
   AppConfig.clearSession(context);
  }
+ private void personalSuggestionChecks(Context context)throws Exception{
+  new AppConfig("https://example.invalid","synthetic-personal-word-token",false).save(context);
+  AppConfig owner=AppConfig.load(context);
+  AppConfig.savePreferences(context,owner,new org.json.JSONObject().put("word_replacements","夢想型態 → DreamType"),null);
+  if(!AppConfig.load(context).wordReplacements.equals("夢想型態 → DreamType"))throw new AssertionError("Personal wording preference lost");
+  Draft.begin("我正在使用夢想型態。");Activity editor=open(EditActivity.class);
+  runOnMainSync(()->find(editor.getWindow().getDecorView(),"用詞建議（1）· 可選擇保留原文").performClick());
+  screenshot("personal-suggestion-dialog");clickAccessibleText("夢想型態 → DreamType");
+  runOnMainSync(()->{
+   if(!input(editor.getWindow().getDecorView()).getText().toString().equals("我正在使用DreamType。"))throw new AssertionError("Personal suggestion not applied");
+   find(editor.getWindow().getDecorView(),"復原這次修改").performClick();
+   if(!input(editor.getWindow().getDecorView()).getText().toString().equals("我正在使用夢想型態。"))throw new AssertionError("Personal suggestion not reversible");
+   find(editor.getWindow().getDecorView(),"用詞建議（1）· 可選擇保留原文").performClick();
+  });
+  AppConfig.clearSession(context);
+  new AppConfig("https://example.invalid","synthetic-next-account",false).save(context);
+  clickAccessibleText("夢想型態 → DreamType");
+  runOnMainSync(()->{
+   if(!input(editor.getWindow().getDecorView()).getText().toString().equals("我正在使用夢想型態。"))throw new AssertionError("Old account suggestion applied after logout");
+   editor.finish();
+  });
+  if(!AppConfig.load(context).wordReplacements.isEmpty())throw new AssertionError("Personal rules leaked to next account");
+  AppConfig.clearSession(context);
+ }
  private void screenshot(String name)throws Exception{
   // System bar transitions do not necessarily post accessibility idle events.
   android.os.SystemClock.sleep(2000);
@@ -241,6 +265,7 @@ public final class SmokeInstrumentation extends Instrumentation {
    screenshot("privacy");
    editorChecks(context);
    suggestionChecks(context);result.putString("word_suggestions","passed");
+   personalSuggestionChecks(context);result.putString("personal_word_suggestions","passed");
    sessionChecks(context);result.putString("session_isolation","passed");
    if(!loginPassword.isEmpty()){loginForm(context);result.putString("login_ui","passed");}
    else if(configureVoice)new AppConfig("http://10.0.2.2:18765",voiceToken,false,"","",true,accountVoice).save(context);
