@@ -1,0 +1,21 @@
+{
+  "started": 1790591218.7012546,
+  "runs": [
+    {
+      "model": "turbo",
+      "exit_code": 0,
+      "wall_seconds": 41.804023027420044
+    },
+    {
+      "model": "breeze",
+      "exit_code": 0,
+      "wall_seconds": 50.168665170669556
+    }
+  ],
+  "restored": true,
+  "scheduled_task_restored": true,
+  "gpu_before": "NVIDIA GeForce RTX 4060 Ti, 8188, 848",
+  "tunnel_process_preserved": true,
+  "tunnel_ready": true,
+  "finished": 1790591327.1313875
+}

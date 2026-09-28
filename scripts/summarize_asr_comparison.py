@@ -3,7 +3,15 @@ import argparse
 import json
 from pathlib import Path
 import statistics
+import re
+import unicodedata
 from check_public_speech import normalized, distance
+
+
+def mixed_tokens(text):
+    """Project MER: Han characters, Latin letter runs and digit runs; ignore punctuation."""
+    text=unicodedata.normalize('NFKC',text).replace('臺','台').lower()
+    return re.findall(r'[\u3400-\u9fff]|[a-z]+|[0-9]+',text)
 
 
 def summarize(first, second):
@@ -58,6 +66,11 @@ def summarize(first, second):
             'empty_cases':sum(not r[label].strip() for r in cases),
             'cpu_median_seconds':statistics.median(r['seconds'] for r in report['results']),
             'cpu_total_seconds':sum(r['seconds'] for r in report['results'])})
+        if corpus=='ascend96':
+            tokens=sum(len(mixed_tokens(r['reference'])) for r in cases)
+            mixed_errors=sum(distance(mixed_tokens(r['reference']),mixed_tokens(r[label])) for r in cases)
+            totals[-1].update(mixed_reference_tokens=tokens,mixed_errors=mixed_errors,
+                              project_mer=mixed_errors/tokens)
     return {'same_corpus_and_settings':True,'cases':len(cases),'totals':totals,
             'improved_cases':sum(r['error_delta']<0 for r in cases),
             'regressed_cases':sum(r['error_delta']>0 for r in cases),
