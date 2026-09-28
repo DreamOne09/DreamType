@@ -27,3 +27,9 @@ Android APK 保持 0.9.14，不需為此更換手機版本；主機更新後 `/h
 ## 仍有的界線
 
 這是程序生命週期隔離，不是低權限安全沙箱或 codec CVE 修補；子程序仍以相同使用者執行。輸入／輸出有大小限制，但未加入每程序 OS 記憶體上限。OS 無法終止程序等異常不在一般逾時測試範圍內。Whisper／LLM 推論本身的卡住問題、全站連線防濫用、Pixel 9 與公開付費上線驗收仍未完成。
+
+## Android 原生回歸
+
+[工作 36416540892](https://github.com/DreamOne09/DreamType/actions/runs/36416540892) 於來源 `3404af8735c6257b4d194060bed051b29405d2e0` 通過（6 分 4 秒）；後續提交只加入測試紀錄。先前工作 36415828327 的原生介面測試通過，但後端流程失敗；該環境將 av 裝在 user site，隔離 Python 無法載入。改用 setup-python 並在啟動模擬器前檢查 `python -I` 可載入指定 av 版本後，完整流程通過。
+
+[正常後端](evidence/decoder-isolation/native/backend-ime-result.json) 與 [遺失回應恢復](evidence/decoder-isolation/native/interrupted-backend-ime-result.json) 都只上傳一次、呼叫 provider 一次，3.008 秒錄音計入 4 秒；故障組回執重送不重複計費。這次 Android AAC 確實通過獨立秒數解碼程序。AI provider 為合成文字，未驗證真人辨識。[用詞建議及帳號隔離](evidence/decoder-isolation/native/result.txt)、[跨程序保留錄音](evidence/decoder-isolation/native/restart-verify.txt) 也通過。使用從原始碼建立的測試 APK，不代表發布 APK 的 Pixel 9 安裝／升級或 Surfshark 行動網路已驗收。
