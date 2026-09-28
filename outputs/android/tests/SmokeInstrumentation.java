@@ -139,6 +139,56 @@ public final class SmokeInstrumentation extends Instrumentation {
   runOnMainSync(()->find(logout.getWindow().getDecorView(),"完成修改").performClick());waitForIdleSync();
   if(Draft.text!=null||Draft.edited)throw new AssertionError("Editor restored text after logout");
  }
+ private void clickAccessibleText(String text){
+  long deadline=android.os.SystemClock.uptimeMillis()+5000;
+  while(android.os.SystemClock.uptimeMillis()<deadline){
+   android.view.accessibility.AccessibilityNodeInfo root=getUiAutomation().getRootInActiveWindow();
+   if(root!=null)for(android.view.accessibility.AccessibilityNodeInfo node:root.findAccessibilityNodeInfosByText(text)){
+    for(android.view.accessibility.AccessibilityNodeInfo target=node;target!=null;target=target.getParent()){
+     if(target.isClickable()&&target.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)){waitForIdleSync();return;}
+    }
+   }
+   android.os.SystemClock.sleep(100);
+  }
+  throw new AssertionError("Visible actionable text missing: "+text);
+ }
+ private void suggestionChecks(Context context)throws Exception{
+  new AppConfig("https://example.invalid","synthetic-suggestion-token",false).save(context);
+  final String original="這個軟件很好用，另一個軟件不用更新。";
+  final String changed="這個軟體很好用，另一個軟件不用更新。";
+  Draft.begin(original);Activity editor=open(EditActivity.class);
+  runOnMainSync(()->find(editor.getWindow().getDecorView(),"用詞建議（2）· 可選擇保留原文").performClick());
+  screenshot("suggestions-dialog");clickAccessibleText("保留原文");
+  runOnMainSync(()->{
+   if(!original.equals(input(editor.getWindow().getDecorView()).getText().toString()))throw new AssertionError("Dismissed suggestion changed text");
+   find(editor.getWindow().getDecorView(),"用詞建議（2）· 可選擇保留原文").performClick();
+  });
+  clickAccessibleText("軟件 → 軟體");
+  runOnMainSync(()->{
+   if(!changed.equals(input(editor.getWindow().getDecorView()).getText().toString()))throw new AssertionError("Suggestion did not replace just the first occurrence");
+   if(find(editor.getWindow().getDecorView(),"用詞建議（1）· 可選擇保留原文")==null)throw new AssertionError("Suggestion count not refreshed");
+   find(editor.getWindow().getDecorView(),"復原這次修改").performClick();
+   if(!original.equals(input(editor.getWindow().getDecorView()).getText().toString()))throw new AssertionError("Suggestion cannot be undone");
+   find(editor.getWindow().getDecorView(),"用詞建議（2）· 可選擇保留原文").performClick();
+  });
+  clickAccessibleText("軟件 → 軟體");screenshot("suggestions-applied");
+  runOnMainSync(()->find(editor.getWindow().getDecorView(),"完成修改").performClick());waitForIdleSync();
+  if(!Draft.edited||!changed.equals(Draft.text))throw new AssertionError("Accepted suggestion not handed back to keyboard draft");
+  Draft.begin(original);Activity cancelled=open(EditActivity.class);
+  runOnMainSync(()->find(cancelled.getWindow().getDecorView(),"用詞建議（2）· 可選擇保留原文").performClick());
+  clickAccessibleText("軟件 → 軟體");
+  runOnMainSync(()->find(cancelled.getWindow().getDecorView(),"取消修改").performClick());waitForIdleSync();
+  if(Draft.edited||!original.equals(Draft.text))throw new AssertionError("Cancel saved suggestion");
+  Activity stale=open(EditActivity.class);
+  runOnMainSync(()->{find(stale.getWindow().getDecorView(),"用詞建議（2）· 可選擇保留原文").performClick();Draft.begin("新的一段。");});
+  clickAccessibleText("軟件 → 軟體");
+  runOnMainSync(()->{
+   if(!original.equals(input(stale.getWindow().getDecorView()).getText().toString()))throw new AssertionError("Stale dialog applied suggestion");
+   stale.finish();
+  });
+  if(!"新的一段。".equals(Draft.text))throw new AssertionError("Stale suggestion overwrote new draft");
+  AppConfig.clearSession(context);
+ }
  private void screenshot(String name)throws Exception{
   // System bar transitions do not necessarily post accessibility idle events.
   android.os.SystemClock.sleep(2000);
@@ -190,6 +240,7 @@ public final class SmokeInstrumentation extends Instrumentation {
    if(!found[0])throw new AssertionError("Offline privacy screen missing");
    screenshot("privacy");
    editorChecks(context);
+   suggestionChecks(context);result.putString("word_suggestions","passed");
    sessionChecks(context);result.putString("session_isolation","passed");
    if(!loginPassword.isEmpty()){loginForm(context);result.putString("login_ui","passed");}
    else if(configureVoice)new AppConfig("http://10.0.2.2:18765",voiceToken,false,"","",true,accountVoice).save(context);
