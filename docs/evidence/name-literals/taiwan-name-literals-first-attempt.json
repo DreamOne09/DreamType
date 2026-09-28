@@ -1,0 +1,109 @@
+{
+  "synthetic_text_only": true,
+  "speech_recognition_tested": false,
+  "automatic_semantic_score": null,
+  "requires_review": true,
+  "results": [
+    {
+      "id": "two-stations",
+      "input": "先到松山車站拿文件，再去南港車站找同事，最後回松山車站交文件。不要合併這兩次行程。",
+      "ordered": [
+        "松山車站拿文件",
+        "南港車站找同事",
+        "松山車站交文件"
+      ],
+      "occurrences": {
+        "松山車站": 2
+      },
+      "required": [
+        "不要合併"
+      ],
+      "status": 200,
+      "seconds": 0.53,
+      "output": "先到松山車站拿文件，再去南港車站找同事，最後回松山車站交文件。\n不要合併這兩次行程。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "hospital-airport",
+      "input": "明天先去仁安醫院拿藥，再到桃園機場接妹妹。如果班機延誤，就先留在仁安醫院等她通知，不要自己取消。",
+      "required": [
+        "仁安醫院拿藥",
+        "桃園機場接妹妹",
+        "如果班機延誤",
+        "不要自己取消"
+      ],
+      "occurrences": {
+        "仁安醫院": 2
+      },
+      "status": 200,
+      "seconds": 0.53,
+      "output": "明天先去仁安醫院拿藥，再到桃園機場接妹妹。\n如果班機延誤，就先留在仁安醫院等她通知，不要自己取消。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "personal-brand",
+      "input": "請用夢想型態專業版整理文字，GPT4先不要更新。",
+      "vocabulary": "夢想型態、夢想型態專業版、GPT",
+      "required": [
+        "夢想型態專業版",
+        "GPT4先不要更新"
+      ],
+      "status": 200,
+      "seconds": 0.28,
+      "output": "請用夢想型態專業版整理文字，GPT4先不要更新。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "name-time-repair",
+      "input": "下午三點到板橋車站，不對，四點到板橋車站。記得帶文件。",
+      "required": [
+        "四點",
+        "板橋車站",
+        "記得帶文件"
+      ],
+      "forbidden": [
+        "三點"
+      ],
+      "status": 200,
+      "seconds": 0.37,
+      "output": "下午三點到板橋車站，不對，四點到板及車站。\n記得帶文件。",
+      "explicit_check_failures": [
+        "unexpected: 三點"
+      ]
+    },
+    {
+      "id": "name-stutter",
+      "input": "我要去板橋車站板橋車站拿文件，不要忘記帶印章。",
+      "required": [
+        "板橋車站拿文件",
+        "不要忘記帶印章"
+      ],
+      "occurrences": {
+        "板橋車站": 1
+      },
+      "status": 200,
+      "seconds": 0.24,
+      "output": "我要去板橋車站拿文件，不要忘記帶印章。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "name-request",
+      "input": "請幫我寫一份到南港車站集合的通知，先不要寄出去，等我確認時間。",
+      "required": [
+        "請幫我寫",
+        "南港車站",
+        "先不要寄出去",
+        "等我確認時間"
+      ],
+      "forbidden": [
+        "各位同仁",
+        "集合時間：",
+        "以下是"
+      ],
+      "status": 200,
+      "seconds": 0.36,
+      "output": "請幫我寫一份到南港車站集合的通知，先不要寄出去，等我確認時間。",
+      "explicit_check_failures": []
+    }
+  ]
+}

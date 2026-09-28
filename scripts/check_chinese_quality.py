@@ -24,7 +24,9 @@ def main():
             response = client.post('http://127.0.0.1:19870/v1/chat/completions',
                 headers={'Authorization': 'Bearer ' + key},
                 json={'messages': [{'role': 'user', 'content': case['input']}],
-                      'personal_prompt':case.get('personal_prompt','')})
+                      'personal_prompt':case.get('personal_prompt',''),
+                      'vocabulary':case.get('vocabulary',''),
+                      'taiwan_places':case.get('taiwan_places',True)})
             row = dict(case, status=response.status_code, seconds=round(time.perf_counter()-start, 2))
             if response.status_code == 200:
                 row['output'] = response.json()['choices'][0]['message']['content']

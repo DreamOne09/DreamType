@@ -113,8 +113,13 @@ class AudioProcessTests(unittest.TestCase):
                 child=psutil.Process(int(parent.stdout.readline().strip()))
                 watchdog.cancel();parent.kill();parent.wait(timeout=3)
                 deadline=time.monotonic()+3
-                while child.is_running() and child.status()!=psutil.STATUS_ZOMBIE and time.monotonic()<deadline:time.sleep(.02)
-                self.assertTrue(not child.is_running() or child.status()==psutil.STATUS_ZOMBIE)
+                def gone():
+                    try:
+                        return not child.is_running() or child.status()==psutil.STATUS_ZOMBIE
+                    except psutil.NoSuchProcess:
+                        return True
+                while not gone() and time.monotonic()<deadline:time.sleep(.02)
+                self.assertTrue(gone())
             finally:
                 watchdog.cancel();watchdog.join()
                 if parent.poll() is None:parent.kill()
