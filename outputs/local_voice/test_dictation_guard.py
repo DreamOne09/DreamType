@@ -2,6 +2,17 @@ import unittest
 from dictation_guard import validate_edit
 
 class DictationGuardTests(unittest.TestCase):
+    def test_action_sequence_cues_cannot_be_removed_or_moved(self):
+        source='第一明天先去銀行領錢。第二回家拿證件。第三到診所拿藥。如果下雨，全部改到後天。'
+        correct='• 明天先去銀行領錢。\n• 回家拿證件。\n• 到診所拿藥。\n如果下雨，全部改到後天。'
+        validate_edit(source,correct)
+        with self.assertRaises(ValueError):validate_edit(source,correct.replace('先',''))
+        for source,changed in (
+            ('先寄文件，確認後再打電話。','寄文件，確認後再打電話。'),
+            ('先寄文件，確認後再打電話。','寄文件，確認後先打電話。'),
+            ('確認附件，然後寄信，最後再通知我。','確認附件，寄信，再通知我。')):
+            with self.subTest(source=source),self.assertRaises(ValueError):validate_edit(source,changed)
+
     def test_layout_and_punctuation_are_allowed(self):
         validate_edit('第一，明天到板橋拿文件。第二，下午四點半去汐止。', '• 明天到板橋拿文件。\n• 下午四點半去汐止。')
         validate_edit('請幫我生成一個計劃','請幫我生成一個計劃。')
