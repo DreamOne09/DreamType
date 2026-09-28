@@ -20,6 +20,13 @@ class TaiwanTypographyTests(unittest.TestCase):
         self.assertEqual(clean('Hello, world!'), 'Hello, world!')
         self.assertEqual(clean('第一段。\n\n第二段。'), '第一段。\n\n第二段。')
 
+    def test_unfinished_code_keeps_literal_punctuation(self):
+        for text in ('程式 `中文,a: b!', '程式\n```\n中文,a: b!',
+                     '請保留 `中文,a!\n後續仍在程式內,b?'):
+            self.assertEqual(clean(text), text)
+        self.assertEqual(clean('程式 `中文,a!`，結束後,請確認.'),
+                         '程式 `中文,a!`，結束後，請確認。')
+
     def test_literals_adjacent_to_chinese_without_spaces(self):
         # Chinese and digits both count as Unicode word characters: a regex
         # word boundary would miss these very common dictated spellings.
