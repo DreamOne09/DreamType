@@ -5,6 +5,10 @@ from personalization import IDENTIFIER
 HAN = re.compile(r'[\u3400-\u9fff]')
 PROTECTED = re.compile(
     r'```[\s\S]*?```|`[^`\n]*`|'
+    # Unquoted English phrases embedded in Chinese still retain their literal
+    # punctuation. A single product name does not make a Chinese sentence English.
+    r"(?<![A-Za-z0-9_])[A-Za-z][A-Za-z0-9_]*(?:['’-][A-Za-z0-9_]+)*"
+    r"(?:[ \t,;:]+[A-Za-z][A-Za-z0-9_]*(?:['’-][A-Za-z0-9_]+)*)+[.?!]*|"
     + IDENTIFIER.pattern +
     r'|(?<![A-Za-z0-9_])[A-Za-z]:\\[^\s，。！？]+|'
     r'(?<![A-Za-z0-9_])\d+(?:[.,:/-]\d+)+(?:%|％)?|'

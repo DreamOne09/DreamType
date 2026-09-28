@@ -64,10 +64,12 @@ if action in ('start', 'restart'):
         print('Local Voice is already ready.')
         sys.exit(0)
     stop({'gateway', 'engine','translation'})
+    # b11055: measured lower host RAM use for this fully GPU-offloaded model
+    # with load-mode none; weights, context and generation settings stay fixed.
     spawn('llama', [str(WORK / 'llama/llama-server.exe'), '-m',
         str(WORK / 'models/qwen-instruct/Qwen3-4B-Instruct-2507-Q4_K_M.gguf'), '--host', '127.0.0.1',
         '--port', '19871', '-ngl', '99', '-c', '4096', '-np', '1',
-        '--flash-attn', 'on', '--jinja', '--alias', 'local-format', '--no-webui',
+        '--flash-attn', 'on', '--load-mode', 'none', '--jinja', '--alias', 'local-format', '--no-webui',
         '--api-key-file', str(KEY), '--cors-origins', 'http://127.0.0.1:19870'])
     spawn('gateway', [sys.executable, '-m', 'uvicorn', 'server:app', '--app-dir', str(HERE),
         '--host', '127.0.0.1', '--port', '19870', '--no-access-log'])

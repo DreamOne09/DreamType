@@ -1,0 +1,26 @@
+{
+  "started": 1790589636.3940141,
+  "runs": [
+    {
+      "model": "breeze",
+      "exit_code": 0,
+      "wall_seconds": 52.76896357536316
+    }
+  ],
+  "restored": true,
+  "scheduled_task_restored": true,
+  "available_ram_before_bytes": 1813852160,
+  "format_model_start_seconds": 2.590315999928862,
+  "format_load_mode": "none",
+  "resident_model_pids": [
+    10396,
+    35212
+  ],
+  "available_ram_after_format_load_bytes": 3968897024,
+  "format_rss_after_load_bytes": 737275904,
+  "gpu_before": "NVIDIA GeForce RTX 4060 Ti, 8188, 5337",
+  "resident_models_preserved": true,
+  "tunnel_process_preserved": true,
+  "tunnel_ready": true,
+  "finished": 1790589707.647911
+}

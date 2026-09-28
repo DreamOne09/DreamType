@@ -30,6 +30,18 @@ class TaiwanTypographyTests(unittest.TestCase):
         self.assertEqual(clean('路徑C:\\Users\\test.txt 和程式foo.bar。'),
                          '路徑C:\\Users\\test.txt 和程式foo.bar。')
 
+    def test_unquoted_english_sentence_in_chinese(self):
+        self.assertEqual(clean('我想傳一句英文：Could you help me draft a plan? 先不要替我寫計畫。'),
+                         '我想傳一句英文：Could you help me draft a plan? 先不要替我寫計畫。')
+        self.assertEqual(clean('他說 Hello, world! 然後離開.'), '他說 Hello, world! 然後離開。')
+        self.assertEqual(clean('你有用ChatGPT?'), '你有用ChatGPT？')
+
+    def test_single_paragraph_style_variants(self):
+        from personalization import apply_explicit_layout
+        text='第一件事。\n第二件事。'
+        self.assertEqual(apply_explicit_layout(text,'不要條列，保留成一段文字。'), '第一件事。 第二件事。')
+        self.assertEqual(apply_explicit_layout(text,'不要整理成一段文字。'),text)
+
 
 if __name__ == '__main__':
     unittest.main()
