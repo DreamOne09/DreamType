@@ -1,0 +1,66 @@
+{
+  "simultaneous_accounts": 3,
+  "rounds": 1,
+  "queue_policy": "production",
+  "database": "isolated temporary SQLite, removed after test",
+  "transport": "in-process account ASGI to localhost HTTP inference",
+  "audio": "hash-verified public manifest audio concatenated and cut to 5/30/60 seconds",
+  "submission_order_seconds": [
+    [
+      5,
+      30,
+      60
+    ]
+  ],
+  "quality_evaluated": false,
+  "native_device_test": false,
+  "capacity_guarantee": false,
+  "live_queue_locked": false,
+  "results": [
+    {
+      "round": 1,
+      "audio_seconds": 5,
+      "mode": "organize",
+      "target": "zh-TW",
+      "total_seconds": 1.847,
+      "wait_before_provider_seconds": 0.206,
+      "provider_seconds": 1.599,
+      "provider_order": 1,
+      "warning_present": false,
+      "output_chars": 12,
+      "cross_account_denied": true,
+      "used_seconds": 5,
+      "duplicate_receipt_no_extra_charge": true
+    },
+    {
+      "round": 1,
+      "audio_seconds": 30,
+      "mode": "translate",
+      "target": "ja",
+      "total_seconds": 6.149,
+      "wait_before_provider_seconds": 1.567,
+      "provider_seconds": 4.509,
+      "provider_order": 2,
+      "warning_present": false,
+      "output_chars": 80,
+      "cross_account_denied": true,
+      "used_seconds": 30,
+      "duplicate_receipt_no_extra_charge": true
+    },
+    {
+      "round": 1,
+      "audio_seconds": 60,
+      "mode": "translate",
+      "target": "en",
+      "total_seconds": 13.58,
+      "wait_before_provider_seconds": 5.858,
+      "provider_seconds": 7.606,
+      "provider_order": 3,
+      "warning_present": false,
+      "output_chars": 410,
+      "cross_account_denied": true,
+      "used_seconds": 60,
+      "duplicate_receipt_no_extra_charge": true
+    }
+  ]
+}

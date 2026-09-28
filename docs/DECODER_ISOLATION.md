@@ -20,7 +20,9 @@
 - 原始 120 秒及多一個 sample 的計費邊界維持一致；6 分鐘 PCM 上限拒絕過長輸入。12 項子程序／秒數測試通過，既有 9 項接收限制測試也通過。
 - [新舊 PCM 比較](evidence/decoder-isolation/pcm-compatibility.json)：以固定 faster-whisper 1.2.1 為參考，六組合成 3 秒音訊（16 kHz mono WAV／MP4 AAC、48 kHz stereo WAV／FLAC／ADTS AAC、48 kHz mono WebM Opus），取樣數與每個 float32 值完全一致。單次獨立轉換約 0.17–0.20 秒；這不是手機端到端延遲或辨識品質證明。重跑工具為 `scripts/check_pcm_compatibility.py --output work/pcm-compatibility.json`。
 
-Android APK 保持 0.9.14，不需為此更換手機版本；主機更新後 `/health` 的 `audio_decoding` 顯示 `isolated-process`。遠端 CI、整合及部署結果另以實際紀錄為準。
+Android APK 保持 0.9.14，不需為此更換手機版本；主機更新後 `/health` 的 `audio_decoding` 顯示 `isolated-process`。Windows 主機已載入此版本，健康檢查、既有 APK 雜湊、全形標點整理及 Tunnel ready 均通過。
+
+[三帳號整合紀錄](evidence/decoder-isolation/mixed.json)：5 秒繁中整理、30 秒日文翻譯、60 秒英文翻譯依序進入佇列，全部成功，端到端主機測試耗時分別為 1.847／6.149／13.580 秒。帳號間結果讀取遭拒，秒數計費正確，重複收據不重複計費。測試用隔離暫存 SQLite 與公開合成片段，兩階段解碼均走新程序；不包含手機行動網路、不評估翻譯品質，也不代表長時間容量承諾。
 
 ## 仍有的界線
 
