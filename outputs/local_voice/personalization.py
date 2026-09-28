@@ -112,6 +112,8 @@ def explicit_list_hint(text, personal_prompt=''):
     matches = re.findall(r'(?:^|[，,。；;！？!?\n])\s*第([一二三四五六七八九])'
         r'(?![一二三四五六七八九十百千萬名天日週周年月季屆次位個組隊排列頁章節步階線航銀行])', text)
     if len(matches) < 2 or matches != list('一二三四五六七八九'[:len(matches)]):
+        if '第一銀行' in text:
+            return '\n「第一銀行」是機構名稱，不是列舉標記。這段沒有連續的口述列舉，不要因此加圓點或數字清單。\n'
         return ''
     return '\n原文包含明確列舉。請把每項列舉標記改成「• 」並分行，保留每項完整內容，共用條件另起一行。不要保留「第一、第二」標記，也不要添加標題。\n'
 

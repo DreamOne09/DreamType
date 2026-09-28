@@ -38,6 +38,19 @@ def main():
             for literal in case.get('forbidden', []):
                 if literal in output:
                     failures.append('unexpected: ' + literal)
+            ordered_output=output
+            for original,equivalent in case.get('ordered_aliases',{}).items():
+                ordered_output=ordered_output.replace(original,equivalent)
+            cursor=0
+            for literal in case.get('ordered', []):
+                position=ordered_output.find(literal,cursor)
+                if position<0:
+                    failures.append('missing or reordered: '+literal)
+                    break
+                cursor=position+len(literal)
+            for literal,count in case.get('occurrences',{}).items():
+                if output.count(literal)!=count:
+                    failures.append('occurrence count: '+literal)
             if 'bullet_count' in case and len(re.findall(r'^\s*• ', output, re.MULTILINE)) != case['bullet_count']:
                 failures.append('bullet count')
             if 'line_count' in case and len(output.splitlines()) != case['line_count']:
