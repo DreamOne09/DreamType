@@ -186,3 +186,9 @@ Android 錄音 28,320 bytes，PyAV 解碼 3.136 秒；資料庫只有一筆 done
 原有四條 IME 流程及跨程序保留錄音也通過：[正常 HTTPS 帳號流程](evidence/android-0.9.13/backend-ime-result.json)、[回應遺失恢復](evidence/android-0.9.13/interrupted-backend-ime-result.json)、[跨程序重啟](evidence/android-0.9.13/restart-verify.txt)。兩個後端流程都只上傳一次及呼叫 provider 一次；遺失回執重送兩次，仍只計 4 秒。AI 為合成回應，未驗證真人語音。
 
 之後的 `54aeb7a` 只補強後端 provider 排除編輯用詞對照，最新後端 CI 通過；Android 原始碼與原生測試來源相同。0.9.13-rc1 的維護者簽署 APK versionCode 23，公開下載 SHA256 已核對為 `b10113b228abdb9e2a7045715c5244c540ca25a9666916789c9b80750ff43bdf`。Pixel 9 安裝／升級、實體手指操作及 Surfshark 行動網路仍待驗收。
+
+## 0.9.15 編輯用詞偏好讀取
+
+[工作 36417733964](https://github.com/DreamOne09/DreamType/actions/runs/36417733964) 於分支的功能提交 `af2af17` 完成（6 分 24 秒）。[原生結果](evidence/android-0.9.15/result.txt) 驗證個人及內建建議、套用一處、復原、取消和登出後拒絕舊建議；[跨程序保留](evidence/android-0.9.15/restart-verify.txt)、[後端](evidence/android-0.9.15/backend-ime-result.json)、[遺失回應恢復](evidence/android-0.9.15/interrupted-backend-ime-result.json) 也通過。正常及故障流程均只上傳一次、provider 一次，3.008 秒計 4 秒。
+
+測試是從原始碼建置的 instrumentation APK，AI 為合成回應。發布 APK 已核對原簽章與公開下載 SHA256 `d313d5b7208db384c0bb483b145be118ab5a9cc86d196ade664487f031d345c7`；尚未在 Pixel 9 安裝升級，也沒有量測實機輸入延遲。

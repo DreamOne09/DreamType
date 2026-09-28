@@ -60,6 +60,13 @@ final class AppConfig {
         }
         return (SecretKey)store.getKey(alias,null);
     }
+    // Editing text only needs style preferences, not Keystore credentials.
+    // Keep the same lock as saveStyle/clearSession so account changes stay atomic.
+    static String wordReplacements(Context c) {
+        synchronized(PendingAudio.class) {
+            return c.getSharedPreferences("style",Context.MODE_PRIVATE).getString("word_replacements","");
+        }
+    }
     static AppConfig load(Context c) {
         synchronized(PendingAudio.class) {
         SharedPreferences p=c.getSharedPreferences("connection",Context.MODE_PRIVATE);
