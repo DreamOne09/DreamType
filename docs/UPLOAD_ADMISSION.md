@@ -22,3 +22,9 @@
 仍需：未登入請求／健康檢查的整體連線限制、登入限流的公平性、持續負載、網路層防濫用，以及對不可中止 native decoder 的隔離。若兩個解碼執行緒永久卡住，本版會維持占用、拒絕新解碼，需管理者重啟；不假裝已能安全終止 Python thread。這些限制也不保證抵擋分散式阻斷服務。私有 `/v1` 仍是主機擁有者金鑰使用，不把其金鑰提供給測試使用者。
 
 Android 本次僅變更錯誤提示，使用 JVM HTTP 合約驗證狀態碼和訊息；最後一次完整原生模擬器仍為 0.9.13。0.9.14 不宣稱已做 Pixel 9／行動網路驗收。
+
+## 合併與部署證據
+
+[PR 35](https://github.com/DreamOne09/DreamType/pull/35) 所有後端及 Android 合約 CI 通過；新增 9 項資源測試已納入持續檢查。以新版帳號層、隔離 SQLite 接上家中真實 Turbo／整理／翻譯服務，三帳號一輪 5／30／60 秒音訊全部完成，耗時 1.611／5.756／13.039 秒，無 warning、跨帳號拒絕，回執重送不重複扣額度；見 [逐筆結果](evidence/upload-admission/mixed.json)。音訊為公開短片段拼接，此處只驗證流程及用量，不評語音品質，也不是持續到達或容量保證。
+
+0.9.14-rc1 同維護者簽章、versionCode 24，公開下載 SHA256 `2215fd6148fc55401f168d4ee24419da25f60726b7bd3b172268819c9a021f76` 已核對。家中服務重新載入後 health、繁中整理、APK 下載與 Tunnel 檢查通過；管理 metrics 為 uploads active 0 / limit 4、decoders active 0 / waiting 0 / limit 2。沒有做正式帳號洪水測試。
