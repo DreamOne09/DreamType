@@ -1,0 +1,40 @@
+{
+  "scope": "synthetic text through live local formatter; not ASR or device test",
+  "results": [
+    {
+      "name": "short",
+      "source": "明天早上九點到板橋開會,請記得帶文件.",
+      "personal_prompt": "",
+      "text": "明天早上九點到板橋開會，請記得帶文件。",
+      "error": null
+    },
+    {
+      "name": "list",
+      "source": "第一，明天去銀行。第二，下午到超市買牛奶。如果下雨就搭公車。",
+      "personal_prompt": "",
+      "text": "• 明天去銀行。\n• 下午到超市買牛奶。\n如果下雨就搭公車。",
+      "error": null
+    },
+    {
+      "name": "paragraph",
+      "source": "明天先去銀行。下午去超市買牛奶。如果下雨就搭公車。",
+      "personal_prompt": "整理成一個段落，不要換行。",
+      "text": "明天先去銀行。下午去超市買牛奶。如果下雨就搭公車。",
+      "error": null
+    },
+    {
+      "name": "request",
+      "source": "請幫我生成一個計劃。",
+      "personal_prompt": "",
+      "text": "請幫我生成一個計劃。",
+      "error": null
+    },
+    {
+      "name": "literals",
+      "source": "價格是 1.5 元，時間 10:30，請寄到 a@example.com。",
+      "personal_prompt": "",
+      "text": "價格是 1.5 元，時間 10:30，請寄到 a@example.com。",
+      "error": null
+    }
+  ]
+}
