@@ -10,7 +10,7 @@ jobs:
           python-version: '3.12'
       - run: pip install fastapi==0.141.1 httpx==0.28.1 python-multipart==0.0.32 cryptography==50.0.1 av==18.1.0
       - run: python -m unittest discover -s scripts -p test_asr_summary.py
-      - run: python -m unittest test_beta test_backup test_durability test_maintenance test_translation test_operations test_session_race test_crash_recovery test_literal_preservation test_dictation_guard test_audio_duration test_inference_queue test_spoken_corrections test_android_release test_taiwan_typography test_speech_profile
+      - run: python -m unittest test_beta test_backup test_durability test_maintenance test_translation test_operations test_session_race test_crash_recovery test_literal_preservation test_dictation_guard test_audio_duration test_inference_queue test_spoken_corrections test_android_release test_taiwan_typography test_speech_profile test_admission
         working-directory: outputs/local_voice
 
   android-contracts:
