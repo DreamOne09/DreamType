@@ -176,3 +176,13 @@ Android 錄音 28,320 bytes，PyAV 解碼 3.136 秒；資料庫只有一筆 done
 原有四條 IME 流程與跨程序保留錄音測試也通過。[正常 HTTPS 後端](evidence/android-0.9.12/backend-ime-result.json) 與 [遺失回應後恢復](evidence/android-0.9.12/interrupted-backend-ime-result.json) 均只上傳一次、呼叫 provider 一次，3.008 秒錄音計入 4 秒；故障組兩次回執沒有重複計費。[重啟驗證](evidence/android-0.9.12/restart-verify.txt)。
 
 這是從原始碼建立的可拋棄 instrumentation APK；不是直接安裝發布的維護者簽署 APK。AI 仍回傳合成文字，Pixel 9／Surfshark、真人辨識品質與安裝升級尚未通過。
+
+## 0.9.13 個人用詞：2026-09-28
+
+[原生工作 36411047123](https://github.com/DreamOne09/DreamType/actions/runs/36411047123) 在來源 `28b8b5f7634058ffa2187fc0551506cde6387e4d` 成功（6 分 17 秒）。測試保存個人對照到 AppConfig，真正開啟修改頁，點選「夢想型態 → DreamType」、復原，再在登出／另一個帳號登入後嘗試點選舊對话框，要求拒絕套用且新帳號沒有舊詞庫。個人對照設定頁的手動輸入及跨裝置同步 UI 尚未實機驗證；帳號隔離、API 取回、舊客戶端保留與刪除對照另由後端測試覆蓋。
+
+[結果](evidence/android-0.9.13/result.txt) · [個人建議對話框](evidence/android-0.9.13/personal-suggestion-dialog.png)。截圖的底部 Toast 是前一個草稿測試留下的暫時提示；可確認對話框中的對照及「保留原文」可見，不代表所有螢幕／字級與鍵盤展開情況均已驗證。
+
+原有四條 IME 流程及跨程序保留錄音也通過：[正常 HTTPS 帳號流程](evidence/android-0.9.13/backend-ime-result.json)、[回應遺失恢復](evidence/android-0.9.13/interrupted-backend-ime-result.json)、[跨程序重啟](evidence/android-0.9.13/restart-verify.txt)。兩個後端流程都只上傳一次及呼叫 provider 一次；遺失回執重送兩次，仍只計 4 秒。AI 為合成回應，未驗證真人語音。
+
+之後的 `54aeb7a` 只補強後端 provider 排除編輯用詞對照，最新後端 CI 通過；Android 原始碼與原生測試來源相同。0.9.13-rc1 的維護者簽署 APK versionCode 23，公開下載 SHA256 已核對為 `b10113b228abdb9e2a7045715c5244c540ca25a9666916789c9b80750ff43bdf`。Pixel 9 安裝／升級、實體手指操作及 Surfshark 行動網路仍待驗收。
