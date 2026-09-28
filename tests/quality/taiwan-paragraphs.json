@@ -50,7 +50,10 @@
     "id": "explicit-list",
     "input": "第一明天先去銀行領錢。第二回家拿證件。第三到診所拿藥。如果下雨，全部改到後天。",
     "bullet_count": 3,
-    "last_line": "如果下雨，全部改到後天。"
+    "last_line": "如果下雨，全部改到後天。",
+    "required": [
+      "明天先去銀行領錢"
+    ]
   },
   {
     "id": "personal-lines",

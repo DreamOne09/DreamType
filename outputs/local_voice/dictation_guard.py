@@ -10,7 +10,7 @@ from spoken_corrections import comparison_source, validate_repair_values
 
 # Literal guard, not a semantic parser. Conservative rejection intentionally
 # keeps the original when a synonym or unsupported self-correction touches these.
-LOGIC = re.compile('除非|否則|如果|只有|只要|必須|不得|不能|不要|不會|不是|沒有|尚未|未經|之前|之後|不|沒|勿|僅|只|若|才')
+LOGIC = re.compile('除非|否則|如果|只有|只要|必須|不得|不能|不要|不會|不是|沒有|尚未|未經|之前|之後|最後|然後|先|再|不|沒|勿|僅|只|若|才')
 REPEATED_LOGIC = re.compile('(' + LOGIC.pattern + r')\1+')
 
 
