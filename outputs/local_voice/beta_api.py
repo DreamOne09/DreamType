@@ -18,6 +18,7 @@ from personalization import validate_preferences
 from word_replacements import validate_word_replacements
 from translation import validate_translation
 from inference_queue import InferenceQueue
+from request_limits import DecoderBudget
 
 def audio_duration(data):
     """Decode frames incrementally; stop long/compressed recordings before allocating PCM."""
@@ -59,6 +60,8 @@ class Beta:
         self.admin=path.read_text().strip()
         self.queue=self.new_queue();self.results={};self.tasks=[];self.logins=deque()
         self.login_slots=asyncio.Semaphore(2)
+        self.uploads=set();self.upload_limit=4;self.body_timeout=30
+        self.decoders=DecoderBudget()
     def new_queue(self):
         def short_dictation(job):
             uid,jid,_,prefs=job
@@ -133,6 +136,12 @@ def install_beta(app,work,provider,decoder):
     async def store_error(request,error):return JSONResponse({'detail':error.message,'error_code':error.code},status_code=error.status)
     @app.middleware('http')
     async def beta_guard(request,call_next):
+        try:return await guarded_request(request,call_next)
+        finally:
+            uid=getattr(request.state,'upload_uid',None)
+            if uid is not None:beta.uploads.discard(uid)
+
+    async def guarded_request(request,call_next):
         if request.url.path.startswith('/v2/'):
             try:
                 length=int(request.headers.get('content-length','0'))
@@ -142,14 +151,22 @@ def install_beta(app,work,provider,decoder):
                 if request.method in ('POST','PATCH','DELETE') and 'content-length' not in request.headers:return JSONResponse({'detail':'需要 Content-Length'},status_code=411)
                 if request.url.path.startswith('/v2/admin/'):
                     beta.admin_check(request)
-                elif request.url.path not in ('/v2/login','/v2/password-reset'):beta.user(request)
+                elif request.url.path not in ('/v2/login','/v2/password-reset'):
+                    user=beta.user(request)
+                    if request.url.path=='/v2/dictations' and request.method=='POST':
+                        uid=user['id']
+                        if uid in beta.uploads or len(beta.uploads)>=beta.upload_limit:
+                            return JSONResponse({'detail':'正在接收其他錄音，請稍後重試。','error_code':'upload_busy'},status_code=429,headers={'Retry-After':'2','Cache-Control':'no-store'})
+                        beta.uploads.add(uid);request.state.upload_uid=uid
                 if request.method in ('POST','PATCH','DELETE'):
                     chunks=[];received=0
-                    async for chunk in request.stream():
-                        received+=len(chunk)
-                        if received>cap:return JSONResponse({'detail':'請求太大'},status_code=413)
-                        chunks.append(chunk)
+                    async with asyncio.timeout(beta.body_timeout):
+                        async for chunk in request.stream():
+                            received+=len(chunk)
+                            if received>cap:return JSONResponse({'detail':'請求太大'},status_code=413)
+                            chunks.append(chunk)
                     request._body=b''.join(chunks)
+            except TimeoutError:return JSONResponse({'detail':'上傳逾時，請稍後重試。','error_code':'upload_timeout'},status_code=408,headers={'Cache-Control':'no-store'})
             except StoreError as e:return JSONResponse({'detail':e.message,'error_code':e.code},status_code=e.status)
             except ValueError:return JSONResponse({'detail':'無效請求'},status_code=400)
         response=await call_next(request)
@@ -197,6 +214,8 @@ def install_beta(app,work,provider,decoder):
         except (OSError,ValueError):maintenance={'errors':['maintenance_not_run']}
         from operations import summarize
         return {'queue_size':beta.queue.qsize(),'jobs_last_24h':counts,'worker_alive':beta.workers_ready(),'maintenance':maintenance,
+                'uploads':{'active':len(beta.uploads),'limit':beta.upload_limit},
+                'decoders':{'active':len(beta.decoders.tasks),'waiting':beta.decoders.waiting,'limit':beta.decoders.limit},
                 'operations':summarize(maintenance,(work/'backup-config.json').is_file())}
     @app.get('/v2/me')
     async def me(request:Request):return beta.store.me(beta.user(request)['id'])
@@ -255,7 +274,11 @@ def install_beta(app,work,provider,decoder):
         except StoreError as error:
             if error.status!=404:raise
         if beta.queue.full():raise StoreError(429,'目前排隊已滿，請稍後再試','queue_full')
-        try:duration=await asyncio.to_thread(beta.decoder,audio)
+        account=beta.store.me(uid)
+        if account['reserved_seconds']>0:raise StoreError(429,'上一段還在處理，請稍候','job_in_progress')
+        if account['remaining_seconds']<=0:raise StoreError(402,'本月試用額度已用完')
+        try:duration=await beta.decoders.run(beta.decoder,audio)
+        except StoreError:raise
         except Exception:raise StoreError(400,'無法讀取錄音')
         if not 0<duration<=120:raise StoreError(413,'每段錄音最多兩分鐘')
         _,fresh=beta.store.reserve(uid,jid,digest,math.ceil(duration),request.headers.get('x-dreamtype-retry')=='1')

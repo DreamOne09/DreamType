@@ -165,7 +165,7 @@ final class VoiceApi {
     }
     private static void error(HttpURLConnection connection) throws Exception {
         int code=connection.getResponseCode();
-        if(code==409||code==429){
+        if(code==408||code==409||code==429||code==503){
             String reason="";
             try {reason=new JSONObject(read(connection.getErrorStream())).optString("error_code","");}catch(Exception ignored){}
             // Show our own known messages, never arbitrary proxy/server response text.
@@ -173,6 +173,9 @@ final class VoiceApi {
             if(code==429&&reason.equals("queue_full"))throw new ApiError(code,"目前使用的人較多，請稍後重試這段錄音；這次未扣額度。");
             if(code==429&&reason.equals("job_in_progress"))throw new ApiError(code,"上一段仍在處理，請稍後從「更多 → 取回上一筆」查看。");
             if(code==429&&reason.equals("auth_rate_limit"))throw new ApiError(code,"登入嘗試太頻繁，請一分鐘後再試。");
+            if(code==429&&reason.equals("upload_busy"))throw new ApiError(code,"正在接收或檢查其他錄音，請稍後重試這段；這次未扣額度。");
+            if(code==408&&reason.equals("upload_timeout"))throw new ApiError(code,"錄音上傳逾時，請確認網路後重試這段；這次未扣額度。");
+            if(code==503&&reason.equals("decode_timeout"))throw new ApiError(code,"錄音檢查逾時，尚未加入排隊；請稍後重試，或改錄較短的一段。");
         }
         error(code);
     }

@@ -11,7 +11,7 @@ public final class ErrorMessageTest {
   server.start();
   try{
    AppConfig config=new AppConfig("http://127.0.0.1:"+server.getAddress().getPort(),"test",false);
-   String[][] cases={{"409","result_unconfirmed","取回上一筆"},{"429","queue_full","未扣額度"},{"429","job_in_progress","上一段仍在處理"},{"429","auth_rate_limit","一分鐘"},{"429","unknown","服務忙碌"},{"409","queue_full","請求衝突"}};
+   String[][] cases={{"409","result_unconfirmed","取回上一筆"},{"429","queue_full","未扣額度"},{"429","job_in_progress","上一段仍在處理"},{"429","auth_rate_limit","一分鐘"},{"429","upload_busy","未扣額度"},{"408","upload_timeout","上傳逾時"},{"503","decode_timeout","尚未加入排隊"},{"503","upload_timeout","電腦暫時連不到"},{"429","unknown","服務忙碌"},{"409","queue_full","請求衝突"}};
    for(String[] item:cases){
     status[0]=Integer.parseInt(item[0]);body[0]="{\"error_code\":\""+item[1]+"\",\"detail\":\"untrusted-detail\"}";
     try{VoiceApi.json(config,"GET","/v2/test",null);throw new AssertionError("Error accepted");}
