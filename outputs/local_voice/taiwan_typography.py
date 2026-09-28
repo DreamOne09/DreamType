@@ -52,3 +52,21 @@ def normalize_taiwan_typography(text):
         lines.append(line.rstrip())
     result = re.sub(r'\n{3,}', '\n\n', '\n'.join(lines)).strip()
     return re.sub(re.escape(prefix) + r'(\d+)END', lambda m: saved[int(m[1])], result)
+
+
+def preserve_prose_layout(source, edited, personal_prompt=''):
+    """Remove invented bullets only when complete source prose is otherwise identical."""
+    from spoken_corrections import comparison_source
+    if personal_prompt.strip() or '\n' in source or '\r' in source:
+        return edited
+    # Ambiguous lists, topic changes and literal markup remain model/user-controlled.
+    if source.count('。') < 2 or re.search(r'[、：:；;•`「」『』]|第[一二三四五六七八九]|[一二三四五六七八九]、|另外|另一方面|至於|除此之外|以下|清單|條列', source):
+        return edited
+    if '\n\n' in edited or not re.search(r'(?m)^\s*• ', edited):
+        return edited
+    baseline = normalize_taiwan_typography(comparison_source(source))
+    without_bullets = re.sub(r'(?m)^[ \t]*• ', '', edited)
+    # No fuzzy comparison: never hide a changed word, number, negation or punctuation.
+    if re.sub(r'\s+', '', baseline) != re.sub(r'\s+', '', without_bullets):
+        return edited
+    return baseline

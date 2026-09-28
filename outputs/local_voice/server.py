@@ -24,7 +24,7 @@ from fastapi.responses import PlainTextResponse, FileResponse, RedirectResponse
 from android_release import APK_NAME, APK_URL, verified_apk
 from opencc import OpenCC
 from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_formatting_literals, restore_identifiers, explicit_list_hint, apply_explicit_layout
-from taiwan_typography import normalize_taiwan_typography
+from taiwan_typography import normalize_taiwan_typography, preserve_prose_layout
 from speech_profile import speech_model_path
 from translation import validate_translation, translate_text
 from beta_api import install_beta, LocalProvider
@@ -146,6 +146,7 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
         edited = restore_identifiers(converter.convert(content.strip()), identifiers, marker_prefix)
         edited = apply_explicit_layout(edited, personal_prompt)
         edited = normalize_taiwan_typography(edited)
+        edited = preserve_prose_layout(converter.convert(text), edited, personal_prompt)
         validate_edit(converter.convert(text), edited)
         validate_identifiers(text, edited)
         return edited

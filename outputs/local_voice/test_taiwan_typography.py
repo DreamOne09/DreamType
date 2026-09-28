@@ -3,6 +3,20 @@ from taiwan_typography import normalize_taiwan_typography as clean
 
 
 class TaiwanTypographyTests(unittest.TestCase):
+    def test_invented_bullets_in_complete_prose(self):
+        from taiwan_typography import preserve_prose_layout as layout
+        source='會議是下午兩點，不對，改成下午三點。只有小陳可以晚十分鐘，其他人不要遲到。'
+        edited='會議是下午三點。\n• 只有小陳可以晚十分鐘，其他人不要遲到。'
+        self.assertEqual(layout(source,edited),'會議是下午三點。只有小陳可以晚十分鐘，其他人不要遲到。')
+        self.assertEqual(layout(source,edited,'請使用條列'),edited)
+        for changed in (edited.replace('不要','要'),edited.replace('小陳','小林'),edited.replace('三點','四點'),edited.replace('不要','都不要')):
+            self.assertEqual(layout(source,changed),changed)
+        for original in ('明天要買東西。第一買牛奶，第二買雞蛋。',
+                         '公司的信寄了。另外，家裡要買牛奶。',
+                         '明天開會。\n只有小陳晚到。', '採買清單。牛奶、雞蛋。'):
+            candidate=original.replace('。','。\n• ',1)
+            self.assertEqual(layout(original,candidate),candidate)
+
     def test_chinese_punctuation_and_layout(self):
         self.assertEqual(clean('今天開會, 請準時!\r\n\r\n\r\n• 帶文件; 不要取消.\n'),
                          '今天開會，請準時！\n\n• 帶文件；不要取消。')
