@@ -22,3 +22,5 @@
 目前沒有因此變更模型、GPU 記憶體配置、worker 數或翻譯路線，也沒有購買外部服務。更多推論 worker 會撞到既有單一 GPU 鎖，並不自動提高容量。
 
 重跑：`python scripts/profile_inference_stages.py --runtime-root <安裝根目錄> --manifest <公開音檔manifest> --output <報告.json>`。開頭要求正式佇列空閒，但不鎖住稍後到達的正式請求，僅在低使用量時執行。
+
+後續 [4／6／8 threads 比較](TRANSLATION_THREADS.md)未找到一致改善，已恢復原本 4 threads。這條候選優化沒有部署。
