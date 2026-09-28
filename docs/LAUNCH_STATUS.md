@@ -35,7 +35,7 @@
 
 ## 最新可接續狀態
 
-- 最新公開測試版為 [0.9.11-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.11-rc1)，versionCode 21；家中手機下載入口已核對相同 SHA-256，主機及 Tunnel 健康檢查通過。仍維持免費邀請試用。
+- 上一輪 [0.9.11-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.11-rc1)，versionCode 21，完成家中下載入口與健康檢查；目前已由本文開頭的 0.9.12 取代。仍維持免費邀請試用。
 - 正式辨識仍為 Turbo。新固定 96 段比較中，Breeze CER 5.97%、Turbo 14.63%，但 Breeze 有 8 段退步，且兩次 CPU 比較速度排序不同；沒有宣稱 GPU／手機更快。見 [完整比較](ASR_MODEL_COMPARISON.md)。
 - 家用候選測試前的[資源快照](evidence/asr-extended96/home-preflight.json)：可用 RAM 約 0.69 GiB、GPU free 1078 MiB、工作磁碟約 5.76 GiB。未下載／載入候選模型，未改正式模型。後續須重新量測，安排釋放既有模型資源的隔離測試，再恢復服務；這不是新模型已可並行運作的證據。
 - 目前主機的加密備份已完成新版記憶體驗證，未改正式資料庫；當次未發現舊版備份暫存目錄。仍沒有離機同步設定，不能宣稱雲端備份完成。
