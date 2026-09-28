@@ -120,5 +120,5 @@ def apply_explicit_layout(text, personal_prompt=''):
     """Honor a clear one-paragraph preference using whitespace only."""
     if re.search('如果|除非|不要使用|不要用|不想用|不使用|不要寫成|不要整理成|不可寫成|再換行|分段', personal_prompt):
         return text
-    single = re.search(r'(?:寫成|整理成|使用|用)(?:一個|單一|一)(?:完整)?段落|整段不可換行|不要換行', personal_prompt)
+    single = re.search(r'(?:寫成|整理成|保留成|合併成|維持|保持|使用|用)(?:一個|單一|一)(?:完整)?(?:段落|段文字)|整段不可換行|不要換行', personal_prompt)
     return re.sub(r'[ \t]*\r?\n[ \t]*', ' ', text).strip() if single else text
