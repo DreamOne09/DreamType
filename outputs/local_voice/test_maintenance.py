@@ -47,6 +47,52 @@ class MaintenanceTests(unittest.TestCase):
             copy_encrypted(source,target)
             self.assertEqual(destination.read_bytes(),source.read_bytes())
 
+    def test_silent_corruption_never_replaces_previous_copy(self):
+        for suffix in ('.dtbackup','.dtledger'):
+            with self.subTest(suffix=suffix),tempfile.TemporaryDirectory() as directory:
+                root=Path(directory);target=root/'sync';target.mkdir()
+                source=root/('encrypted'+suffix);source.write_bytes(b'new complete encrypted bytes')
+                destination=target/source.name;destination.write_bytes(b'previous complete bytes')
+                def corrupt(src,dst):dst.write_bytes(b'silent corruption')
+                with patch('maintenance.shutil.copy2',side_effect=corrupt):
+                    with self.assertRaisesRegex(ValueError,'verification failed'):copy_encrypted(source,target)
+                self.assertEqual(destination.read_bytes(),b'previous complete bytes')
+                self.assertEqual(list(target.iterdir()),[destination])
+
+    def test_source_directory_is_not_a_verified_copy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);source=root/'test.dtbackup';source.write_bytes(b'original encrypted bytes')
+            with self.assertRaisesRegex(ValueError,'differ'):copy_encrypted(source,root)
+            self.assertEqual(source.read_bytes(),b'original encrypted bytes')
+            self.assertEqual(list(root.iterdir()),[source])
+
+    def test_verification_read_failure_preserves_previous_copy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);target=root/'sync';target.mkdir()
+            source=root/'test.dtbackup';source.write_bytes(b'new encrypted bytes')
+            destination=target/source.name;destination.write_bytes(b'previous encrypted bytes')
+            with patch('maintenance.hashlib.file_digest',side_effect=OSError('read failed')):
+                with self.assertRaises(OSError):copy_encrypted(source,target)
+            self.assertEqual(destination.read_bytes(),b'previous encrypted bytes')
+            self.assertEqual(list(target.iterdir()),[destination])
+
+    def test_corrupt_copy_not_reported_as_verified(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';work.mkdir();target=root/'sync';target.mkdir()
+            (work/'backup-config.json').write_text(json.dumps({'sync_directory':str(target)}))
+            archive=work/'test.dtbackup';archive.write_bytes(b'encrypted backup')
+            ledger=work/'latest-deletions.dtledger';ledger.write_bytes(b'encrypted ledger')
+            def corrupt(src,dst):dst.write_bytes(b'wrong bytes')
+            with patch('maintenance.httpx.get',return_value=Mock(status_code=200,json=lambda:{'status':'ready'})), \
+                    patch('maintenance.create',return_value=archive),patch('maintenance.export_deletions',return_value=ledger), \
+                    patch('maintenance.shutil.copy2',side_effect=corrupt):
+                state=run(root)
+            self.assertIn('backup_or_copy_failed',state['errors'])
+            self.assertIn('deletion_export_or_copy_failed',state['errors'])
+            self.assertNotIn('last_backup_copy_verified',state)
+            self.assertNotIn('last_deletion_copy_verified',state)
+            self.assertEqual(list(target.iterdir()),[])
+
     def test_ledger_export_and_copy_follow_daily_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);work=root/'work';work.mkdir();cloud=root/'sync';cloud.mkdir()
@@ -71,6 +117,8 @@ class MaintenanceTests(unittest.TestCase):
             ledger=work/'latest-deletions.dtledger';ledger.write_bytes(b'DTD1 encrypted')
             with patch('maintenance.export_deletions',return_value=ledger),patch('maintenance.httpx.get',return_value=Mock(status_code=200,json=lambda:{'status':'ready'})),patch('maintenance.create',return_value=archive),patch('maintenance.subprocess.run') as process:
                 state=run(root);process.assert_not_called()
+            self.assertEqual(state['last_backup_copy_verified'],state['last_backup_copy'])
+            self.assertEqual(state['last_deletion_copy_verified'],state['last_deletion_copy'])
             self.assertEqual(state['errors'],[]);self.assertEqual(sorted(p.name for p in cloud.iterdir()),['latest-deletions.dtledger','test.dtbackup'])
             self.assertEqual(state['backup_verified_file'],archive.name)
             self.assertEqual(state['last_backup_verified'],state['last_backup'])

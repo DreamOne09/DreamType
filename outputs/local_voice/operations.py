@@ -31,7 +31,7 @@ def summarize(maintenance, sync_configured=False, now=None):
     verified = (recent('last_backup_verified',129600) and isinstance(state.get('backup_file'),str) and bool(state.get('backup_file'))
                 and state.get('backup_verified_file')==state.get('backup_file'))
     add('backup_restore','備份還原驗證',verified,
-        '這份備份已在本機隔離目錄成功還原；尚不代表雲端可恢復',
+        '這份備份已在本機記憶體通過還原準備驗證；尚不代表雲端可恢復',
         '尚無這份備份的近期還原驗證，不能只憑檔案存在判定可恢復')
     add('deletions', '刪除紀錄', recent('last_deletion_export', 900),
         '最近 15 分鐘內有成功匯出紀錄', '刪除紀錄未更新，還原前務必取得最新紀錄')
@@ -43,8 +43,14 @@ def summarize(maintenance, sync_configured=False, now=None):
     add('storage','主機儲存空間',storage_ok,
         '可用空間至少 5 GB，仍需留意模型與備份成長',storage_detail)
     copied = sync_configured and recent('last_backup_copy', 129600) and recent('last_deletion_copy', 900)
+    copy_verified = (copied and recent('last_backup_copy_verified',129600)
+        and state.get('last_backup_copy_verified')==state.get('last_backup_copy')
+        and bool(state.get('backup_file')) and state.get('backup_copy_verified_file')==state.get('backup_file')
+        and recent('last_deletion_copy_verified',900)
+        and state.get('last_deletion_copy_verified')==state.get('last_deletion_copy')==state.get('last_deletion_export'))
     checks.append({'code': 'offsite', 'title': '異機備援', 'state': 'unverified',
-        'detail': ('已複製至同步資料夾；雲端上傳與異機還原仍需驗證' if copied else
+        'detail': ('同步資料夾的備份與最新刪除紀錄已核對內容；雲端上傳與異機還原仍需驗證' if copy_verified else
+                   '有同步資料夾複製紀錄，但尚無目前備份與最新刪除紀錄的內容核對；請重新複製驗證' if copied else
                    '同步資料夾的備份或刪除紀錄複製未更新，請檢查同步工作' if sync_configured else
                    '尚未設定同步資料夾；目前只有本機備份')})
     errors = state.get('errors', [])

@@ -1,5 +1,6 @@
 """One bounded maintenance pass; intended for Windows Task Scheduler every five minutes."""
 import json
+import hashlib
 import argparse
 import shutil
 import subprocess
@@ -17,10 +18,16 @@ def copy_encrypted(source,target):
     if source.suffix not in ('.dtbackup','.dtledger') or not target.is_dir():
         raise ValueError('Expected encrypted backup and existing sync directory')
     destination=target/source.name
-    if source.resolve()==destination.resolve():return
+    if source.resolve()==destination.resolve():
+        raise ValueError('Backup copy destination must differ from source')
     temporary=target/(source.name+'.'+secrets.token_hex(8)+'.uploading')
     try:
         shutil.copy2(source,temporary)
+        # Verify complete bytes before replacing the last usable copy. This
+        # proves only the local destination, not a cloud provider's upload.
+        with source.open('rb') as original, temporary.open('rb') as copied:
+            if hashlib.file_digest(original,'sha256').digest()!=hashlib.file_digest(copied,'sha256').digest():
+                raise ValueError('Encrypted backup copy verification failed')
         temporary.replace(destination)
     finally:
         temporary.unlink(missing_ok=True)
@@ -65,6 +72,8 @@ def run(root=ROOT,force_backup=False):
                 target=Path(json.loads(config.read_text())['sync_directory'])
                 copy_encrypted(archive,target)
                 state['last_backup_copy']=now
+                state['last_backup_copy_verified']=now
+                state['backup_copy_verified_file']=archive.name
         except Exception:
             state['errors'].append('backup_or_copy_failed')
             state['last_backup']=0
@@ -79,6 +88,7 @@ def run(root=ROOT,force_backup=False):
             if not target.is_dir():raise ValueError('Backup destination must already exist')
             copy_encrypted(ledger,target)
             state['last_deletion_copy']=now
+            state['last_deletion_copy_verified']=now
     except Exception:
         state['errors'].append('deletion_export_or_copy_failed')
     temporary=state_path.with_suffix('.tmp')
