@@ -2,7 +2,7 @@
 
 目前是可下載的封閉測試產品，尚不能公開付費上線，也沒有證據證明整體比 Typeless 更好。本文彙整當前差距，歷史版本文件的完成項目不能代替這些門檻。
 
-最新預覽版為 [0.9.14-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.14-rc1)，versionCode 24，公開 APK 雜湊已核對。新增上傳與解碼資源限制、手機逾時提示，見 [接收資源保護](UPLOAD_ADMISSION.md)。保留個人用詞對照；完整原生模擬器最後驗證仍是 0.9.13，0.9.14 使用 JVM 網路合約與 APK 建置驗證，不取代 Pixel 9 驗收。
+最新預覽版為 [0.9.15-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.15-rc1)，versionCode 25，公開 APK 雜湊已核對。修改頁更新用詞建議不再每次解密憑證；Android 原生模擬器工作 36417733964 通過。保留個人對照、全形標點及分段；原生測試的 AI 為合成文字，不取代 Pixel 9／Surfshark 實機驗收或延遲量測。
 
 | 要求 | 已有證據 | 尚缺 |
 |---|---|---|
@@ -35,7 +35,7 @@
 
 ## 最新可接續狀態
 
-- 上一輪 [0.9.11-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.11-rc1)，versionCode 21，完成家中下載入口與健康檢查；目前已由本文開頭的 0.9.14 取代。仍維持免費邀請試用。
+- 上一輪 [0.9.11-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.11-rc1)，versionCode 21，完成家中下載入口與健康檢查；目前已由本文開頭的 0.9.15 取代。仍維持免費邀請試用。
 - 正式辨識仍為 Turbo。新固定 96 段比較中，Breeze CER 5.97%、Turbo 14.63%，但 Breeze 有 8 段退步，且兩次 CPU 比較速度排序不同；沒有宣稱 GPU／手機更快。見 [完整比較](ASR_MODEL_COMPARISON.md)。
 - Breeze 固定模型已下載、同機 GPU／三模型共載／三輪 API 測試已完成；正式服務仍為 Turbo。Qwen 改用 `--load-mode none` 後完整 API 測試可用 RAM 最低約 819 MiB，仍需長時間驗證。舊版下載前資源快照不是目前部署狀態；見 [記憶體測試](MEMORY_TUNING.md) 與 [完整 API](ASR_PROFILES.md)。
 - 目前主機的加密備份已完成新版記憶體驗證，未改正式資料庫；當次未發現舊版備份暫存目錄。仍沒有離機同步設定，不能宣稱雲端備份完成。
