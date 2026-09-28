@@ -4,7 +4,8 @@ from personalization import IDENTIFIER
 
 HAN = re.compile(r'[\u3400-\u9fff]')
 PROTECTED = re.compile(
-    r'```[\s\S]*?```|`[^`\n]*`|'
+    # Incomplete dictated/pasted code remains literal through the end of input.
+    r'```[\s\S]*?(?:```|$)|`[^`]*(?:`|$)|'
     # Unquoted English phrases embedded in Chinese still retain their literal
     # punctuation. A single product name does not make a Chinese sentence English.
     r"(?<![A-Za-z0-9_])[A-Za-z][A-Za-z0-9_]*(?:['’-][A-Za-z0-9_]+)*"
