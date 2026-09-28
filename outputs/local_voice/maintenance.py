@@ -10,6 +10,7 @@ import secrets
 from pathlib import Path
 import httpx
 from backup import create,export_deletions
+from backup_inventory import inventory
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -91,6 +92,7 @@ def run(root=ROOT,force_backup=False):
             state['last_deletion_copy_verified']=now
     except Exception:
         state['errors'].append('deletion_export_or_copy_failed')
+    state['backup_inventory']=inventory(work/'backups')
     temporary=state_path.with_suffix('.tmp')
     temporary.write_text(json.dumps(state,indent=2),encoding='utf-8');temporary.replace(state_path)
     return state

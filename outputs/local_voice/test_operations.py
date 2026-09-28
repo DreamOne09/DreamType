@@ -18,12 +18,21 @@ class OperationsTests(unittest.TestCase):
 
     def test_sync_copy_is_never_cloud_verification(self):
         state={key:100 for key in ('checked_at','last_backup','last_deletion_export','last_backup_copy','last_deletion_copy')}
-        state.update(ready=True,tunnel_ready=True,errors=[],disk_free_bytes=10*1024**3)
+        state.update(ready=True,tunnel_ready=True,errors=[],disk_free_bytes=10*1024**3,
+            backup_inventory={'encrypted_archive_files':1,'legacy_zip_files':0,'incomplete_files':0,'total_bytes':100,'skipped_links':0,'read_errors':0})
         state.update(last_backup_verified=100,backup_file='a.dtbackup',backup_verified_file='a.dtbackup')
         report=summarize(state,True,now=110)
         self.assertEqual(self.states(report)['offsite'],'unverified')
         self.assertTrue(report['needs_attention'])
         self.assertTrue(all(item['state']=='ok' for item in report['checks'] if item['code']!='offsite'))
+
+    def test_inventory_warns_for_legacy_partial_missing_or_invalid_counts(self):
+        good={'encrypted_archive_files':1,'legacy_zip_files':0,'incomplete_files':0,'total_bytes':100,'skipped_links':0,'read_errors':0}
+        self.assertEqual(self.states(summarize({'checked_at':100,'backup_inventory':good},now=110))['backup_files'],'ok')
+        for changes in ({'legacy_zip_files':1},{'incomplete_files':1},{'read_errors':1},{'encrypted_archive_files':0},{'total_bytes':True},{'total_bytes':2**100}):
+            report=summarize({'checked_at':100,'backup_inventory':{**good,**changes}},now=110)
+            self.assertEqual(self.states(report)['backup_files'],'attention')
+        self.assertEqual(self.states(summarize({'checked_at':100,'backup_inventory':good},now=2000))['backup_files'],'attention')
 
     def test_copy_status_requires_current_backup_and_latest_ledger(self):
         state={key:100 for key in ('last_backup_copy','last_deletion_copy','last_backup_copy_verified',
