@@ -1,0 +1,32 @@
+{
+  "synthetic_audio_only": true,
+  "real_local_asr": true,
+  "production_accounts_modified": false,
+  "pixel9_tested": false,
+  "results": [
+    {
+      "case": "silence",
+      "private_status": 422,
+      "account_state": "failed",
+      "error_code": "no_speech",
+      "used_seconds": 0,
+      "reserved_seconds": 0
+    },
+    {
+      "case": "silence-translation",
+      "private_status": 422,
+      "account_state": "failed",
+      "error_code": "no_speech",
+      "used_seconds": 0,
+      "reserved_seconds": 0
+    },
+    {
+      "case": "low-noise",
+      "private_status": 422,
+      "account_state": "failed",
+      "error_code": "no_speech",
+      "used_seconds": 0,
+      "reserved_seconds": 0
+    }
+  ]
+}

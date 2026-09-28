@@ -1,0 +1,31 @@
+{
+  "external_editor": true,
+  "ime_visible": true,
+  "password_voice_disabled": true,
+  "normal_field_reenabled": true,
+  "microphone_recording_tested": true,
+  "text_insertion_tested": true,
+  "pixel9_tested": false,
+  "response_source": "production beta API and SQLite through HTTPS/ASGI bridge; synthetic AI provider",
+  "speech_recognition_tested": false,
+  "uploaded_audio_bytes": [
+    27296
+  ],
+  "mode": "account",
+  "queue_polling_tested": true,
+  "receipts": 1,
+  "delivered_recording_cleanup_tested": true,
+  "login_ui_tested": true,
+  "real_backend_tested": true,
+  "provider_calls": 1,
+  "decoded_seconds": 3.008,
+  "charged_seconds": 4,
+  "sqlite_job_done": true,
+  "quota_matches_decoded_audio": true,
+  "login_api_tested": true,
+  "login_rejection_tested": true,
+  "https_tested": true,
+  "response_losses": [],
+  "receipt_requests": 1,
+  "audio_upload_requests": 1
+}
