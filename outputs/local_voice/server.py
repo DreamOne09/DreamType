@@ -27,6 +27,7 @@ from faster_whisper.audio import decode_audio
 from opencc import OpenCC
 from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint, apply_explicit_layout
 from taiwan_typography import normalize_taiwan_typography
+from speech_profile import speech_model_path
 from translation import validate_translation, translate_text
 from beta_api import install_beta, LocalProvider, audio_duration
 
@@ -38,6 +39,8 @@ API_KEY = KEY_PATH.read_text(encoding='ascii').strip()
 app = FastAPI(title='Local Voice', docs_url=None, redoc_url=None, openapi_url=None)
 converter = OpenCC('s2tw')  # Taiwan glyphs, without context-free phrase substitutions (文件 -> 檔案).
 model = None
+SPEECH_PROFILE = os.environ.get('DREAMTYPE_ASR_MODEL', 'turbo')
+SPEECH_MODEL_PATH = speech_model_path(WORK, SPEECH_PROFILE)
 gpu_lock = asyncio.Lock()
 MAX_BYTES = 25 * 1024 * 1024
 beta = install_beta(app, WORK, LocalProvider('http://127.0.0.1:19870', API_KEY), audio_duration)
@@ -81,8 +84,8 @@ async def android_apk():
 @app.on_event('startup')
 async def load_model():
     global model
-    model = await asyncio.to_thread(WhisperModel, str(WORK / 'models/whisper-turbo'),
-        device='cuda', compute_type='int8_float16', cpu_threads=4, num_workers=1)
+    model = await asyncio.to_thread(WhisperModel, str(SPEECH_MODEL_PATH),
+        device='cuda', compute_type='int8_float16', cpu_threads=4, num_workers=1, local_files_only=True)
 
 @app.get('/health')
 async def health():
@@ -99,7 +102,7 @@ async def health():
     except httpx.HTTPError:pass
     workers_ready=beta.workers_ready()
     return {'status': 'ready' if model is not None and llm_ready and workers_ready and (translation_ready or not translation_configured) else 'starting',
-            'speech_ready': model is not None, 'formatting_ready': llm_ready,
+            'speech_ready': model is not None, 'speech_profile': SPEECH_PROFILE, 'formatting_ready': llm_ready,
             'translation_ready':translation_ready,
             'workers_ready':workers_ready,
             'processing': 'local', 'version': 1}
