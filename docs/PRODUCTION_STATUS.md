@@ -1,4 +1,6 @@
-# 0.7.0：資料保護與維運補強
+# 資料保護與維運（含 0.7.0 歷史紀錄）
+
+目前版本與公開上線缺口以 [上線狀態](LAUNCH_STATUS.md) 為準。以下備份操作已對齊 schema 4；歷史測試數量與 APK 版本不代表目前版本。
 
 2026-09-26 補充：每份新備份完成加密後會自動在記憶體中驗證還原準備流程，不再建立明文暫存副本，管理介面區分「備份」與「還原驗證」；見 [驗證流程及限制](BACKUP_VERIFICATION.md)。這仍不是離機或雲端備援。
 
@@ -59,13 +61,13 @@ Google 要求在安全後端驗證購買與確認訂閱，再授予權益；不�
 
 維護程式只複製加密備份，不複製金鑰。`last_backup_copy` 只代表已複製到本機同步資料夾，**不是雲端上傳完成的證據**；必須在雲端網頁確認並下載還原一次。沒有設定此檔時只做本機備份。雲端帳號與資料夾仍待使用者指定。
 
-新主機先安裝依賴，不啟動服務，使用空的 `work/beta`：
+搬機前在原主機執行 `backup.py export-deletions`，取得最新 `latest-deletions.dtledger`。將它與加密備份帶到新主機，復原金鑰分開保管。新主機先安裝依賴，不啟動服務，使用新的專案資料夾及空的 `work/beta`：
 
 ```powershell
-.\work\venv\Scripts\python.exe .\outputs\local_voice\backup.py restore --archive "D:\\Backups\\example.dtbackup" --recovery-key "E:\\Private\\backup-recovery.key"
+.\work\venv\Scripts\python.exe .\outputs\local_voice\backup.py restore --archive "D:\Backups\example.dtbackup" --recovery-key "E:\Private\backup-recovery.key" --deletion-ledger "D:\Backups\latest-deletions.dtledger"
 ```
 
-禁止覆蓋既有資料庫；還原撤銷登入與未完成工作。簽章檔與模型不在備份中，須另行保管。已刪除帳號可能仍存在舊備份，還原前必須核對應刪除帳號；目前還沒有跨備份刪除追蹤系統。
+禁止覆蓋既有資料庫；還原撤銷登入與未完成工作。簽章檔與模型不在備份中，須另行保管。還原會以同一主機的最新加密刪除紀錄移除舊快照中的已刪帳號。缺少紀錄、主機不符或紀錄早於新格式快照時拒絕還原；升級前的刪除要求及匯出後尚未同步的刪除仍需人工核對，詳見 [刪除還原](DELETION_RECOVERY.md)。
 
 ## 自動維護
 
