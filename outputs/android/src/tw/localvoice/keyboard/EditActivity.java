@@ -1,5 +1,8 @@
 package tw.localvoice.keyboard;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.text.TextWatcher;
+import android.text.Editable;
 import android.os.Bundle;
 import android.content.*;
 import android.view.*;
@@ -28,6 +31,21 @@ public final class EditActivity extends Activity {
   TextView hint=new TextView(this);hint.setText("可切換 Gboard 修改。完成後回到原 App，切回 DreamType，再按「插入」。");hint.setTextColor(Ui.MUTED);hint.setTextSize(15);p.addView(hint);
   editor=new EditText(this);editor.setText(retained==null?original:retained.text);editor.setTextColor(Ui.INK);editor.setTextSize(18);editor.setGravity(Gravity.TOP);editor.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE|android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);editor.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);editor.setSaveEnabled(false);editor.setContentDescription("要修改的文字");p.addView(editor,new LinearLayout.LayoutParams(-1,0,1));
   if(retained!=null)editor.setSelection(Math.max(0,Math.min(retained.start,editor.length())),Math.max(0,Math.min(retained.end,editor.length())));
+  Button suggestions=button(p,"",v->{
+   final String snapshot=editor.getText().toString();
+   final java.util.ArrayList<WordSuggestions.Suggestion> choices=WordSuggestions.find(snapshot);
+   if(choices.isEmpty())return;
+   String[] labels=new String[choices.size()];
+   for(int i=0;i<labels.length;i++){WordSuggestions.Suggestion s=choices.get(i);labels[i]=s.label()+"\n…"+snapshot.substring(Math.max(0,s.start-8),Math.min(snapshot.length(),s.end+8))+"…";}
+   new AlertDialog.Builder(this).setTitle("台灣常用說法 · 點選套用一處")
+    .setItems(labels,(dialog,index)->{
+     if(!snapshot.equals(editor.getText().toString())||draftRevision!=Draft.revision||!sessionKey.equals(AppConfig.load(this).key))return;
+     WordSuggestions.Suggestion s=choices.get(index);editor.getText().replace(s.start,s.end,s.to);editor.setSelection(s.start+s.to.length());
+    }).setNegativeButton("保留原文",null).show();
+  });
+  Runnable updateSuggestions=()->{int count=WordSuggestions.find(editor.getText().toString()).size();suggestions.setText("用詞建議（"+count+"）· 可選擇保留原文");suggestions.setVisibility(count>0?View.VISIBLE:View.GONE);};
+  editor.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int start,int count,int after){}public void onTextChanged(CharSequence s,int start,int before,int count){updateSuggestions.run();}public void afterTextChanged(Editable value){}});
+  updateSuggestions.run();
   button(p,"切換打字鍵盤",v->((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showInputMethodPicker());
   LinearLayout restoreRow=new LinearLayout(this);p.addView(restoreRow);
   Button restoreEdit=button(restoreRow,"復原這次修改",v->editor.setText(original));restoreEdit.setLayoutParams(new LinearLayout.LayoutParams(0,dp(52),1));

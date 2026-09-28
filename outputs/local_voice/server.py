@@ -26,6 +26,7 @@ from faster_whisper import WhisperModel
 from faster_whisper.audio import decode_audio
 from opencc import OpenCC
 from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint, apply_explicit_layout
+from taiwan_typography import normalize_taiwan_typography
 from translation import validate_translation, translate_text
 from beta_api import install_beta, LocalProvider, audio_duration
 
@@ -108,7 +109,7 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
         return ''
     if mode=='translate':
         translated=await translate_text(text,target_language,API_KEY,source_language)
-        return converter.convert(translated) if target_language=='zh-TW' else translated
+        return normalize_taiwan_typography(converter.convert(translated)) if target_language=='zh-TW' else translated
     protected, identifiers, marker_prefix = protect_identifiers(text, personal_prompt, vocabulary)
     instructions = formatting_prompt(PROMPT, personal_prompt, vocabulary, taiwan_places)
     instructions += explicit_list_hint(text, personal_prompt)
@@ -136,6 +137,7 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
             raise ValueError('Empty formatting result')
         edited = restore_identifiers(converter.convert(content.strip()), identifiers, marker_prefix)
         edited = apply_explicit_layout(edited, personal_prompt)
+        edited = normalize_taiwan_typography(edited)
         validate_edit(converter.convert(text), edited)
         validate_identifiers(text, edited)
         return edited

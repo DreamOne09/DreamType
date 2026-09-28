@@ -161,7 +161,7 @@ public final class VoiceIme extends InputMethodService {
         if(resultArea!=null)resultArea.setVisibility(pending?View.VISIBLE:View.GONE);
         if(discard!=null)discard.setEnabled(pending&&!busy&&!recordingNow);
         if(restore!=null)restore.setEnabled(pending&&!protectedField&&!busy&&!recordingNow&&!lastRawText.isEmpty()&&!lastRawText.equals(lastText));
-        if(edit!=null)edit.setEnabled(pending&&!protectedField&&!busy&&!recordingNow);
+        if(edit!=null){edit.setEnabled(pending&&!protectedField&&!busy&&!recordingNow);int suggestions=pending?WordSuggestions.find(lastText).size():0;edit.setText(suggestions>0?"修改 · "+suggestions+" 項建議":"修改文字");}
         if(getCurrentInputEditorInfo()!=null&&getPackageName().equals(getCurrentInputEditorInfo().packageName)){mic.setEnabled(false);if(edit!=null)edit.setEnabled(false);status.setText("請切換 Gboard 修改；完成後回到原 App 插入。");return;}
         if(recordingNow)return;
         if(protectedField)status.setText("密碼欄位不使用語音，請切回原本鍵盤。");
