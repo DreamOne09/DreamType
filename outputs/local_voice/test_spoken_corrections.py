@@ -5,6 +5,17 @@ from personalization import apply_explicit_layout
 
 
 class SpokenRepairTests(unittest.TestCase):
+    def test_explicit_period_time_repair_preserves_exceptions(self):
+        source='會議是下午兩點，不對，改成下午三點。只有小陳可以晚十分鐘，其他人不要遲到。'
+        edited='會議是下午三點。只有小陳可以晚十分鐘，其他人不要遲到。'
+        self.assertEqual(comparison_source(source),edited)
+        validate_edit(source,edited)
+        for wrong in (edited.replace('下午三點','上午三點'),edited.replace('下午三點','下午四點'),edited.replace('不要','要')):
+            with self.assertRaises(ValueError):validate_edit(source,wrong)
+        for literal in ('他說「下午兩點，不對，下午三點」。','下午兩點，不對，下午三點三十分。'):
+            self.assertEqual(comparison_source(literal),literal)
+        self.assertEqual(comparison_source('上午九點，不對，改成下午三點半。'),'下午三點半。')
+
     def test_adjacent_same_unit_repair_keeps_other_constraints(self):
         source='明天下午三點，不對，是四點半，在板橋車站見，不要去台北車站。'
         edited='明天下午四點半，在板橋車站見，不要去台北車站。'

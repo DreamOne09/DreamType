@@ -1,0 +1,125 @@
+{
+  "synthetic_text_only": true,
+  "speech_recognition_tested": false,
+  "automatic_semantic_score": null,
+  "requires_review": true,
+  "results": [
+    {
+      "id": "short-chat",
+      "input": "我已經到樓下了。你慢慢來，不用急。我會在便利商店門口等你。",
+      "line_count": 1,
+      "required": [
+        "我已經到樓下了",
+        "不用急",
+        "便利商店門口等你"
+      ],
+      "status": 200,
+      "seconds": 0.69,
+      "output": "我已經到樓下了。你慢慢來，不用急。我會在便利商店門口等你。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "same-topic-meeting",
+      "input": "明天的會議改到下午兩點。地點還是在原本的會議室。請記得帶上次的紀錄，如果來不及準備就先告訴我，不要直接取消。",
+      "line_count": 1,
+      "required": [
+        "下午兩點",
+        "原本的會議室",
+        "如果來不及準備",
+        "不要直接取消"
+      ],
+      "status": 200,
+      "seconds": 0.51,
+      "output": "明天的會議改到下午兩點。地點還是在原本的會議室。請記得帶上次的紀錄，如果來不及準備就先告訴我，不要直接取消。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "request-message",
+      "input": "請幫我寫一份活動計畫。我想先確認需要哪些資料，等我提供完整資訊以後再開始。現在先不要替我安排日期，也不要預估預算。",
+      "line_count": 1,
+      "required": [
+        "請幫我寫一份活動計畫",
+        "等我提供完整資訊以後再開始",
+        "不要預估預算"
+      ],
+      "forbidden": [
+        "以下是",
+        "第一階段"
+      ],
+      "status": 200,
+      "seconds": 0.51,
+      "output": "請幫我寫一份活動計畫。我想先確認需要哪些資料，等我提供完整資訊以後再開始。現在先不要替我安排日期，也不要預估預算。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "two-topics",
+      "input": "公司的報告我已經寄出了。附件裡有最新的數字，如果打不開再跟我說。另外，週末家裡的聚餐改到晚上六點。請幫我問媽媽要不要一起搭車，不用先訂位。",
+      "required": [
+        "公司的報告我已經寄出了",
+        "如果打不開再跟我說",
+        "聚餐改到晚上六點",
+        "不用先訂位"
+      ],
+      "line_count": 3,
+      "paragraph_count": 2,
+      "status": 200,
+      "seconds": 0.66,
+      "output": "公司的報告我已經寄出了。附件裡有最新的數字，如果打不開再跟我說。\n\n週末家裡的聚餐改到晚上六點。請幫我問媽媽要不要一起搭車，不用先訂位。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "explicit-list",
+      "input": "第一明天先去銀行領錢。第二回家拿證件。第三到診所拿藥。如果下雨，全部改到後天。",
+      "bullet_count": 3,
+      "last_line": "如果下雨，全部改到後天。",
+      "status": 200,
+      "seconds": 0.52,
+      "output": "• 明天去銀行領錢。\n• 回家拿證件。\n• 到診所拿藥。\n如果下雨，全部改到後天。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "personal-lines",
+      "input": "今天先確認帳號。明天再整理文件。後天才開始測試。",
+      "personal_prompt": "每個句子各佔一行，不要條列，不要空白行。",
+      "line_count": 3,
+      "required": [
+        "今天先確認帳號",
+        "明天再整理文件",
+        "後天才開始測試"
+      ],
+      "status": 200,
+      "seconds": 0.31,
+      "output": "今天先確認帳號。\n明天再整理文件。\n後天才開始測試。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "single-topic-followup",
+      "input": "這份檔案我重新寄了一次。剛剛漏掉了最後一頁，這次的附件才是完整版本。你收到以後再回覆我就好，不用重新填表。",
+      "line_count": 1,
+      "required": [
+        "最後一頁",
+        "完整版本",
+        "不用重新填表"
+      ],
+      "status": 200,
+      "seconds": 0.54,
+      "output": "這份檔案我重新寄了一次。剛剛漏掉了最後一頁，這次的附件才是完整版本。你收到以後再回覆我就好，不用重新填表。",
+      "explicit_check_failures": []
+    },
+    {
+      "id": "written-list",
+      "input": "要帶的東西：一、健保卡。二、身分證。三、印章。不要帶過期的證件。",
+      "bullet_count": 3,
+      "required": [
+        "健保卡",
+        "身分證",
+        "印章",
+        "不要帶過期的證件"
+      ],
+      "status": 200,
+      "seconds": 0.43,
+      "output": "要帶的東西：\n• 健保卡\n• 身分證\n• 印章\n不要帶過期的證件。",
+      "explicit_check_failures": []
+    }
+  ]
+}
