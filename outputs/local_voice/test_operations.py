@@ -25,6 +25,19 @@ class OperationsTests(unittest.TestCase):
         self.assertTrue(report['needs_attention'])
         self.assertTrue(all(item['state']=='ok' for item in report['checks'] if item['code']!='offsite'))
 
+    def test_copy_status_requires_current_backup_and_latest_ledger(self):
+        state={key:100 for key in ('last_backup_copy','last_deletion_copy','last_backup_copy_verified',
+                                  'last_deletion_copy_verified','last_deletion_export')}
+        state.update(backup_file='a.dtbackup',backup_copy_verified_file='a.dtbackup')
+        def detail():return next(item['detail'] for item in summarize(state,True,now=110)['checks'] if item['code']=='offsite')
+        self.assertIn('已核對內容',detail())
+        state['backup_file']='b.dtbackup'
+        self.assertIn('尚無目前',detail())
+        state['backup_file']='a.dtbackup';state['last_deletion_export']=105
+        self.assertIn('尚無目前',detail())
+        state['last_deletion_export']=100;del state['last_backup_copy_verified']
+        self.assertIn('尚無目前',detail())
+
     def test_old_verification_cannot_certify_a_new_backup(self):
         state={'last_backup':100,'last_backup_verified':100,'backup_file':'new.dtbackup',
                'backup_verified_file':'old.dtbackup'}
