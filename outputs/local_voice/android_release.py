@@ -8,10 +8,10 @@ from pathlib import Path
 import tempfile
 import urllib.request
 
-VERSION = '0.9.11'
-TAG = 'v0.9.11-rc1'
+VERSION = '0.9.12'
+TAG = 'v0.9.12-rc1'
 APK_NAME = 'DreamType-' + VERSION + '.apk'
-APK_SHA256 = '6a3956718b5119496b48336126cf9aa80594fe3888e153483c9943e9f8979dff'
+APK_SHA256 = 'ef47c209c55552eca4d0efe91f467a846d940ff38f87ec1da3697fc9bc659eed'
 APK_URL = 'https://github.com/DreamOne09/DreamType/releases/download/' + TAG + '/' + APK_NAME
 
 
