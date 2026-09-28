@@ -20,6 +20,16 @@ class TaiwanTypographyTests(unittest.TestCase):
         self.assertEqual(clean('Hello, world!'), 'Hello, world!')
         self.assertEqual(clean('第一段。\n\n第二段。'), '第一段。\n\n第二段。')
 
+    def test_literals_adjacent_to_chinese_without_spaces(self):
+        # Chinese and digits both count as Unicode word characters: a regex
+        # word boundary would miss these very common dictated spellings.
+        self.assertEqual(clean('時間10:30,金額1,000元,日期2026/09/28.'),
+                         '時間10:30，金額1,000元，日期2026/09/28。')
+        self.assertEqual(clean('比例1:2,版本v1.2.3,不要取消!'),
+                         '比例1:2，版本v1.2.3，不要取消！')
+        self.assertEqual(clean('路徑C:\\Users\\test.txt 和程式foo.bar。'),
+                         '路徑C:\\Users\\test.txt 和程式foo.bar。')
+
 
 if __name__ == '__main__':
     unittest.main()

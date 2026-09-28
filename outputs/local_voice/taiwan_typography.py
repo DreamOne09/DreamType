@@ -6,9 +6,9 @@ HAN = re.compile(r'[\u3400-\u9fff]')
 PROTECTED = re.compile(
     r'```[\s\S]*?```|`[^`\n]*`|'
     + IDENTIFIER.pattern +
-    r'|\b[A-Za-z]:\\[^\s，。！？]+|'
-    r'\b\d+(?:[.,:/-]\d+)+(?:%|％)?|'
-    r'\b[A-Za-z][A-Za-z0-9_]*(?:[._/-][A-Za-z0-9_]+)+')
+    r'|(?<![A-Za-z0-9_])[A-Za-z]:\\[^\s，。！？]+|'
+    r'(?<![A-Za-z0-9_])\d+(?:[.,:/-]\d+)+(?:%|％)?|'
+    r'(?<![A-Za-z0-9_])[A-Za-z][A-Za-z0-9_]*(?:[._/-][A-Za-z0-9_]+)+')
 
 
 def normalize_taiwan_typography(text):
