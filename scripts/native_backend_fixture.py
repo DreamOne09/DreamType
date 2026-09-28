@@ -13,6 +13,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'outputs/local_voice')
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from beta_api import install_beta, audio_duration
+from audio_process import isolated_audio_duration
 
 
 class BackendFixture:
@@ -28,7 +29,7 @@ class BackendFixture:
                 await asyncio.sleep(1.5)
                 return {'text':'明天下午四點半到板橋。','mode':'organize','target_language':'zh-TW'}
         app=FastAPI()
-        self.beta=install_beta(app,Path(self.temporary.name),Provider(),audio_duration)
+        self.beta=install_beta(app,Path(self.temporary.name),Provider(),isolated_audio_duration)
         self.client=TestClient(app)
         self.client.__enter__()
         self.password=password=secrets.token_urlsafe(24)

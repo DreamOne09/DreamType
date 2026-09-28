@@ -1,0 +1,66 @@
+{
+  "synthetic_audio": true,
+  "reference": "installed faster-whisper 1.2.1 decode_audio",
+  "cases": [
+    {
+      "format": "wav",
+      "rate": 16000,
+      "channels": 1,
+      "input_bytes": 96044,
+      "samples": 48000,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.1745688000228256
+    },
+    {
+      "format": "wav",
+      "rate": 48000,
+      "channels": 2,
+      "input_bytes": 576044,
+      "samples": 48000,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.19850239995867014
+    },
+    {
+      "format": "flac",
+      "rate": 48000,
+      "channels": 2,
+      "input_bytes": 108815,
+      "samples": 48000,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.17006519995629787
+    },
+    {
+      "format": "adts",
+      "rate": 48000,
+      "channels": 2,
+      "input_bytes": 48886,
+      "samples": 48469,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.1726736999116838
+    },
+    {
+      "format": "mp4",
+      "rate": 16000,
+      "channels": 1,
+      "input_bytes": 19551,
+      "samples": 49152,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.17017589998431504
+    },
+    {
+      "format": "webm",
+      "rate": 48000,
+      "channels": 1,
+      "input_bytes": 31599,
+      "samples": 48000,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.17907880013808608
+    }
+  ]
+}

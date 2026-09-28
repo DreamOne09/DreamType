@@ -1,7 +1,6 @@
 """Private, OpenAI-compatible dictation gateway. Audio is processed in RAM."""
 from dictation_guard import validate_edit
 import asyncio
-import io
 import json
 import os
 from pathlib import Path
@@ -23,13 +22,15 @@ from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form, Dep
 from fastapi.responses import PlainTextResponse, FileResponse, RedirectResponse
 from android_release import APK_NAME, APK_URL, verified_apk
 from faster_whisper import WhisperModel
-from faster_whisper.audio import decode_audio
 from opencc import OpenCC
 from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint, apply_explicit_layout
 from taiwan_typography import normalize_taiwan_typography
 from speech_profile import speech_model_path
 from translation import validate_translation, translate_text
-from beta_api import install_beta, LocalProvider, audio_duration
+from beta_api import install_beta, LocalProvider
+from audio_process import isolated_audio_duration, isolated_pcm
+from request_limits import DecoderBudget
+from beta_store import StoreError
 
 PROMPT = (Path(__file__).parent / 'formatting.txt').read_text(encoding='utf-8')
 KEY_PATH = WORK / 'local-voice.key'
@@ -43,7 +44,8 @@ SPEECH_PROFILE = os.environ.get('DREAMTYPE_ASR_MODEL', 'turbo')
 SPEECH_MODEL_PATH = speech_model_path(WORK, SPEECH_PROFILE)
 gpu_lock = asyncio.Lock()
 MAX_BYTES = 25 * 1024 * 1024
-beta = install_beta(app, WORK, LocalProvider('http://127.0.0.1:19870', API_KEY), audio_duration)
+beta = install_beta(app, WORK, LocalProvider('http://127.0.0.1:19870', API_KEY), isolated_audio_duration)
+pcm_decoders = DecoderBudget()
 
 async def authorize(request: Request):
     value = request.headers.get('authorization', '')
@@ -105,7 +107,7 @@ async def health():
             'speech_ready': model is not None, 'speech_profile': SPEECH_PROFILE, 'formatting_ready': llm_ready,
             'translation_ready':translation_ready,
             'workers_ready':workers_ready,
-            'processing': 'local', 'version': 1}
+            'processing': 'local', 'audio_decoding': 'isolated-process', 'version': 1}
 
 async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=True, mode='organize',target_language='en',source_language='zh'):
     if not text.strip():
@@ -189,7 +191,9 @@ async def transcribe(file: UploadFile = File(...), model: str = Form('local-dict
     if not data or len(data) > MAX_BYTES:
         raise HTTPException(413, 'Empty recording or recording too large')
     try:
-        audio = await asyncio.to_thread(decode_audio, io.BytesIO(data), sampling_rate=16000)
+        pcm = await pcm_decoders.run(isolated_pcm,data)
+        audio = np.frombuffer(pcm,dtype='<i2').astype(np.float32)/32768.0
+    except StoreError:raise
     except Exception:
         raise HTTPException(400, 'Unable to decode recording')
     duration = len(audio) / 16000
