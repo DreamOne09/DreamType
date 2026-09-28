@@ -1,0 +1,1001 @@
+{
+  "same_corpus_and_settings": true,
+  "cases": 96,
+  "totals": [
+    {
+      "model": "mobiuslabsgmbh/faster-whisper-large-v3-turbo",
+      "revision": "0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf",
+      "errors": 601,
+      "reference_chars": 2496,
+      "cer": 0.24078525641025642,
+      "exact_cases": 14,
+      "empty_cases": 0,
+      "mixed_reference_tokens": 1549,
+      "mixed_errors": 367,
+      "project_mer": 0.23692704970949,
+      "gpu_median_seconds": 0.2187,
+      "gpu_total_seconds": 33.1288,
+      "gpu_p95_seconds": 1.2494,
+      "load_seconds": 3.440009099896997,
+      "warmup_seconds": 1.1497098000254482
+    },
+    {
+      "model": "shdennlin/breeze-asr-25-ct2",
+      "revision": "70660216b01a6f6b7b8c5690767a4763df61755f",
+      "errors": 366,
+      "reference_chars": 2496,
+      "cer": 0.1466346153846154,
+      "exact_cases": 25,
+      "empty_cases": 1,
+      "mixed_reference_tokens": 1549,
+      "mixed_errors": 268,
+      "project_mer": 0.17301484828921884,
+      "gpu_median_seconds": 0.4118,
+      "gpu_total_seconds": 43.2097,
+      "gpu_p95_seconds": 0.7431,
+      "load_seconds": 2.0874137999489903,
+      "warmup_seconds": 0.6434601000510156
+    }
+  ],
+  "improved_cases": 48,
+  "regressed_cases": 26,
+  "equal_error_cases": 22,
+  "changed_cases": [
+    {
+      "index": 0,
+      "reference": "呃what's the呃",
+      "reference_chars": 10,
+      "before": "So it was the, uh,",
+      "after": "我死了",
+      "before_errors": 8,
+      "after_errors": 10,
+      "error_delta": 2
+    },
+    {
+      "index": 1,
+      "reference": "um運動啊男生一般不都喜歡運動",
+      "reference_chars": 15,
+      "before": "運動啊,男生一般不都喜歡運動。",
+      "after": "運動啊男生一般不都喜歡運動",
+      "before_errors": 2,
+      "after_errors": 2,
+      "error_delta": 0
+    },
+    {
+      "index": 2,
+      "reference": "所以我上學期也學了python",
+      "reference_chars": 15,
+      "before": "所以我上學期也學了python。",
+      "after": "所以我上學期也學了 python",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 3,
+      "reference": "但那個辦那個 i n g i a n g是不是隻有之後打算留香港的人才能",
+      "reference_chars": 29,
+      "before": "但那個ING是不是隻有之後打算留香港的人才能?",
+      "after": "但那個 img 是不是隻有之後打算留香港的人才能",
+      "before_errors": 7,
+      "after_errors": 8,
+      "error_delta": 1
+    },
+    {
+      "index": 4,
+      "reference": "uh呃",
+      "reference_chars": 3,
+      "before": "有名詞。",
+      "after": "",
+      "before_errors": 3,
+      "after_errors": 3,
+      "error_delta": 0
+    },
+    {
+      "index": 5,
+      "reference": "嗯spicy food",
+      "reference_chars": 10,
+      "before": "Mmm, spicy food.",
+      "after": "嗯 spicy food",
+      "before_errors": 3,
+      "after_errors": 0,
+      "error_delta": -3
+    },
+    {
+      "index": 6,
+      "reference": "那個玩basketball的然後我有時候有時候會邀我的friends啊一起打在就是after class的時候",
+      "reference_chars": 54,
+      "before": "那個玩Basketball的,然後也說會邀我的Friends一起打在就是Afterclass的時候",
+      "after": "那個玩 basketball 的然後有時候會邀我的 friends 一起打在 after class 的時候",
+      "before_errors": 8,
+      "after_errors": 7,
+      "error_delta": -1
+    },
+    {
+      "index": 7,
+      "reference": "對所以我們以後可以一起去play basketball",
+      "reference_chars": 26,
+      "before": "所以我們說他應該要去玩遊戲。",
+      "after": "所以我們以後可以一起去 play basketball",
+      "before_errors": 21,
+      "after_errors": 1,
+      "error_delta": -20
+    },
+    {
+      "index": 8,
+      "reference": "在唸呃computer engineering對那u g的時候我是在臺灣",
+      "reference_chars": 34,
+      "before": "在唸Campaign Engineering,對,那UG的時候我是在臺灣。",
+      "after": "在唸 capital engineering那 UG 的時候我是在臺灣",
+      "before_errors": 6,
+      "after_errors": 7,
+      "error_delta": 1
+    },
+    {
+      "index": 9,
+      "reference": "哦我們的department大概我們有四間",
+      "reference_chars": 21,
+      "before": "我們的Department大概有沒有4間?",
+      "after": "我們的 department 大概我們有四間",
+      "before_errors": 4,
+      "after_errors": 1,
+      "error_delta": -3
+    },
+    {
+      "index": 10,
+      "reference": "對我們我們professor大概也有七八十位",
+      "reference_chars": 22,
+      "before": "對,我們我們professor 大概也有七八十位。",
+      "after": "我們 professor 大概也有七八十位",
+      "before_errors": 0,
+      "after_errors": 3,
+      "error_delta": 3
+    },
+    {
+      "index": 11,
+      "reference": "來來到我們的tutor然後會帶就是一開始的時候會帶我們融入集體",
+      "reference_chars": 31,
+      "before": "來到我們的Tutor,一開始的時候會帶我們融入集體。",
+      "after": "來當我們的 tutor 瞭然後會帶我就是一開始的時候會帶我們融入集體",
+      "before_errors": 7,
+      "after_errors": 4,
+      "error_delta": -3
+    },
+    {
+      "index": 12,
+      "reference": "那你現在住在Hong Kong大概住了多久",
+      "reference_chars": 20,
+      "before": "那你現在住在風況大概住了多久",
+      "after": "那你現在住在 home 框大概住了多久",
+      "before_errors": 8,
+      "after_errors": 6,
+      "error_delta": -2
+    },
+    {
+      "index": 13,
+      "reference": "就是像那些就是沒有deadline的時候也不會那麼stress",
+      "reference_chars": 31,
+      "before": "就是像那些就是沒有電話的時候也不會那麼穿越。",
+      "after": "就是像那些就是沒有 deadline 的時候也不會那麼 stress",
+      "before_errors": 14,
+      "after_errors": 0,
+      "error_delta": -14
+    },
+    {
+      "index": 14,
+      "reference": "一個one semester在這邊唸書",
+      "reference_chars": 18,
+      "before": "一個 semester 在這邊念書。",
+      "after": "一個 semester 在這邊念書",
+      "before_errors": 4,
+      "after_errors": 4,
+      "error_delta": 0
+    },
+    {
+      "index": 15,
+      "reference": "就吃的方面還算是normal",
+      "reference_chars": 14,
+      "before": "就吃的方面還算是NOMO",
+      "after": "就吃的方面還算是 normal",
+      "before_errors": 3,
+      "after_errors": 0,
+      "error_delta": -3
+    },
+    {
+      "index": 16,
+      "reference": "就是這些dialogue system它其實是有任務去完成的就不是像是一般的chitchat",
+      "reference_chars": 45,
+      "before": "就是這些 Dialog System 其實是由任務去完成的,就不是像是一般的 Cheat Chat",
+      "after": "就是這些 dialogue system 它其實是有任務去完成的就不是像是一般的 cheat chat",
+      "before_errors": 6,
+      "after_errors": 2,
+      "error_delta": -4
+    },
+    {
+      "index": 17,
+      "reference": "呃怎麼之類的就是我們希望透過多輪就是monitor的方式然後最後讓這個system可以幫助我們完成某一項任務",
+      "reference_chars": 54,
+      "before": "我們希望透過多輪的方式,最後讓這個系統可以幫助我們完成某項任務。",
+      "after": "什麼之類的就是我們希望透過多輪就是 multi-turn 的方式然後最後讓這個 system 可以幫助我們完成某一項任務",
+      "before_errors": 26,
+      "after_errors": 7,
+      "error_delta": -19
+    },
+    {
+      "index": 18,
+      "reference": "這方面的study",
+      "reference_chars": 9,
+      "before": "這方面的study",
+      "after": "這方面的 study",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 19,
+      "reference": "對我也做過一些generation task",
+      "reference_chars": 21,
+      "before": "我也做過一些generation task",
+      "after": "我也做過一些 generation task",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 20,
+      "reference": "就是user去回去respond一些就是interesting的",
+      "reference_chars": 32,
+      "before": "就是User去去Response一些就是Interesting的",
+      "after": "就是 user 去 respond 一些 interesting 的",
+      "before_errors": 3,
+      "after_errors": 4,
+      "error_delta": 1
+    },
+    {
+      "index": 21,
+      "reference": "我覺得Hong Kong這樣比較in between就是western還有eastern的的那種",
+      "reference_chars": 46,
+      "before": "我覺得香港比較in between,就是western,還有eastern的那種。",
+      "after": "我覺得 Hong Kong 這樣比較 in between 就是 western 還有 eastern 的那種",
+      "before_errors": 11,
+      "after_errors": 1,
+      "error_delta": -10
+    },
+    {
+      "index": 22,
+      "reference": "就當初在做exchange student的時候就在apply to這個program的時候其實我是可以選擇我要往哪個方向",
+      "reference_chars": 59,
+      "before": "當初在做exchange students 的時候,就是在apply to program 的時候,其實我是可以選擇我要往哪個方向。",
+      "after": "當初在做 exchange student 的時候就是我在 apply to 這個 program 的時候其實我是可以選擇我要往哪個方向",
+      "before_errors": 5,
+      "after_errors": 3,
+      "error_delta": -2
+    },
+    {
+      "index": 23,
+      "reference": "對然後那時候apply的時候很很忙就是you know too too many",
+      "reference_chars": 36,
+      "before": "對,然後那時候普來的時候,那時候很忙。就是,you know, too many.",
+      "after": "對然後那時候 apply 的時候那時候很忙就是 too many",
+      "before_errors": 10,
+      "after_errors": 13,
+      "error_delta": 3
+    },
+    {
+      "index": 24,
+      "reference": "from our department如果我們要去申請",
+      "reference_chars": 25,
+      "before": "從我們的部份,如果我們要去申請",
+      "after": "from our department 如果我們要去申請",
+      "before_errors": 17,
+      "after_errors": 0,
+      "error_delta": -17
+    },
+    {
+      "index": 25,
+      "reference": "like所有的教授什麼都會說中文",
+      "reference_chars": 16,
+      "before": "所有的教授什麼都是說中文的。",
+      "after": "所有的教授什麼都是說中文的",
+      "before_errors": 6,
+      "after_errors": 6,
+      "error_delta": 0
+    },
+    {
+      "index": 26,
+      "reference": "not what I expected in the beginning but just對最後就回到這裡",
+      "reference_chars": 45,
+      "before": "不像我預期望的,但最後就回到這裡。",
+      "after": "It's not what I expected in the beginning, but just...最後就回到這裡",
+      "before_errors": 38,
+      "after_errors": 4,
+      "error_delta": -34
+    },
+    {
+      "index": 27,
+      "reference": "major你是說大學的時候的major",
+      "reference_chars": 19,
+      "before": "major 你說大學的時候的major",
+      "after": "major 你說大學的時候的 major",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 28,
+      "reference": "我的方法比較不一樣是因為在做extra申請extra的時候不用選你要去哪一個department",
+      "reference_chars": 48,
+      "before": "我的方法比較不一樣,是因為在做incentive exchange的時候,不用選你要去哪一個department。",
+      "after": "我的方案比較不一樣是因為在做 incentive exchange 的時候不用選你要去哪一個 department",
+      "before_errors": 13,
+      "after_errors": 14,
+      "error_delta": 1
+    },
+    {
+      "index": 29,
+      "reference": "還是company engineering去做這個這個地方是是要決定的",
+      "reference_chars": 34,
+      "before": "還是Compute Engineering去做,這個地方是要決定的。",
+      "after": "還是 complete engineering 去做這個地方是要決定的",
+      "before_errors": 6,
+      "after_errors": 7,
+      "error_delta": 1
+    },
+    {
+      "index": 30,
+      "reference": "我並不是要做N L P的對我並不是要做natural language processing",
+      "reference_chars": 42,
+      "before": "我並不是要做NLP的,我並不是要做NATAL LANGUAGE PROCESSING。",
+      "after": "我並不是要做 nlp 的因為我並不是要做 natural language processing",
+      "before_errors": 3,
+      "after_errors": 2,
+      "error_delta": -1
+    },
+    {
+      "index": 31,
+      "reference": "也就是我現在supervisor呢就跟我說哎那你過來跟我做我就給你一些robotics相關的題目啊這樣子做那我就說哎那其實",
+      "reference_chars": 61,
+      "before": "也就是我現在是Advisor,就跟我說,那你過來跟我做,我就給你一些Robotics相關的題目啊,這樣子做,然後我就想說,那其實",
+      "after": "也就是我現在 supervisor 就跟我說那你過來跟我做我就給你一些 robotics 相關的題目這樣子做這樣那我就想說那其實",
+      "before_errors": 11,
+      "after_errors": 7,
+      "error_delta": -4
+    },
+    {
+      "index": 32,
+      "reference": "然後在打算申請graduate school的時候我考慮過挺多major的",
+      "reference_chars": 36,
+      "before": "然後在打算申請Graduate School的時候,我考慮過挺多major的。",
+      "after": "然後在打算申請 graduate school 的時候我考慮過挺多 major 的",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 33,
+      "reference": "對就是當時考慮過挺多major的",
+      "reference_chars": 16,
+      "before": "對,就是當時考慮過挺多major的。",
+      "after": "對就是當時考慮過挺多 major 的",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 34,
+      "reference": "that's the reason我來就是最後決定做那個",
+      "reference_chars": 25,
+      "before": "That's the reason,我來最後決定做那個",
+      "after": "That's the reason 我來就是最後決定做那個",
+      "before_errors": 2,
+      "after_errors": 0,
+      "error_delta": -2
+    },
+    {
+      "index": 35,
+      "reference": "我只參加最後final的體測",
+      "reference_chars": 14,
+      "before": "我去參加最後final的題材。",
+      "after": "我是參加最後 final 的體測",
+      "before_errors": 3,
+      "after_errors": 1,
+      "error_delta": -2
+    },
+    {
+      "index": 36,
+      "reference": "所以你平時就現在大部分時間還是tennis就打網球",
+      "reference_chars": 25,
+      "before": "所以你平時就現在大部分時間還是Tennis就打網球。",
+      "after": "所以你平時就現在大部分時間還是 tennis 就打網球",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 37,
+      "reference": "ok那",
+      "reference_chars": 3,
+      "before": "OK,那",
+      "after": "OK 那",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 38,
+      "reference": "嗯yeah因為體積比較小",
+      "reference_chars": 12,
+      "before": "因為體力比較小。",
+      "after": "嗯 yeah 因為體積比較小",
+      "before_errors": 6,
+      "after_errors": 0,
+      "error_delta": -6
+    },
+    {
+      "index": 39,
+      "reference": "一個是basketball一個是badminton",
+      "reference_chars": 25,
+      "before": "一個是Basketball,一個是Bagminton。",
+      "after": "一個是 basketball 一個是 badminton",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 40,
+      "reference": "其實呢badminton有一個就是badminton因為basketball的話主要是",
+      "reference_chars": 43,
+      "before": "其實呢,Bemington有一個,就是Bemington,因為Basketball的話主要是",
+      "after": "其實呢 badminton 有一個就是 badminton 因為 basketball 的話主要是",
+      "before_errors": 6,
+      "after_errors": 0,
+      "error_delta": -6
+    },
+    {
+      "index": 41,
+      "reference": "因為你不可能邀你的female friends去說走我們去play basketball",
+      "reference_chars": 42,
+      "before": "因為你不可能要你的female friends 去走門去play basketball。",
+      "after": "因為你不可能邀你的 female friends 去揍 woman to play basketball",
+      "before_errors": 4,
+      "after_errors": 8,
+      "error_delta": 4
+    },
+    {
+      "index": 42,
+      "reference": "就是特別不好掌控那個就是你bracket的balance",
+      "reference_chars": 28,
+      "before": "特別不好掌控,就是你bracket balance。",
+      "after": "就是特別不好掌控那個就是你 bracket 的 balance",
+      "before_errors": 5,
+      "after_errors": 0,
+      "error_delta": -5
+    },
+    {
+      "index": 43,
+      "reference": "用就是可以發揮你的strength",
+      "reference_chars": 17,
+      "before": "就是可以發揮你的strength",
+      "after": "用就是可以發揮你的 strength",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 44,
+      "reference": "badminton是一個比較好學的就是說",
+      "reference_chars": 20,
+      "before": "北明堂是一個比較好學的,就是說",
+      "after": "Badminton 是一個比較好學的就是說",
+      "before_errors": 9,
+      "after_errors": 0,
+      "error_delta": -9
+    },
+    {
+      "index": 45,
+      "reference": "在elementary school的時候就我當時",
+      "reference_chars": 24,
+      "before": "在 elementary school 的時候,就我當時",
+      "after": "在 elementary school 的時候其實我當時",
+      "before_errors": 0,
+      "after_errors": 2,
+      "error_delta": 2
+    },
+    {
+      "index": 46,
+      "reference": "呃是因為我比較喜歡籃球所以我喜歡的運動員有Michael Jordan啊",
+      "reference_chars": 35,
+      "before": "因為我比較喜歡籃球,所以我喜歡的運動也有麥可傾登啊。",
+      "after": "因為我比較喜歡籃球所以我喜歡的運動員有 Michael Jordan 啊",
+      "before_errors": 16,
+      "after_errors": 2,
+      "error_delta": -14
+    },
+    {
+      "index": 47,
+      "reference": "首先呢他他就是打球的方式非常fancy",
+      "reference_chars": 19,
+      "before": "首先呢,他打球的方式非常fancy。",
+      "after": "首先呢它它就是打球的方式非常 fancy",
+      "before_errors": 3,
+      "after_errors": 2,
+      "error_delta": -1
+    },
+    {
+      "index": 48,
+      "reference": "因為他的得分方式非常efficient",
+      "reference_chars": 19,
+      "before": "因為它的得分方式非常Efficient",
+      "after": "因為他的得分方式非常 efficient",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 49,
+      "reference": "對他當時是我的idol因為當時就是",
+      "reference_chars": 17,
+      "before": "對,他當時是我的idol,因為當時就是……",
+      "after": "對 她當時是我的 idol因為當時就是",
+      "before_errors": 0,
+      "after_errors": 1,
+      "error_delta": 1
+    },
+    {
+      "index": 50,
+      "reference": "然後McGrady他本身打球就是也是特別帥的那一種",
+      "reference_chars": 25,
+      "before": "然後,麥格蒂他本身打球也是特別帥的那一種。",
+      "after": "然後 McGrady 他本身打球也是特別帥的那種",
+      "before_errors": 9,
+      "after_errors": 3,
+      "error_delta": -6
+    },
+    {
+      "index": 51,
+      "reference": "對他們來說可以強化他們的memory呀什麼的",
+      "reference_chars": 22,
+      "before": "對他們來說可以強化他們的 memory 啊什麼的。",
+      "after": "對他們來說可以強化他們的 memory 啊什麼的",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 52,
+      "reference": "HK啊C",
+      "reference_chars": 4,
+      "before": "HKRC",
+      "after": "HK 啊 see",
+      "before_errors": 1,
+      "after_errors": 3,
+      "error_delta": 2
+    },
+    {
+      "index": 53,
+      "reference": "我覺得one year",
+      "reference_chars": 10,
+      "before": "我覺得萬一",
+      "after": "我覺得萬一人",
+      "before_errors": 7,
+      "after_errors": 7,
+      "error_delta": 0
+    },
+    {
+      "index": 54,
+      "reference": "你不是本來就深圳人嗎不會說cantonese嗎",
+      "reference_chars": 23,
+      "before": "你不是本來就深圳人嗎?不會說Cantonese嗎?",
+      "after": "你不是本來就深知人嗎不會說 Cantonese 嗎",
+      "before_errors": 0,
+      "after_errors": 1,
+      "error_delta": 1
+    },
+    {
+      "index": 55,
+      "reference": "you can not wear your呃clothes",
+      "reference_chars": 25,
+      "before": "You can now wear your clothes.",
+      "after": "You can know where you're close.",
+      "before_errors": 2,
+      "after_errors": 9,
+      "error_delta": 7
+    },
+    {
+      "index": 56,
+      "reference": "個人的personalities還有那個",
+      "reference_chars": 20,
+      "before": "個人的personalities, I own a girl.",
+      "after": "個人的 personalities 還有那個",
+      "before_errors": 9,
+      "after_errors": 0,
+      "error_delta": -9
+    },
+    {
+      "index": 57,
+      "reference": "那我們每天就每每次期末都先刷G P A",
+      "reference_chars": 17,
+      "before": "每次節目都先刷GPA。",
+      "after": "每次起步都先刷 gpa",
+      "before_errors": 9,
+      "after_errors": 9,
+      "error_delta": 0
+    },
+    {
+      "index": 58,
+      "reference": "嗯你覺得那你為什麼會呃你就是覺得國外更open minded然後有更多",
+      "reference_chars": 34,
+      "before": "你覺得那你為什麼會,你就是覺得國外更open minded,然後有更多。",
+      "after": "你覺得那你為什麼會你就是覺得國外更 open-minded 然後有更多的",
+      "before_errors": 2,
+      "after_errors": 3,
+      "error_delta": 1
+    },
+    {
+      "index": 59,
+      "reference": "但是你們不覺得平時也有很多due要趕嗎",
+      "reference_chars": 19,
+      "before": "但是你們不覺得平時也有很多丟腰感嗎?",
+      "after": "但是你們不覺得平時也有很多 deal 要幹嘛",
+      "before_errors": 5,
+      "after_errors": 5,
+      "error_delta": 0
+    },
+    {
+      "index": 60,
+      "reference": "嗯那種活動或者是你去參加lunch talk就會請一些比如說fin tech有你感興趣的一些fin tech然後又是ai呀",
+      "reference_chars": 58,
+      "before": "有那種活動,或者是你去參加launch talk,就會請一些比如說fintech,就是你感興趣的fintech,或者是AI啊。",
+      "after": "會有那種活動或者是你去參加 lunch talk就會請一些比如說 fintech 也有你感興趣的 fintech然後或者是 AI 啊",
+      "before_errors": 10,
+      "after_errors": 8,
+      "error_delta": -2
+    },
+    {
+      "index": 61,
+      "reference": "哦那是誒你們剛開學不會拍那個portrait嗎",
+      "reference_chars": 23,
+      "before": "哦,那是,誒你們剛才學不會拍那個portrait嗎?",
+      "after": "喔那是欸你們剛開始不會拍那個 portrait 嗎",
+      "before_errors": 1,
+      "after_errors": 3,
+      "error_delta": 2
+    },
+    {
+      "index": 62,
+      "reference": "呃work shop學校應該也有統一的的work shop",
+      "reference_chars": 27,
+      "before": "學校英格也有同意的workshop。",
+      "after": "Workshop 學校應該也有同一個 workshop",
+      "before_errors": 14,
+      "after_errors": 4,
+      "error_delta": -10
+    },
+    {
+      "index": 63,
+      "reference": "能就是幫人類做很多work",
+      "reference_chars": 13,
+      "before": "能就是幫人類做很多work。",
+      "after": "能幫人類做很多 work",
+      "before_errors": 0,
+      "after_errors": 2,
+      "error_delta": 2
+    },
+    {
+      "index": 64,
+      "reference": "我們還是不能夠trust AI",
+      "reference_chars": 14,
+      "before": "我們還是不能夠trust AI。",
+      "after": "我們還是不能夠 trust AI",
+      "before_errors": 0,
+      "after_errors": 0,
+      "error_delta": 0
+    },
+    {
+      "index": 65,
+      "reference": "他他make a mistake",
+      "reference_chars": 14,
+      "before": "他 make a mistake.",
+      "after": "他 make a mistake",
+      "before_errors": 1,
+      "after_errors": 1,
+      "error_delta": 0
+    },
+    {
+      "index": 67,
+      "reference": "取決於他當時build這個AI system的時候他有沒有考慮過這種情況",
+      "reference_chars": 35,
+      "before": "取決於他當時Build AI System的時候,他有沒有考慮過這種情況。",
+      "after": "取決於他當時 build 這個 AI system 的時候他有沒有考慮過這種情況",
+      "before_errors": 2,
+      "after_errors": 0,
+      "error_delta": -2
+    },
+    {
+      "index": 68,
+      "reference": "另一個呢就是responsibility的問題",
+      "reference_chars": 23,
+      "before": "另一個呢,就是Responsibility的問題。",
+      "after": "另一個就是 responsibility 的問題",
+      "before_errors": 0,
+      "after_errors": 1,
+      "error_delta": 1
+    },
+    {
+      "index": 69,
+      "reference": "但是在零點零點一percent的幾率就是就是需要這個降落傘公司來承擔",
+      "reference_chars": 34,
+      "before": "但是這0.1%的機率,就是需要這個降落傘公司來承擔。",
+      "after": "但是這 0.1% 的機率就是需要這個降落傘公司來承擔",
+      "before_errors": 16,
+      "after_errors": 16,
+      "error_delta": 0
+    },
+    {
+      "index": 70,
+      "reference": "我這個我這個self driving car它的安全性能只有百分之九十五",
+      "reference_chars": 34,
+      "before": "我這個Self-Driving Car,它的安全性能是有95%。",
+      "after": "我這個 self-driving car 它的安全性能只有 95％",
+      "before_errors": 10,
+      "after_errors": 9,
+      "error_delta": -1
+    },
+    {
+      "index": 71,
+      "reference": "我覺得那這樣的話就是應該customer他就是他負這個就是說如果真的accident happen的話就應該是customer他負這個責任",
+      "reference_chars": 68,
+      "before": "我覺得那這樣的話就是應該customer他就是他付這個,就是說如果真的exit happened的話,就應該是customer他付這個責任。",
+      "after": "我覺得那這樣的話就是應該 customer 它就是它付這就是說如果真的 accident happen 的話就應該是 customer 它付這個責任",
+      "before_errors": 10,
+      "after_errors": 6,
+      "error_delta": -4
+    },
+    {
+      "index": 72,
+      "reference": "然後如果這樣的話accident happen的話我覺得就是company要take要負這個責任",
+      "reference_chars": 47,
+      "before": "如果這樣的話,我認為公司要負這個責任。",
+      "after": "然後如果這樣的話 accident happen 的話我覺得就是 company out 叫付這個責任",
+      "before_errors": 34,
+      "after_errors": 7,
+      "error_delta": -27
+    },
+    {
+      "index": 73,
+      "reference": "就是說首先呢它要考慮的scenario比較複雜就是當你在城市裡",
+      "reference_chars": 31,
+      "before": "首先,他要考慮的scenario比較複雜,當你在城市裡",
+      "after": "就是說首先呢它要考慮的 scenario 比較複雜就是當你在程式裡",
+      "before_errors": 7,
+      "after_errors": 2,
+      "error_delta": -5
+    },
+    {
+      "index": 74,
+      "reference": "對然後所以說你的你當你測試的時候你說我我這個百分之九十九percent",
+      "reference_chars": 35,
+      "before": "對,然後,所以說,當你測試的時候,你說我這個99%。",
+      "after": "對然後所以說你的你當你測試的時候你說我我這個 99.9％",
+      "before_errors": 17,
+      "after_errors": 13,
+      "error_delta": -4
+    },
+    {
+      "index": 75,
+      "reference": "好那我們現在開始我們第二個topic就是你認為你就是你認為children應不應該有自己的smart phone",
+      "reference_chars": 55,
+      "before": "好,那我們現在開始我們第二個topic。就是你認為,就是你認為, Children 應不應該有自己的 smartphone?",
+      "after": "好那我們現在開始我們第二個 topic就是你認為 children 應不應該有自己的 smartphone",
+      "before_errors": 1,
+      "after_errors": 6,
+      "error_delta": 5
+    },
+    {
+      "index": 76,
+      "reference": "我就在那個group這樣info你們",
+      "reference_chars": 18,
+      "before": "我就在那個group 上 info 裡面。",
+      "after": "我就在那個 group 上 info 你們",
+      "before_errors": 4,
+      "after_errors": 2,
+      "error_delta": -2
+    },
+    {
+      "index": 77,
+      "reference": "就是 [UNK] surfing the internet",
+      "reference_chars": 23,
+      "before": "就是開設備的網絡。",
+      "after": "就是 get catch serving 的 internet",
+      "before_errors": 21,
+      "after_errors": 13,
+      "error_delta": -8
+    },
+    {
+      "index": 78,
+      "reference": "so呃",
+      "reference_chars": 3,
+      "before": "So, uh...",
+      "after": "So",
+      "before_errors": 2,
+      "after_errors": 1,
+      "error_delta": -1
+    },
+    {
+      "index": 79,
+      "reference": "but for iphone you will be more呃",
+      "reference_chars": 26,
+      "before": "but for iPhone it will be more uh",
+      "after": "for iPhone, it will be more",
+      "before_errors": 5,
+      "after_errors": 7,
+      "error_delta": 2
+    },
+    {
+      "index": 80,
+      "reference": "三件套Mac嗎",
+      "reference_chars": 7,
+      "before": "三件套 Mac 嘛。",
+      "after": "三件套 mac 嗎",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 81,
+      "reference": "device上面使用",
+      "reference_chars": 10,
+      "before": "是否有名詞?",
+      "after": "device 專業是用",
+      "before_errors": 10,
+      "after_errors": 3,
+      "error_delta": -7
+    },
+    {
+      "index": 82,
+      "reference": "呃對它analyzed或者是哦對就你剛你說的那些東西",
+      "reference_chars": 26,
+      "before": "Data Analyst,或者是,對,就看你剛剛說的那些東西。",
+      "after": "data analyst 或者是喔對就剛你剛剛說的那些東西",
+      "before_errors": 10,
+      "after_errors": 10,
+      "error_delta": 0
+    },
+    {
+      "index": 83,
+      "reference": "做optimization然後再去做預測主要還是做預測",
+      "reference_chars": 27,
+      "before": "做Multipensation,然後再做預測,主要還是做預測。",
+      "after": "做 multiplication 然後再去做預測主要還是做預測",
+      "before_errors": 8,
+      "after_errors": 6,
+      "error_delta": -2
+    },
+    {
+      "index": 84,
+      "reference": "就之前運用到的一些都是一些現存的package",
+      "reference_chars": 23,
+      "before": "就之前運用到的一些都是一些現成的package。",
+      "after": "之前運用到的都是一些現成的 package",
+      "before_errors": 1,
+      "after_errors": 4,
+      "error_delta": 3
+    },
+    {
+      "index": 85,
+      "reference": "哦stock嗎對有",
+      "reference_chars": 9,
+      "before": "ああ、ストークマ。對。",
+      "after": "喔 stalk 嗎對有",
+      "before_errors": 8,
+      "after_errors": 3,
+      "error_delta": -5
+    },
+    {
+      "index": 86,
+      "reference": "哦那個是那個是wind好像是做",
+      "reference_chars": 15,
+      "before": "哦,那個是,那個是wind,好像是做",
+      "after": "喔那個是那個是 wind 好像是做",
+      "before_errors": 0,
+      "after_errors": 1,
+      "error_delta": 1
+    },
+    {
+      "index": 87,
+      "reference": "是不是像ocr那種語音識別",
+      "reference_chars": 13,
+      "before": "是不是像歐西亞那種語音識別?",
+      "after": "是不是像 OCR 那種語音識別",
+      "before_errors": 3,
+      "after_errors": 0,
+      "error_delta": -3
+    },
+    {
+      "index": 88,
+      "reference": "我們一直是我們講的是privacy的問題block",
+      "reference_chars": 25,
+      "before": "我們講的是privacy的問題。",
+      "after": "我們也只是我們講的是 privacy 的問題 blah blah blah",
+      "before_errors": 10,
+      "after_errors": 12,
+      "error_delta": 2
+    },
+    {
+      "index": 89,
+      "reference": "就大部分還是比較偏 [UNK] finance這一塊",
+      "reference_chars": 22,
+      "before": "大部分還是比較偏finance這一塊。",
+      "after": "大部分還是比較偏 finance 這塊的",
+      "before_errors": 4,
+      "after_errors": 6,
+      "error_delta": 2
+    },
+    {
+      "index": 90,
+      "reference": "然後它可能會record your personal life",
+      "reference_chars": 28,
+      "before": "然後他可能會record your personal life",
+      "after": "然後它可能會 record your personal life",
+      "before_errors": 1,
+      "after_errors": 0,
+      "error_delta": -1
+    },
+    {
+      "index": 91,
+      "reference": "認真的看那個呃協議條款就是你要他其實是要先拿到你的consent然後才就是說你同不同意我們去collect你的這些data",
+      "reference_chars": 61,
+      "before": "認真地看那個協議條款,就是你要他其實是要先拿到你的consent,然後才就是說你同不同用門去collect你的這些data。",
+      "after": "認真的看那個協議條款它其實是要先拿到你的 consent然後才就是說你同不同意我們去 collect 你的這些 data",
+      "before_errors": 5,
+      "after_errors": 6,
+      "error_delta": 1
+    },
+    {
+      "index": 92,
+      "reference": "去使用這個app就直接捅一捅一下就下去所以不會很仔細地看這些東西",
+      "reference_chars": 32,
+      "before": "去使用這個app就直接統一統一下一步下一步,所以不會去很直接看這些東西。",
+      "after": "去使用這個 app 就直接同一同一下一步下一步所以不會去很仔細的看這些東西",
+      "before_errors": 10,
+      "after_errors": 8,
+      "error_delta": -2
+    },
+    {
+      "index": 93,
+      "reference": "他們還考慮到安全問題因為alipay你去",
+      "reference_chars": 20,
+      "before": "他們還考慮到安全問題。因為阿立佩你去",
+      "after": "他們還考慮到安全問題因為阿力配你去",
+      "before_errors": 6,
+      "after_errors": 6,
+      "error_delta": 0
+    },
+    {
+      "index": 94,
+      "reference": "其實也是之前做了一個project的",
+      "reference_chars": 18,
+      "before": "其實也是之前做的一個project",
+      "after": "其實也是之前做了一個 project under the",
+      "before_errors": 2,
+      "after_errors": 8,
+      "error_delta": 6
+    },
+    {
+      "index": 95,
+      "reference": "嗯ok",
+      "reference_chars": 3,
+      "before": "Okay.",
+      "after": "嗯 OK",
+      "before_errors": 3,
+      "after_errors": 0,
+      "error_delta": -3
+    }
+  ],
+  "independent_blind_test": false,
+  "home_gpu_asr_test": true,
+  "phone_latency_test": false,
+  "production_coload_test": false,
+  "hardware": "Intel i7-9700 / RTX 4060 Ti 8GB / 16GB RAM",
+  "warmup_policy": "first case once before timed corpus"
+}

@@ -3,14 +3,33 @@ import argparse
 import json
 from pathlib import Path
 import statistics
+import re
+import unicodedata
 from check_public_speech import normalized, distance
+
+
+def mixed_tokens(text):
+    """Project MER: Han characters, Latin letter runs and digit runs; ignore punctuation."""
+    text=unicodedata.normalize('NFKC',text).replace('臺','台').lower()
+    return re.findall(r'[\u3400-\u9fff]|[a-z]+|[0-9]+',text)
 
 
 def summarize(first, second):
     corpus=first.get('corpus','regression36')
-    if corpus not in ('regression36','extended96') or second.get('corpus','regression36')!=corpus:
+    if corpus not in ('regression36','extended96','ascend96') or second.get('corpus','regression36')!=corpus:
         raise ValueError('Different or unknown corpus')
-    indices=set(range(36)) if corpus=='regression36' else set(range(36,132))
+    indices={'regression36':set(range(36)), 'extended96':set(range(36,132)),
+             'ascend96':set(range(96))}[corpus]
+    if corpus=='ascend96':
+        frozen=json.loads((Path(__file__).resolve().parents[1]/'tests/quality/ascend96/manifest.json').read_text(encoding='utf-8'))
+        canonical={r['index']:r for r in frozen}
+        for report in (first,second):
+            if report.get('dataset_revision')!='737e9800ae31be9932ba8464c80366559bd28424':
+                raise ValueError('Different ASCEND revision')
+            for row in report['results']:
+                for field in ('source_index','reference','sha256','duration_ms'):
+                    if row[field]!=canonical[row['index']][field]:
+                        raise ValueError('Report differs from frozen ASCEND manifest')
     for report in (first, second):
         if report.get('complete') is not True:
             raise ValueError('Incomplete benchmark is not a completed comparison')
@@ -47,6 +66,11 @@ def summarize(first, second):
             'empty_cases':sum(not r[label].strip() for r in cases),
             'cpu_median_seconds':statistics.median(r['seconds'] for r in report['results']),
             'cpu_total_seconds':sum(r['seconds'] for r in report['results'])})
+        if corpus=='ascend96':
+            tokens=sum(len(mixed_tokens(r['reference'])) for r in cases)
+            mixed_errors=sum(distance(mixed_tokens(r['reference']),mixed_tokens(r[label])) for r in cases)
+            totals[-1].update(mixed_reference_tokens=tokens,mixed_errors=mixed_errors,
+                              project_mer=mixed_errors/tokens)
     return {'same_corpus_and_settings':True,'cases':len(cases),'totals':totals,
             'improved_cases':sum(r['error_delta']<0 for r in cases),
             'regressed_cases':sum(r['error_delta']>0 for r in cases),
