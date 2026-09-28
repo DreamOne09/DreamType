@@ -37,6 +37,37 @@ class DurabilityTests(unittest.TestCase):
             self.assertEqual(restarted.me(uid)['used_seconds'],10)
             with self.assertRaises(ValueError):restarted.complete(uid,'request-123456789',{'text':'overwrite'})
             self.assertEqual(restarted.result(uid,'request-123456789')['text'],'secret transcript marker')
+    def test_corrupt_delivered_result_keeps_completed_charge_and_blocks_rerun(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=Store(Path(directory)/'accounts.sqlite3');uid=store.create('alice','password-123456789')
+            jid='delivered-request-12345'
+            store.reserve(uid,jid,'hash',10);store.expect_receipt(uid,jid)
+            store.state(uid,jid,'running');store.complete(uid,jid,{'text':'received text'})
+            store.receipt(uid,jid)
+            with store.db() as db:db.execute('UPDATE results SET payload=? WHERE uid=? AND id=?',(b'corrupt',uid,jid))
+            self.assertIsNone(store.result(uid,jid))
+            self.assertEqual(store.job(uid,jid)['state'],'done')
+            self.assertEqual(store.me(uid)['used_seconds'],10)
+            row,created=store.reserve(uid,jid,'hash',10,retry_failed=True)
+            self.assertFalse(created);self.assertEqual(row['state'],'done')
+
+    def test_corrupt_undelivered_result_refunds_and_retry_requires_fresh_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=Store(Path(directory)/'accounts.sqlite3');uid=store.create('alice','password-123456789')
+            jid='undelivered-request-12345'
+            store.reserve(uid,jid,'hash',10);store.expect_receipt(uid,jid)
+            store.state(uid,jid,'running');store.complete(uid,jid,{'text':'not yet received'})
+            with store.db() as db:db.execute('UPDATE results SET payload=? WHERE uid=? AND id=?',(b'corrupt',uid,jid))
+            self.assertIsNone(store.result(uid,jid))
+            self.assertEqual(store.job(uid,jid)['state'],'failed');self.assertEqual(store.me(uid)['used_seconds'],0)
+            _,created=store.reserve(uid,jid,'hash',10,retry_failed=True);self.assertTrue(created)
+            with store.db() as db:self.assertEqual(db.execute('SELECT COUNT(*) FROM receipts').fetchone()[0],0)
+            store.save_pending(uid,jid,b'fixture audio',{},True)
+            store.state(uid,jid,'running');store.complete(uid,jid,{'text':'retry received'})
+            with store.db() as db:self.assertEqual(db.execute('SELECT confirmed FROM receipts').fetchone()[0],0)
+            store.receipt(uid,jid);store.receipt(uid,jid)
+            self.assertEqual(store.me(uid)['used_seconds'],10)
+
     def test_reset_is_single_use_and_revokes_sessions(self):
         with tempfile.TemporaryDirectory() as directory:
             store=Store(Path(directory)/'accounts.sqlite3');uid=store.create('alice','password-123456789')
