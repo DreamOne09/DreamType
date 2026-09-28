@@ -10,7 +10,7 @@
       "samples": 48000,
       "max_absolute_difference": 0.0,
       "identical": true,
-      "child_seconds": 0.18452839995734394
+      "child_seconds": 0.1745688000228256
     },
     {
       "format": "wav",
@@ -20,7 +20,7 @@
       "samples": 48000,
       "max_absolute_difference": 0.0,
       "identical": true,
-      "child_seconds": 0.20619679987430573
+      "child_seconds": 0.19850239995867014
     },
     {
       "format": "flac",
@@ -30,7 +30,7 @@
       "samples": 48000,
       "max_absolute_difference": 0.0,
       "identical": true,
-      "child_seconds": 0.17302600014954805
+      "child_seconds": 0.17006519995629787
     },
     {
       "format": "adts",
@@ -40,7 +40,27 @@
       "samples": 48469,
       "max_absolute_difference": 0.0,
       "identical": true,
-      "child_seconds": 0.18516630004160106
+      "child_seconds": 0.1726736999116838
+    },
+    {
+      "format": "mp4",
+      "rate": 16000,
+      "channels": 1,
+      "input_bytes": 19551,
+      "samples": 49152,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.17017589998431504
+    },
+    {
+      "format": "webm",
+      "rate": 48000,
+      "channels": 1,
+      "input_bytes": 31599,
+      "samples": 48000,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.17907880013808608
     }
   ]
 }

@@ -27,7 +27,7 @@ def encoded(container,codec,rate,channels):
 
 parser=argparse.ArgumentParser();parser.add_argument('--output',type=Path,required=True);args=parser.parse_args()
 report=[]
-for container,codec,rate,channels in [('wav','pcm_s16le',16000,1),('wav','pcm_s16le',48000,2),('flac','flac',48000,2),('adts','aac',48000,2)]:
+for container,codec,rate,channels in [('wav','pcm_s16le',16000,1),('wav','pcm_s16le',48000,2),('flac','flac',48000,2),('adts','aac',48000,2),('mp4','aac',16000,1),('webm','libopus',48000,1)]:
     audio=encoded(container,codec,rate,channels)
     previous=decode_audio(io.BytesIO(audio),sampling_rate=16000)
     started=time.perf_counter();raw=isolated_pcm(audio);elapsed=time.perf_counter()-started

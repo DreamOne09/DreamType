@@ -18,7 +18,7 @@
 
 - Windows 真實子程序測試：阻塞於 stdin 前、異常退出、逾時後下一段恢復、取消仍保留名額、父程序強制結束後子程序退出、異常回傳拒絕，以及播放清單不連到隔離 HTTP 測試端點。
 - 原始 120 秒及多一個 sample 的計費邊界維持一致；6 分鐘 PCM 上限拒絕過長輸入。12 項子程序／秒數測試通過，既有 9 項接收限制測試也通過。
-- [新舊 PCM 比較](evidence/decoder-isolation/pcm-compatibility.json)：以固定 faster-whisper 1.2.1 為參考，四組合成 3 秒音訊（16 kHz mono WAV、48 kHz stereo WAV／FLAC／AAC），取樣數與每個 float32 值完全一致。單次獨立轉換約 0.17–0.21 秒；這不是手機端到端延遲或辨識品質證明。重跑工具為 `scripts/check_pcm_compatibility.py --output work/pcm-compatibility.json`。
+- [新舊 PCM 比較](evidence/decoder-isolation/pcm-compatibility.json)：以固定 faster-whisper 1.2.1 為參考，六組合成 3 秒音訊（16 kHz mono WAV／MP4 AAC、48 kHz stereo WAV／FLAC／ADTS AAC、48 kHz mono WebM Opus），取樣數與每個 float32 值完全一致。單次獨立轉換約 0.17–0.20 秒；這不是手機端到端延遲或辨識品質證明。重跑工具為 `scripts/check_pcm_compatibility.py --output work/pcm-compatibility.json`。
 
 Android APK 保持 0.9.14，不需為此更換手機版本；主機更新後 `/health` 的 `audio_decoding` 顯示 `isolated-process`。遠端 CI、整合及部署結果另以實際紀錄為準。
 
