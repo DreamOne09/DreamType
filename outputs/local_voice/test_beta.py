@@ -191,6 +191,8 @@ class BetaTests(unittest.IsolatedAsyncioTestCase):
             r=await self.client.post('/v2/me/preferences',headers=a,json={'word_replacements':invalid})
             self.assertEqual(r.status_code,400,repr(invalid))
         self.assertIn('DreamType',(await self.client.get('/v2/me',headers=a)).json()['preferences']['word_replacements'])
+        await self.upload(a);await asyncio.wait_for(self.beta.queue.join(),2)
+        self.assertNotIn('word_replacements',self.provider.calls[-1][1])
         r=await self.client.post('/v2/me/preferences',headers=a,json={'word_replacements':''})
         self.assertEqual(r.json()['word_replacements'],'')
 

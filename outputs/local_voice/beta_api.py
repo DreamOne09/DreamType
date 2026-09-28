@@ -92,7 +92,8 @@ class Beta:
             try:
                 if not self.store.me(uid)['enabled']:raise ValueError('disabled')
                 self.store.state(uid,jid,'running')
-                result=await asyncio.wait_for(self.provider.transcribe(audio,prefs),timeout=self.processing_timeout)
+                inference_prefs={k:v for k,v in prefs.items() if k!='word_replacements'}
+                result=await asyncio.wait_for(self.provider.transcribe(audio,inference_prefs),timeout=self.processing_timeout)
                 if not self.store.me(uid)['enabled']:raise ValueError('disabled')
                 if not isinstance(result.get('text'),str) or not result['text'].strip():raise ValueError('Empty or invalid response')
                 self.store.complete(uid,jid,result)
@@ -237,7 +238,7 @@ def install_beta(app,work,provider,decoder):
             if file is None or not hasattr(file,'read'):raise StoreError(400,'需要錄音檔案')
             audio=await file.read(2*1024*1024+1)
         if not audio or len(audio)>2*1024*1024:raise StoreError(413,'錄音需小於 2 MB')
-        prefs=beta.store.me(uid)['preferences']
+        prefs={k:v for k,v in beta.store.me(uid)['preferences'].items() if k!='word_replacements'}
         if request.headers.get('x-dreamtype-mode') is not None:
             try:
                 mode,target,source=validate_translation(request.headers.get('x-dreamtype-mode'),request.headers.get('x-dreamtype-target','en'),request.headers.get('x-dreamtype-source','zh-TW'))
