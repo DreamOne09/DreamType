@@ -211,6 +211,8 @@ async def transcribe(file: UploadFile = File(...), model: str = Form('local-dict
                          token_count=speech_token_count,chinese=selected=='zh')
         raw, detected = await asyncio.to_thread(recognize, audio,
             None if selected in ('', 'auto') else selected, hint)
+        if not raw.strip():
+            raise StoreError(422,'未偵測到語音，請確認麥克風並重新錄音。','no_speech')
         speech_seconds = time.perf_counter() - speech_start
         format_start = time.perf_counter()
         text, warning = raw, None
