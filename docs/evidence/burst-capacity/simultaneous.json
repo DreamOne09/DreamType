@@ -1,0 +1,158 @@
+{
+  "accounts": 12,
+  "arrival_interval_seconds": 0,
+  "audio_seconds": 60,
+  "mode": "translate",
+  "target": "en",
+  "database": "isolated temporary SQLite, removed after test",
+  "transport": "in-process account ASGI to localhost real inference",
+  "quality_evaluated": false,
+  "native_device_test": false,
+  "capacity_guarantee": false,
+  "live_queue_locked": false,
+  "results": [
+    {
+      "account_index": 0,
+      "status": 202,
+      "accepted": true,
+      "admission_seconds": 0.378,
+      "total_seconds": 14.695,
+      "used_seconds": 60,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": null
+    },
+    {
+      "account_index": 1,
+      "status": 202,
+      "accepted": true,
+      "admission_seconds": 0.375,
+      "total_seconds": 7.671,
+      "used_seconds": 60,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": null
+    },
+    {
+      "account_index": 2,
+      "status": 202,
+      "accepted": true,
+      "admission_seconds": 0.511,
+      "total_seconds": 21.67,
+      "used_seconds": 60,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": null
+    },
+    {
+      "account_index": 3,
+      "status": 202,
+      "accepted": true,
+      "admission_seconds": 0.613,
+      "total_seconds": 28.865,
+      "used_seconds": 60,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": null
+    },
+    {
+      "account_index": 4,
+      "status": 429,
+      "accepted": false,
+      "admission_seconds": 0.011,
+      "total_seconds": 0.034,
+      "used_seconds": 0,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": "upload_busy"
+    },
+    {
+      "account_index": 5,
+      "status": 429,
+      "accepted": false,
+      "admission_seconds": 0.011,
+      "total_seconds": 0.034,
+      "used_seconds": 0,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": "upload_busy"
+    },
+    {
+      "account_index": 6,
+      "status": 429,
+      "accepted": false,
+      "admission_seconds": 0.011,
+      "total_seconds": 0.033,
+      "used_seconds": 0,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": "upload_busy"
+    },
+    {
+      "account_index": 7,
+      "status": 429,
+      "accepted": false,
+      "admission_seconds": 0.012,
+      "total_seconds": 0.032,
+      "used_seconds": 0,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": "upload_busy"
+    },
+    {
+      "account_index": 8,
+      "status": 429,
+      "accepted": false,
+      "admission_seconds": 0.012,
+      "total_seconds": 0.031,
+      "used_seconds": 0,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": "upload_busy"
+    },
+    {
+      "account_index": 9,
+      "status": 429,
+      "accepted": false,
+      "admission_seconds": 0.012,
+      "total_seconds": 0.03,
+      "used_seconds": 0,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": "upload_busy"
+    },
+    {
+      "account_index": 10,
+      "status": 429,
+      "accepted": false,
+      "admission_seconds": 0.012,
+      "total_seconds": 0.03,
+      "used_seconds": 0,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": "upload_busy"
+    },
+    {
+      "account_index": 11,
+      "status": 429,
+      "accepted": false,
+      "admission_seconds": 0.012,
+      "total_seconds": 0.029,
+      "used_seconds": 0,
+      "reserved_seconds": 0,
+      "recovery": false,
+      "rejection_code": "upload_busy"
+    }
+  ],
+  "recovery": {
+    "account_index": 4,
+    "status": 202,
+    "accepted": true,
+    "admission_seconds": 0.252,
+    "total_seconds": 7.658,
+    "used_seconds": 60,
+    "reserved_seconds": 0,
+    "recovery": true,
+    "rejection_code": null
+  }
+}
