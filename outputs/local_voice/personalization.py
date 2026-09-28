@@ -2,6 +2,7 @@
 import json
 import re
 from collections import Counter
+from spoken_corrections import comparison_source
 
 # Only machine-readable identifiers: do not constrain ordinary spoken amounts,
 # dates or explicit verbal self-corrections. On ambiguity, retain the raw text.
@@ -24,7 +25,7 @@ def validate_identifiers(original, edited):
     if Counter(IDENTIFIER.findall(original)) != Counter(IDENTIFIER.findall(edited)):
         raise ValueError('Formatting changed a literal identifier')
 
-def protect_identifiers(text, *references):
+def protect_identifiers(text, *references, literal_terms=()):
     """Keep literal identifiers out of generation; mapping lives for one request."""
     prefix = 'DTKEEP'
     while any(prefix in value for value in (text, *references)):
@@ -34,7 +35,14 @@ def protect_identifiers(text, *references):
         marker = f'{prefix}{len(values)}END'
         values[marker] = match.group(0)
         return marker
-    return IDENTIFIER.sub(replace, text), values, prefix
+    # Identifier alternatives take priority over names inside a URL/email.
+    terms = sorted({term for term in literal_terms if term}, key=lambda term: (-len(term), term))
+    def literal_pattern(term):
+        left = r'(?<![A-Za-z0-9_])' if re.match(r'[A-Za-z0-9_]', term[0]) else ''
+        right = r'(?![A-Za-z0-9_])' if re.match(r'[A-Za-z0-9_]', term[-1]) else ''
+        return left + re.escape(term) + right
+    pattern = re.compile(IDENTIFIER.pattern + (('|' + '|'.join(literal_pattern(term) for term in terms)) if terms else ''))
+    return pattern.sub(replace, text), values, prefix
 
 def restore_identifiers(edited, values, prefix):
     if not values:
@@ -49,6 +57,35 @@ def restore_identifiers(edited, values, prefix):
 # County/city names checked against Chunghwa Post's county list.
 # https://www.post.gov.tw/post/internet/Download/index.jsp?ID=220306
 TAIWAN_PLACES = '臺北市、新北市、桃園市、臺中市、臺南市、高雄市、基隆市、新竹市、新竹縣、苗栗縣、彰化縣、南投縣、雲林縣、嘉義市、嘉義縣、屏東縣、宜蘭縣、花蓮縣、臺東縣、澎湖縣、金門縣、連江縣'
+
+# Bounded literal capture, not a named-entity recognizer or spelling correction.
+# Only destinations explicitly introduced by these verbs qualify automatically.
+DESTINATION_NAME = re.compile(
+    r'(?<=[到回去在從往])((?:(?![到回去在從往])[\u3400-\u9fff]){1,8}?'
+    r'(?:車站|機場|醫院|大學))')
+NAME_REPAIR = re.compile(r'不對|不是|改成|改為|更正|口誤|說錯')
+
+
+def protect_formatting_literals(text, personal_prompt='', vocabulary='', taiwan_places=True):
+    """Protect recognized spellings only in organize mode, never translation.
+
+    Resolve only the existing strictly recognized numeric repairs in this
+    temporary generation input. Raw ASR text and final validation stay intact.
+    Unsupported repairs remain unmasked so superseded names can be dropped.
+    """
+    text = comparison_source(text)
+    terms = []
+    if not NAME_REPAIR.search(text):
+        terms.extend(term.strip() for term in re.split(r'[,，、;；\n\r]+', vocabulary)
+                     if 2 <= len(term.strip()) <= 40 and term.strip() in text)
+        if taiwan_places:
+            terms.extend(name for name in TAIWAN_PLACES.split('、') if name in text)
+            terms.extend(match[1] for match in DESTINATION_NAME.finditer(text))
+        # Do not freeze adjacent repeated words that may be a spoken stutter.
+        terms = [term for term in terms if not re.search(
+            re.escape(term) + r'[\s，,]*' + re.escape(term), text)]
+    return protect_identifiers(text, personal_prompt, vocabulary, literal_terms=terms)
+
 
 def validate_preferences(personal_prompt='', vocabulary='', taiwan_places=True):
     if not isinstance(personal_prompt, str) or len(personal_prompt) > 2000:

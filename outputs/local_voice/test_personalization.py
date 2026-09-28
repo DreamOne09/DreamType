@@ -22,7 +22,7 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
         edited='明天下午四點半，不要取消。'
         def engine(request):
             return httpx.Response(200,json={'choices':[{'finish_reason':'stop','message':{'content':edited}}]})
-        with patch.object(server.httpx,'AsyncClient',lambda **kwargs:client_type(transport=httpx.MockTransport(engine))), patch.object(server,'decode_audio',lambda *a,**k:[0]*16000), patch.object(server,'recognize',lambda *a:(original,'zh')):
+        with patch.object(server.httpx,'AsyncClient',lambda **kwargs:client_type(transport=httpx.MockTransport(engine))), patch.object(server,'isolated_pcm',lambda *a,**k:bytes(32000)), patch.object(server,'recognize',lambda *a:(original,'zh')):
             response=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('test.wav',b'fake')})
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.json()['text'],edited)
@@ -43,7 +43,7 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
                 messages=json.loads(request.content)['messages']
                 self.assertEqual(json.loads(messages[-1]['content'])['transcript'],original)
                 return httpx.Response(200,json={'choices':[{'finish_reason':'stop','message':{'content':answer}}]})
-            with self.subTest(original=original), patch.object(server.httpx,'AsyncClient',lambda **kwargs:client_type(transport=httpx.MockTransport(engine))), patch.object(server,'decode_audio',lambda *a,**k:[0]*16000), patch.object(server,'recognize',lambda *a:(original,'zh')):
+            with self.subTest(original=original), patch.object(server.httpx,'AsyncClient',lambda **kwargs:client_type(transport=httpx.MockTransport(engine))), patch.object(server,'isolated_pcm',lambda *a,**k:bytes(32000)), patch.object(server,'recognize',lambda *a:(original,'zh')):
                 response=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('test.wav',b'fake')})
                 self.assertEqual(response.status_code,200)
                 self.assertEqual(response.json()['text'],original)
@@ -94,7 +94,7 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
                 'message': {'content': '電話 0912-003-45，請明天聯絡。'}}]})
         with patch.object(server.httpx, 'AsyncClient',
                 lambda **kwargs: client_type(transport=httpx.MockTransport(engine))), \
-                patch.object(server, 'decode_audio', lambda *a, **k: [0]*16000), \
+                patch.object(server, 'isolated_pcm', lambda *a, **k: bytes(32000)), \
                 patch.object(server, 'recognize', lambda *a: (original, 'zh')):
             response = await self.client.post('/v1/audio/transcriptions', headers=self.auth,
                 files={'file': ('test.wav', b'fake')})
@@ -112,7 +112,7 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
             def model_client(*args, **kwargs):
                 return client_type(transport=httpx.MockTransport(engine))
             with self.subTest(finish=finish), patch.object(server.httpx, 'AsyncClient', model_client), \
-                    patch.object(server, 'decode_audio', lambda *a, **k: [0]*16000), \
+                    patch.object(server, 'isolated_pcm', lambda *a, **k: bytes(32000)), \
                     patch.object(server, 'recognize', lambda *a: (original, 'zh')):
                 response = await self.client.post('/v1/audio/transcriptions', headers=self.auth,
                     files={'file': ('test.wav', b'fake')})
@@ -136,19 +136,19 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
     async def test_translation_routes_target_and_never_falls_back_to_chinese(self):
         captured=[]
         async def formatter(text,*args):captured.append(args);return '明日の予約をキャンセルしないでください。'
-        with patch.object(server,'decode_audio',lambda *a,**k:[0]*16000),patch.object(server,'recognize',lambda *a:('不要取消明天的預約。','zh')),patch.object(server,'format_text',formatter):
+        with patch.object(server,'isolated_pcm',lambda *a,**k:bytes(32000)),patch.object(server,'recognize',lambda *a:('不要取消明天的預約。','zh')),patch.object(server,'format_text',formatter):
             r=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('x.wav',b'fake')},data={'mode':'translate','target_language':'ja'})
         self.assertEqual(r.status_code,200);self.assertEqual(r.json()['target_language'],'ja')
         self.assertEqual(captured[0][-3:],('translate','ja','zh'))
         async def failure(*a):raise ValueError('offline')
-        with patch.object(server,'decode_audio',lambda *a,**k:[0]*16000),patch.object(server,'recognize',lambda *a:('不要取消。','zh')),patch.object(server,'format_text',failure):
+        with patch.object(server,'isolated_pcm',lambda *a,**k:bytes(32000)),patch.object(server,'recognize',lambda *a:('不要取消。','zh')),patch.object(server,'format_text',failure):
             r=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('x.wav',b'fake')},data={'mode':'translate','target_language':'th'})
         self.assertEqual(r.status_code,503);self.assertNotIn('text',r.json())
     async def test_translation_source_and_target_validation(self):
         seen=[]
         def recognize(audio,language,prompt):seen.append((language,prompt));return 'hello','en'
         async def formatter(*a):return '你好'
-        with patch.object(server,'decode_audio',lambda *a,**k:[0]*16000),patch.object(server,'recognize',recognize),patch.object(server,'format_text',formatter):
+        with patch.object(server,'isolated_pcm',lambda *a,**k:bytes(32000)),patch.object(server,'recognize',recognize),patch.object(server,'format_text',formatter):
             r=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('x.wav',b'fake')},data={'mode':'translate','target_language':'zh-TW','source_language':'auto'})
         self.assertEqual(r.status_code,200);self.assertEqual(seen,[(None,'')])
         r=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('x.wav',b'fake')},data={'mode':'translate','target_language':'invalid'})
@@ -168,7 +168,7 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
                 encoded.append(text)
                 return SimpleNamespace(ids=list(range(len(text)*3)))
         with patch.object(server,'model',SimpleNamespace(hf_tokenizer=Tokenizer())), \
-             patch.object(server,'decode_audio',lambda *a,**k:[0]*16000), \
+             patch.object(server,'isolated_pcm',lambda *a,**k:bytes(32000)), \
              patch.object(server,'recognize',lambda *a:('測試。','zh')):
             response=await self.client.post('/v1/audio/transcriptions',headers=self.auth,
                 files={'file':('test.wav',b'fake')},data={'model':'local-raw','vocabulary':'陳昀霏、汐止'})
@@ -199,7 +199,7 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
         def recognize(audio,language,prompt):
             seen.append(prompt);return '明天去汐止。','zh'
         async def fail(*args):raise ValueError('offline')
-        with patch.object(server,'decode_audio',lambda *a,**k: [0]*16000),patch.object(server,'recognize',recognize),patch.object(server,'format_text',fail):
+        with patch.object(server,'isolated_pcm',lambda *a,**k: bytes(32000)),patch.object(server,'recognize',recognize),patch.object(server,'format_text',fail):
             r=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('test.wav',b'fake')},data={'vocabulary':'汐止','personal_prompt':'條列','taiwan_places':'false'})
         self.assertEqual(r.status_code,200)
         self.assertEqual(r.json()['text'],'明天去汐止。')
@@ -212,8 +212,8 @@ class PromptTests(unittest.TestCase):
                      '我的安排。第一、買牛奶。第二、拿藥。如果下雨就延期。'):
             self.assertIn('• ', explicit_list_hint(text))
             self.assertEqual(explicit_list_hint(text, '用完整段落，不要條列'), '')
-        for text in ('第一銀行今天有開，第二天再去郵局，第三天才去台中。',
-                     '第一天去台北，第二天去台中。',
+        self.assertIn('機構名稱', explicit_list_hint('第一銀行今天有開，第二天再去郵局，第三天才去台中。'))
+        for text in ('第一天去台北，第二天去台中。',
                      '第一百名領獎，第二百名不用。',
                      '第一買牛奶，第三拿藥。', '第二買牛奶，第三拿藥。',
                      '那是我的第一選擇，第二選擇還沒決定。'):

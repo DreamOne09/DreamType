@@ -23,7 +23,7 @@ from fastapi.responses import PlainTextResponse, FileResponse, RedirectResponse
 from android_release import APK_NAME, APK_URL, verified_apk
 from faster_whisper import WhisperModel
 from opencc import OpenCC
-from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_identifiers, restore_identifiers, explicit_list_hint, apply_explicit_layout
+from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_formatting_literals, restore_identifiers, explicit_list_hint, apply_explicit_layout
 from taiwan_typography import normalize_taiwan_typography
 from speech_profile import speech_model_path
 from translation import validate_translation, translate_text
@@ -115,7 +115,7 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
     if mode=='translate':
         translated=await translate_text(text,target_language,API_KEY,source_language)
         return normalize_taiwan_typography(converter.convert(translated)) if target_language=='zh-TW' else translated
-    protected, identifiers, marker_prefix = protect_identifiers(text, personal_prompt, vocabulary)
+    protected, identifiers, marker_prefix = protect_formatting_literals(text, personal_prompt, vocabulary, taiwan_places)
     instructions = formatting_prompt(PROMPT, personal_prompt, vocabulary, taiwan_places)
     instructions += explicit_list_hint(text, personal_prompt)
     if identifiers:
