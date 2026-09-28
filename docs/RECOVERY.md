@@ -1,4 +1,4 @@
-> 目前版本 0.7.0，结果保存、加密備份與維運以 [最新狀態](PRODUCTION_STATUS.md) 為準；以下保留歷史版本紀錄。
+> 本頁保留 0.5.0 起的歷史紀錄。最新 APK 與驗收缺口請看 [上線狀態](LAUNCH_STATUS.md)；搬機與救援請依 [現行加密備份流程](PRODUCTION_STATUS.md#備份與雲端) 及 [刪除紀錄核對](DELETION_RECOVERY.md)，不要照舊版 ZIP 指令操作。
 
 > 0.6.0 已新增手機加密暫存與手動重試，見 [兩輪修正](TWO_ROUND_REVIEW.md)。本頁描述 0.5.0 的伺服器結果取回及備份機制。
 
@@ -22,9 +22,11 @@
 
 網頁不把登入 token 寫入 localStorage/sessionStorage；登出會撤銷這次登入。刪除需再次輸入密碼並確認；主機管理者建立的私人備份不會因此自動改寫，需另外處理。臨時網址可變，尚不能視為正式商店的長期刪除網址。
 
-## 備份家用主機
+## 舊版備份家用主機（0.5.0，非現行操作指南）
 
-在專案根目錄執行：
+以下僅記錄 0.5.0 的行為；現行 `create` 產生加密 `.dtbackup`，還原也必須提供最新刪除紀錄及其復原金鑰。舊 ZIP 的相容讀取不會略過刪除核對，也不會自動加密原檔。
+
+當時在專案根目錄執行：
 
 ```powershell
 .\work\venv\Scripts\python.exe .\outputs\local_voice\backup.py create
@@ -34,9 +36,7 @@ SQLite 線上快照會寫入 `work/backups/beta-日期-隨機碼.zip`。包含�
 
 主機若要搬到 AI PC，先安裝程式與模型，在啟動服務之前，於新主機的專案根目錄執行：
 
-```powershell
-.\work\venv\Scripts\python.exe .\outputs\local_voice\backup.py restore --archive "D:\private-backups\你的備份.zip"
-```
+歷史版本只以 ZIP 路徑還原。此舊指令省略現行必需的刪除紀錄與復原金鑰，已移除可複製範例，請改用上方現行流程。
 
 只允許恢復到空的 `work/beta`；若已有資料或推論金鑰不同，工具會拒絕覆蓋。不可為了通過檢查直接刪除既有使用者資料，請改用新的專案資料夾。
 
