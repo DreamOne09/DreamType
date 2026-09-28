@@ -25,6 +25,7 @@ from faster_whisper.audio import decode_audio
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'outputs/local_voice'))
 from beta_api import LocalProvider, audio_duration, install_beta
+from audio_process import isolated_audio_duration
 
 
 def clips(manifest):
@@ -76,7 +77,7 @@ async def run(args):
     results = []
     with tempfile.TemporaryDirectory(prefix='dreamtype-capacity-') as directory:
         app = FastAPI()
-        beta = install_beta(app, Path(directory), provider, audio_duration)
+        beta = install_beta(app, Path(directory), provider, isolated_audio_duration)
         if args.queue_policy == 'fifo':
             beta.queue = asyncio.Queue(maxsize=8)
         await beta.start()

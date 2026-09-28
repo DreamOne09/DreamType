@@ -1,0 +1,46 @@
+{
+  "synthetic_audio": true,
+  "reference": "installed faster-whisper 1.2.1 decode_audio",
+  "cases": [
+    {
+      "format": "wav",
+      "rate": 16000,
+      "channels": 1,
+      "input_bytes": 96044,
+      "samples": 48000,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.18452839995734394
+    },
+    {
+      "format": "wav",
+      "rate": 48000,
+      "channels": 2,
+      "input_bytes": 576044,
+      "samples": 48000,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.20619679987430573
+    },
+    {
+      "format": "flac",
+      "rate": 48000,
+      "channels": 2,
+      "input_bytes": 108815,
+      "samples": 48000,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.17302600014954805
+    },
+    {
+      "format": "adts",
+      "rate": 48000,
+      "channels": 2,
+      "input_bytes": 48886,
+      "samples": 48469,
+      "max_absolute_difference": 0.0,
+      "identical": true,
+      "child_seconds": 0.18516630004160106
+    }
+  ]
+}
