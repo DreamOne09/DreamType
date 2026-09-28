@@ -50,11 +50,16 @@ def spawn(name, arguments):
     print(name, 'started', child.pid)
 
 action = sys.argv[1] if len(sys.argv) > 1 else 'status'
+# Validate configuration before stopping healthy processes.
+layers = 10
+if action in ('start','restart','translation'):
+    from translation_profile import gpu_layers
+    layers = gpu_layers(WORK, os.environ.get('DREAMTYPE_ASR_MODEL','turbo'))
 def start_translation():
     path=WORK/'models/translategemma/translategemma-4b-it.Q4_K_M.gguf'
     if not path.exists():return
     spawn('translation',[str(WORK/'llama/llama-server.exe'),'-m',str(path),'--host','127.0.0.1','--port','19873',
-        '-ngl','10','-c','2048','-np','1','-t','4','-b','128','-ub','128','--flash-attn','on','--no-jinja','--chat-template','gemma','--alias','local-translate','--no-webui','--api-key-file',str(KEY)])
+        '-ngl',str(layers),'-c','2048','-np','1','-t','4','-b','128','-ub','128','--flash-attn','on','--no-jinja','--chat-template','gemma','--alias','local-translate','--no-webui','--api-key-file',str(KEY)])
 if action in ('start', 'restart'):
     try:
         ready = httpx.get('http://127.0.0.1:19870/health', timeout=2).json()['status'] == 'ready'
