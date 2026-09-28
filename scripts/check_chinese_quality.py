@@ -53,6 +53,8 @@ def main():
             for literal,count in case.get('occurrences',{}).items():
                 if output.count(literal)!=count:
                     failures.append('occurrence count: '+literal)
+            if 'paragraph_count' in case and len(re.split(r'\n[ \t]*\n', output.strip())) != case['paragraph_count']:
+                failures.append('paragraph count')
             if 'bullet_count' in case and len(re.findall(r'^\s*• ', output, re.MULTILINE)) != case['bullet_count']:
                 failures.append('bullet count')
             if 'line_count' in case and len(output.splitlines()) != case['line_count']:
