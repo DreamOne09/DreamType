@@ -154,8 +154,8 @@ public final class SmokeInstrumentation extends Instrumentation {
  }
  private void suggestionChecks(Context context)throws Exception{
   new AppConfig("https://example.invalid","synthetic-suggestion-token",false).save(context);
-  final String original="這個軟件很好用，另一個軟件不用更新。";
-  final String changed="這個軟體很好用，另一個軟件不用更新。";
+  final String original="這個軟件很好用，另一個軟件不用更新。引用“軟件”與《硬件設計》保持原文。";
+  final String changed="這個軟體很好用，另一個軟件不用更新。引用“軟件”與《硬件設計》保持原文。";
   Draft.begin(original);Activity editor=open(EditActivity.class);
   runOnMainSync(()->find(editor.getWindow().getDecorView(),"用詞建議（2）· 可選擇保留原文").performClick());
   screenshot("suggestions-dialog");clickAccessibleText("保留原文");

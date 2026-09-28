@@ -11,7 +11,28 @@ final class WordSuggestions {
   {"視頻","影片"},{"默認","預設"},{"文件夾","資料夾"},{"服務器","伺服器"},
   {"計劃","計畫"}
  };
- private static final Pattern PROTECTED=Pattern.compile("```[\\s\\S]*?```|`[^`\\n]*`|https?://[^\\s，。！？]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}|「[^」]*」|『[^』]*』|\"[^\"]*\"");
+ private static final Pattern PROTECTED=Pattern.compile("```[\\s\\S]*?(?:```|$)|`[^`\\n]*(?:`|$)|https?://[^\\s，。！？；：、（）「」『』“”《》\"]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}");
+ // Scan paired delimiters so nested and unfinished quotations stay literal.
+ private static void protectQuotes(String text,boolean[] protectedAt){
+  String open="「『“‘《〈\"",close="」』”’》〉\"";
+  ArrayList<Character> stack=new ArrayList<>();int begin=-1;
+  for(int i=0;i<text.length();i++){
+   if(protectedAt[i])continue;
+   char c=text.charAt(i);
+   if(c=='"'){
+    int slashes=0;for(int j=i-1;j>=0&&text.charAt(j)=='\\';j--)slashes++;
+    if(slashes%2==1)continue;
+   }
+   if(!stack.isEmpty()&&c==stack.get(stack.size()-1)){
+    stack.remove(stack.size()-1);
+    if(stack.isEmpty()){for(int j=begin;j<=i;j++)protectedAt[j]=true;begin=-1;}
+   }else{
+    int kind=open.indexOf(c);
+    if(kind>=0){if(stack.isEmpty())begin=i;stack.add(close.charAt(kind));}
+   }
+  }
+  if(begin>=0)for(int i=begin;i<text.length();i++)protectedAt[i]=true;
+ }
  static final class Suggestion {
   final int start,end;final String from,to;
   Suggestion(int start,String from,String to){this.start=start;this.end=start+from.length();this.from=from;this.to=to;}
@@ -45,6 +66,7 @@ final class WordSuggestions {
   for(String[] word:WORDS)if(!personal.contains(word[0]))words.add(word);
   boolean[] protectedAt=new boolean[text.length()];Matcher matcher=PROTECTED.matcher(text);
   while(matcher.find())for(int i=matcher.start();i<matcher.end();i++)protectedAt[i]=true;
+  protectQuotes(text,protectedAt);
   for(String[] word:words){
    int start=0;
    while((start=text.indexOf(word[0],start))>=0){
