@@ -11,6 +11,10 @@ public final class WordSuggestionsTest {
   if(!WordSuggestions.find("保留「軟件」和 `硬件`，https://example.com/視頻").isEmpty())throw new AssertionError("Protect quotes, code and URLs");
   if(!WordSuggestions.find("請幫我生成一個計畫。明天不要取消。").isEmpty())throw new AssertionError("Never invent tasks or suggestions");
   if(!WordSuggestions.find("").isEmpty())throw new AssertionError("Empty input");
+  for(String literal:new String[]{"保留“軟件”原文。", "書名《軟件設計》不要改。", "原話「他說『軟件』，硬件也一樣」。", "還在輸入「軟件", "程式 `軟件", "程式\n```\n軟件"}){
+   if(!WordSuggestions.find(literal).isEmpty())throw new AssertionError("Protected or unfinished literal: "+literal);
+  }
+  if(WordSuggestions.find("引用「軟件」後，軟件需要更新。").size()!=1)throw new AssertionError("Resume after closing quote");
   String rules="夢想型態 → DreamType\nGPT → ChatGPT\n軟件 → 應用程式\n軟件平台 → 應用平台";
   found=WordSuggestions.find("夢想型態使用GPT，ChatGPT與GPT4不用改。軟件平台和軟件。",rules);
   if(found.size()!=4||!found.get(0).to.equals("DreamType")||!found.get(2).to.equals("應用平台")||!found.get(3).to.equals("應用程式"))throw new AssertionError("Personal, longest nonoverlapping alternatives; ASCII word boundaries");
