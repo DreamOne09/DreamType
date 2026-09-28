@@ -1,0 +1,81 @@
+{
+  "audio": "hash-verified public manifest clips, concatenated/cut to 5 or 60 seconds",
+  "transport": "sequential localhost private gateway; no account queue or mobile network",
+  "quality_evaluated": false,
+  "live_queue_locked": false,
+  "capacity_guarantee": false,
+  "results": [
+    {
+      "audio_seconds": 5,
+      "mode": "organize",
+      "target": "zh-TW",
+      "speech_seconds": 0.538,
+      "text_seconds": 0.133,
+      "gateway_total_seconds": 0.857,
+      "client_seconds": 0.862,
+      "raw_characters": 12,
+      "output_characters": 12,
+      "formatting_fallback": false
+    },
+    {
+      "audio_seconds": 60,
+      "mode": "organize",
+      "target": "zh-TW",
+      "speech_seconds": 0.81,
+      "text_seconds": 1.191,
+      "gateway_total_seconds": 2.222,
+      "client_seconds": 2.237,
+      "raw_characters": 112,
+      "output_characters": 125,
+      "formatting_fallback": false
+    },
+    {
+      "audio_seconds": 60,
+      "mode": "translate",
+      "target": "en",
+      "speech_seconds": 0.804,
+      "text_seconds": 5.485,
+      "gateway_total_seconds": 6.509,
+      "client_seconds": 6.524,
+      "raw_characters": 112,
+      "output_characters": 407,
+      "formatting_fallback": false
+    },
+    {
+      "audio_seconds": 60,
+      "mode": "translate",
+      "target": "ja",
+      "speech_seconds": 1.088,
+      "text_seconds": 6.33,
+      "gateway_total_seconds": 7.634,
+      "client_seconds": 7.649,
+      "raw_characters": 112,
+      "output_characters": 163,
+      "formatting_fallback": false
+    },
+    {
+      "audio_seconds": 60,
+      "mode": "translate",
+      "target": "th",
+      "speech_seconds": 1.08,
+      "text_seconds": 14.206,
+      "gateway_total_seconds": 15.518,
+      "client_seconds": 15.534,
+      "raw_characters": 112,
+      "output_characters": 350,
+      "formatting_fallback": false
+    },
+    {
+      "audio_seconds": 60,
+      "mode": "translate",
+      "target": "ms",
+      "speech_seconds": 1.14,
+      "text_seconds": 13.35,
+      "gateway_total_seconds": 14.733,
+      "client_seconds": 14.752,
+      "raw_characters": 112,
+      "output_characters": 437,
+      "formatting_fallback": false
+    }
+  ]
+}
