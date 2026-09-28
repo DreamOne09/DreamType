@@ -8,9 +8,20 @@ from check_public_speech import normalized, distance
 
 def summarize(first, second):
     corpus=first.get('corpus','regression36')
-    if corpus not in ('regression36','extended96') or second.get('corpus','regression36')!=corpus:
+    if corpus not in ('regression36','extended96','ascend96') or second.get('corpus','regression36')!=corpus:
         raise ValueError('Different or unknown corpus')
-    indices=set(range(36)) if corpus=='regression36' else set(range(36,132))
+    indices={'regression36':set(range(36)), 'extended96':set(range(36,132)),
+             'ascend96':set(range(96))}[corpus]
+    if corpus=='ascend96':
+        frozen=json.loads((Path(__file__).resolve().parents[1]/'tests/quality/ascend96/manifest.json').read_text(encoding='utf-8'))
+        canonical={r['index']:r for r in frozen}
+        for report in (first,second):
+            if report.get('dataset_revision')!='737e9800ae31be9932ba8464c80366559bd28424':
+                raise ValueError('Different ASCEND revision')
+            for row in report['results']:
+                for field in ('source_index','reference','sha256','duration_ms'):
+                    if row[field]!=canonical[row['index']][field]:
+                        raise ValueError('Report differs from frozen ASCEND manifest')
     for report in (first, second):
         if report.get('complete') is not True:
             raise ValueError('Incomplete benchmark is not a completed comparison')

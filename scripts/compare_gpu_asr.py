@@ -11,7 +11,7 @@ from personalization import speech_hint
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--model',choices=['turbo','breeze'],required=True)
 parser.add_argument('--output',type=Path,required=True)
-parser.add_argument('--corpus',choices=['regression36','extended96'],default='extended96')
+parser.add_argument('--corpus',choices=['regression36','extended96','ascend96'],default='extended96')
 parser.add_argument('--verify-only',action='store_true')
 parser.add_argument('--model-dir',type=Path,required=True,help='Directory containing the pinned model.bin and tokenizer files')
 parser.add_argument('--audio-dir',type=Path,default=REPO/'work/asr-comparison/audio')
@@ -23,10 +23,12 @@ folder,model_id,revision,digest=models[args.model]
 model_path=args.model_dir
 with (model_path/'model.bin').open('rb') as stream:
  if hashlib.file_digest(stream,'sha256').hexdigest()!=digest:raise ValueError('Model hash differs from frozen benchmark revision')
-names=['public-taiwan-speech-extended.json'] if args.corpus=='extended96' else ['public-taiwan-speech.json','public-taiwan-speech-holdout.json']
+names={'extended96':['public-taiwan-speech-extended.json'],
+       'regression36':['public-taiwan-speech.json','public-taiwan-speech-holdout.json'],
+       'ascend96':['ascend96/manifest.json']}[args.corpus]
 rows=[]
 for name in names:rows.extend(json.loads((REPO/'tests/quality'/name).read_text(encoding='utf-8')))
-expected=list(range(36,132)) if args.corpus=='extended96' else list(range(36))
+expected=list(range(36,132)) if args.corpus=='extended96' else list(range(96 if args.corpus=='ascend96' else 36))
 if [r['index'] for r in rows]!=expected:raise ValueError('Corpus indices differ')
 audio=args.audio_dir
 for row in rows:
@@ -53,6 +55,11 @@ report={'model':model_id,'revision':revision,'model_sha256':digest,'device':'CUD
  'dataset':'OpenFormosa/common_voice_25_zh-TW','split':'test','license':'CC0-1.0','corpus':args.corpus,'beam_size':1,'vad_min_silence_ms':350,'condition_on_previous_text':False,'prompt':prompt,
  'reference_in_prompt':False,'llm_formatting':False,'private_data_used':False,'phone_latency_test':False,'complete':False,'results':[]}
 args.output.parent.mkdir(parents=True,exist_ok=True)
+if args.corpus=='ascend96':
+ report.update(dataset='CAiRE/ASCEND',dataset_revision='737e9800ae31be9932ba8464c80366559bd28424',
+               license='CC-BY-SA-4.0',natural_speech=True,long_form_test=False,
+               reference_conversion='OpenCC s2tw; original_reference retained',
+               selection='96 evenly spaced positions of 373 mixed test rows, no ASR-based selection')
 for row in rows:
  started=time.perf_counter();hypothesis=transcribe(row);seconds=time.perf_counter()-started
  reference=normalized(row['reference'])
