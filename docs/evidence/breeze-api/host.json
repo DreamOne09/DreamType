@@ -1,0 +1,14 @@
+{
+  "started": 1790590391.941325,
+  "restored": true,
+  "profile": "breeze",
+  "profile_verified": true,
+  "benchmark_exit_code": 0,
+  "profile_still_breeze": true,
+  "restored_profile": "turbo",
+  "tunnel_ready": true,
+  "resource_sample_count": 90,
+  "observed_peak_gpu_mib": 7545,
+  "observed_min_available_ram_bytes": 858521600,
+  "finished": 1790590464.0921335
+}
