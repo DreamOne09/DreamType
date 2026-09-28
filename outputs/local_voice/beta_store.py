@@ -168,10 +168,11 @@ class Store:
         if not row or row['expires']<=time.time():return None
         try:return json.loads(decrypt(self.payload_key,row['payload'],f"{uid}/{jid}/{row['expires']}".encode()))
         except Exception:
-            # An unreadable result cannot be delivered; release the charge and permit explicit retry.
+            # Refund only when delivery was not confirmed. A later damaged
+            # recovery copy must not undo a completed, acknowledged delivery.
             with self.db() as db:
                 db.execute('DELETE FROM results WHERE uid=? AND id=?',(uid,jid))
-                db.execute("UPDATE jobs SET state='failed' WHERE uid=? AND id=?",(uid,jid))
+                db.execute("UPDATE jobs SET state='failed' WHERE uid=? AND id=? AND NOT EXISTS (SELECT 1 FROM receipts WHERE uid=? AND id=? AND confirmed=1)",(uid,jid,uid,jid))
             return None
     def cleanup(self):
         with self.db() as db:

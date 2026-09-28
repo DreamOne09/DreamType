@@ -310,6 +310,22 @@ class BetaTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn(r.json()['state'],('queued','running'))
         self.provider.gate.set();await asyncio.wait_for(self.beta.queue.join(),2)
         self.assertEqual((await self.client.get('/v2/me/latest-dictation',headers=a)).json()['state'],'done')
+    async def test_corrupt_acknowledged_copy_is_expired_without_reprocessing(self):
+        uid,auth=await self.account()
+        headers={**auth,'X-DreamType-Receipt':'1'};jid='request-1234567890'
+        await self.upload(headers);await asyncio.wait_for(self.beta.queue.join(),2)
+        confirmed=await self.client.post('/v2/dictations/'+jid+'/receipt',headers=auth)
+        self.assertEqual(confirmed.status_code,200)
+        with self.beta.store.db() as db:
+            db.execute('UPDATE results SET payload=? WHERE uid=? AND id=?',(b'corrupt',uid,jid))
+        result=await self.client.get('/v2/dictations/'+jid,headers=auth)
+        self.assertEqual(result.json()['state'],'expired')
+        retry=await self.upload({**headers,'X-DreamType-Retry':'1'})
+        self.assertEqual(retry.status_code,202);self.assertEqual(retry.json()['state'],'expired')
+        self.assertEqual(len(self.provider.calls),1)
+        self.assertEqual(self.beta.store.job(uid,jid)['state'],'done')
+        self.assertEqual(self.beta.store.me(uid)['used_seconds'],10)
+
     async def test_retry_keeps_original_settings_and_success_charge(self):
         _,a=await self.account()
         await self.upload(a);await self.beta.queue.join()
