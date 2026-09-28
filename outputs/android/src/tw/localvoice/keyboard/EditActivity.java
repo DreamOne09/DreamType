@@ -33,17 +33,17 @@ public final class EditActivity extends Activity {
   if(retained!=null)editor.setSelection(Math.max(0,Math.min(retained.start,editor.length())),Math.max(0,Math.min(retained.end,editor.length())));
   Button suggestions=button(p,"",v->{
    final String snapshot=editor.getText().toString();
-   final java.util.ArrayList<WordSuggestions.Suggestion> choices=WordSuggestions.find(snapshot);
+   final java.util.ArrayList<WordSuggestions.Suggestion> choices=WordSuggestions.find(snapshot,AppConfig.load(this).wordReplacements);
    if(choices.isEmpty())return;
    String[] labels=new String[choices.size()];
    for(int i=0;i<labels.length;i++){WordSuggestions.Suggestion s=choices.get(i);labels[i]=s.label()+"\n…"+snapshot.substring(Math.max(0,s.start-8),Math.min(snapshot.length(),s.end+8))+"…";}
-   new AlertDialog.Builder(this).setTitle("台灣常用說法 · 點選套用一處")
+   new AlertDialog.Builder(this).setTitle("用詞建議 · 點選套用一處")
     .setItems(labels,(dialog,index)->{
      if(!snapshot.equals(editor.getText().toString())||draftRevision!=Draft.revision||!sessionKey.equals(AppConfig.load(this).key))return;
      WordSuggestions.Suggestion s=choices.get(index);editor.getText().replace(s.start,s.end,s.to);editor.setSelection(s.start+s.to.length());
     }).setNegativeButton("保留原文",null).show();
   });
-  Runnable updateSuggestions=()->{int count=WordSuggestions.find(editor.getText().toString()).size();suggestions.setText("用詞建議（"+count+"）· 可選擇保留原文");suggestions.setVisibility(count>0?View.VISIBLE:View.GONE);};
+  Runnable updateSuggestions=()->{int count=WordSuggestions.find(editor.getText().toString(),AppConfig.load(this).wordReplacements).size();suggestions.setText("用詞建議（"+count+"）· 可選擇保留原文");suggestions.setVisibility(count>0?View.VISIBLE:View.GONE);};
   editor.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int start,int count,int after){}public void onTextChanged(CharSequence s,int start,int before,int count){updateSuggestions.run();}public void afterTextChanged(Editable value){}});
   updateSuggestions.run();
   button(p,"切換打字鍵盤",v->((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showInputMethodPicker());

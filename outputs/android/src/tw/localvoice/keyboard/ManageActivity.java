@@ -38,15 +38,20 @@ public final class ManageActivity extends Activity {
   text(p,"常用地名與人名",20);
   EditText words=field(p,"每行一個，例如：汐止、新莊、板橋、竹北、鹽埕、苓雅。也可以加入公司或人名。",config.vocabulary,1000);
   text(p,"最多 1,000 字。優先填最常用的詞；只作辨識參考，不強制替換同音字。",14);
+  text(p,"我的用詞建議",20);
+  EditText replacements=field(p,"每行一組，例如：夢想型態 → DreamType",config.wordReplacements,1000);
+  text(p,"遇到原詞時提醒你選用慣用寫法，不會自動替換。每側最多 40 字，最多 20 組；刪除對照即可停止建議。",14);
   CheckBox taiwan=new CheckBox(this);taiwan.setText("加強台灣地名辨識");taiwan.setChecked(config.taiwanPlaces);p.addView(taiwan);
   CheckBox automatic=new CheckBox(this);automatic.setText("完成後直接插入（不先修改）");automatic.setChecked(config.autoInsert);p.addView(automatic);
   status=new TextView(this);status.setTextColor(Ui.MUTED);status.setTextSize(15);status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);p.addView(status);
   Button save=button(p,"儲存我的偏好",v->{
    final String personal=prompt.getText().toString().trim(),vocabulary=words.getText().toString().trim();final boolean places=taiwan.isChecked(),auto=automatic.isChecked();
+   final String rules;
+   try{rules=WordSuggestions.validate(replacements.getText().toString());}catch(IllegalArgumentException error){status.setText(error.getMessage());return;}
    final String outputMode=mode.getSelectedItemPosition()==1?"translate":"organize",targetCode=AppConfig.LANGUAGE_CODES[target.getSelectedItemPosition()],sourceCode=source.getSelectedItemPosition()==0?"auto":AppConfig.LANGUAGE_CODES[source.getSelectedItemPosition()-1];
    v.setEnabled(false);status.setText("正在儲存…");worker.execute(()->{String message;
     try{AppConfig active=AppConfig.load(this);if(!active.key.equals(config.key))throw new Exception("帳號已切換，請重新開啟設定。");
-     org.json.JSONObject prefs=new org.json.JSONObject().put("personal_prompt",personal).put("vocabulary",vocabulary).put("taiwan_places",places).put("mode",outputMode).put("target_language",targetCode).put("source_language",sourceCode);
+     org.json.JSONObject prefs=new org.json.JSONObject().put("word_replacements",rules).put("personal_prompt",personal).put("vocabulary",vocabulary).put("taiwan_places",places).put("mode",outputMode).put("target_language",targetCode).put("source_language",sourceCode);
      if(active.accountMode)VoiceApi.json(active,"POST","/v2/me/preferences",prefs);
      AppConfig.savePreferences(this,config,prefs,auto);message="已儲存，下次錄音生效。";
     }catch(Exception e){message=VoiceApi.friendly(e);}final String result=message;runOnUiThread(()->{if(!isDestroyed()){status.setText(result);v.setEnabled(true);}});

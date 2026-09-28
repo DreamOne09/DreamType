@@ -15,6 +15,7 @@ from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, FileResponse
 from beta_store import Store, StoreError
 from personalization import validate_preferences
+from word_replacements import validate_word_replacements
 from translation import validate_translation
 from inference_queue import InferenceQueue
 
@@ -44,7 +45,7 @@ class LocalProvider:
     async def transcribe(self,audio,prefs):
         async with httpx.AsyncClient(timeout=100) as client:
             r=await client.post(self.url+'/v1/audio/transcriptions',headers={'Authorization':'Bearer '+self.key},
-                files={'file':('voice.m4a',audio,'application/octet-stream')},data={'model':'local-dictation',**prefs})
+                files={'file':('voice.m4a',audio,'application/octet-stream')},data={'model':'local-dictation',**{k:v for k,v in prefs.items() if k!='word_replacements'}})
             r.raise_for_status();return r.json()
 
 class Beta:
@@ -91,7 +92,8 @@ class Beta:
             try:
                 if not self.store.me(uid)['enabled']:raise ValueError('disabled')
                 self.store.state(uid,jid,'running')
-                result=await asyncio.wait_for(self.provider.transcribe(audio,prefs),timeout=self.processing_timeout)
+                inference_prefs={k:v for k,v in prefs.items() if k!='word_replacements'}
+                result=await asyncio.wait_for(self.provider.transcribe(audio,inference_prefs),timeout=self.processing_timeout)
                 if not self.store.me(uid)['enabled']:raise ValueError('disabled')
                 if not isinstance(result.get('text'),str) or not result['text'].strip():raise ValueError('Empty or invalid response')
                 self.store.complete(uid,jid,result)
@@ -206,11 +208,14 @@ def install_beta(app,work,provider,decoder):
     @app.patch('/v2/me/preferences')
     async def prefs(request:Request):
         body=await object_body(request)
+        uid=beta.user(request)['id']
+        previous=beta.store.me(uid)['preferences']
         try:
             p,v,t=validate_preferences(body.get('personal_prompt',''),body.get('vocabulary',''),body.get('taiwan_places',True))
             mode,target,source=validate_translation(body.get('mode','organize'),body.get('target_language','en'),body.get('source_language','zh-TW'))
+            replacements=validate_word_replacements(body.get('word_replacements',previous.get('word_replacements','')))
         except ValueError as e:raise StoreError(400,str(e))
-        uid=beta.user(request)['id'];beta.store.preferences(uid,{'personal_prompt':p,'vocabulary':v,'taiwan_places':t,'mode':mode,'target_language':target,'source_language':source})
+        beta.store.preferences(uid,{'personal_prompt':p,'vocabulary':v,'taiwan_places':t,'mode':mode,'target_language':target,'source_language':source,'word_replacements':replacements})
         return beta.store.me(uid)['preferences']
     @app.delete('/v2/me')
     async def delete(request:Request):
@@ -233,7 +238,7 @@ def install_beta(app,work,provider,decoder):
             if file is None or not hasattr(file,'read'):raise StoreError(400,'需要錄音檔案')
             audio=await file.read(2*1024*1024+1)
         if not audio or len(audio)>2*1024*1024:raise StoreError(413,'錄音需小於 2 MB')
-        prefs=beta.store.me(uid)['preferences']
+        prefs={k:v for k,v in beta.store.me(uid)['preferences'].items() if k!='word_replacements'}
         if request.headers.get('x-dreamtype-mode') is not None:
             try:
                 mode,target,source=validate_translation(request.headers.get('x-dreamtype-mode'),request.headers.get('x-dreamtype-target','en'),request.headers.get('x-dreamtype-source','zh-TW'))
