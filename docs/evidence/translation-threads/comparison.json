@@ -1,0 +1,196 @@
+{
+  "synthetic_text": "明天下午四點半到板橋車站集合，不要去台北車站。請先確認訂單，再通知同事。如果下雨，會議改到室內，但時間不變。這次只需要準備文件和筆電，不要另外購買設備。完成檢查後，請把結果寄給負責人，並保留原本的紀錄。",
+  "configurations": [
+    {
+      "threads": 4,
+      "results": [
+        {
+          "repeat": 0,
+          "target": "en",
+          "seconds": 7.514,
+          "sha256": "9ff50c16d26868722dd6b290d9c42123dbf4c4028c6e3ff9e1b2075c8e9d9d0b",
+          "text": "Please meet at Banqiao Station at 4:30 PM tomorrow, not at Taipei Station. Please first confirm the order, and then notify your colleagues. If it rains, the meeting will be held indoors, but the time will remain the same. This time, please only bring documents and a laptop; do not purchase any additional equipment. After completing the check, please send the results to the responsible person and keep the original records."
+        },
+        {
+          "repeat": 0,
+          "target": "th",
+          "seconds": 17.343,
+          "sha256": "723c5d8eb4b1da9e00ff46ea9ec467e1d7b4339491b85ea2f882ee860522863f",
+          "text": "กรุณาพบกันที่สถานีบันกิโอ ในเวลา 16:30 น. ในวันพรุ่งนี้ ไม่ใช่ที่สถานีไทเป กรุณาตรวจสอบคำสั่งซื้อก่อน และแจ้งให้เพื่อนร่วมงานทราบ หากมีฝน กรุณาจัดกิจกรรมภายในอาคาร แต่เวลาจะยังคงเดิม ในครั้งนี้ กรุณานำเอกสารและแล็ปท็อปมาเท่านั้น ห้ามซื้ออุปกรณ์เพิ่มเติม หลังจากตรวจสอบเสร็จแล้ว กรุณาส่งผลลัพธ์ให้ผู้รับผิดชอบ และเก็บเอกสารต้นฉบับไว้"
+        },
+        {
+          "repeat": 0,
+          "target": "ms",
+          "seconds": 16.666,
+          "sha256": "863cbf36c5e4db557c5ebf1dfe6d478afbf077be9cb3e43586d6a1bbf0379b26",
+          "text": "Mohon bertemu di Stasiun Banqiao pada pukul 16.30 besok, bukan di Stasiun Taipei. Mohon untuk pertama-tama mengkonfirmasi pesanan, lalu beritahukan kepada rekan-rekan Anda. Jika hujan, pertemuan akan diadakan di dalam ruangan, tetapi waktunya tetap sama. Untuk pertemuan ini, mohon bawa hanya dokumen dan laptop; jangan membeli peralatan tambahan. Setelah selesai melakukan pemeriksaan, mohon kirimkan hasilnya kepada orang yang bertanggung jawab dan simpan catatan aslinya."
+        },
+        {
+          "repeat": 1,
+          "target": "en",
+          "seconds": 8.042,
+          "sha256": "9ff50c16d26868722dd6b290d9c42123dbf4c4028c6e3ff9e1b2075c8e9d9d0b",
+          "text": "Please meet at Banqiao Station at 4:30 PM tomorrow, not at Taipei Station. Please first confirm the order, and then notify your colleagues. If it rains, the meeting will be held indoors, but the time will remain the same. This time, please only bring documents and a laptop; do not purchase any additional equipment. After completing the check, please send the results to the responsible person and keep the original records."
+        },
+        {
+          "repeat": 1,
+          "target": "th",
+          "seconds": 18.899,
+          "sha256": "db15a39251d65bb7f5887f57635cf4713e920d9a21a9c1e4494ab05e989c6f9b",
+          "text": "กรุณาพบกันที่สถานีบันกิโอ ในเวลา 16:30 น. ในวันพรุ่งนี้ ไม่ใช่ที่สถานีไทเป กรุณาตรวจสอบคำสั่งซื้อก่อน แล้วแจ้งให้เพื่อนร่วมงานทราบ หากมีฝน กรุณาจัดกิจกรรมภายในอาคาร แต่เวลาจะยังคงเดิม ในครั้งนี้ กรุณานำเอกสารและแล็ปท็อปมาเท่านั้น ไม่จำเป็นต้องซื้ออุปกรณ์เพิ่มเติม หลังจากตรวจสอบเสร็จแล้ว กรุณาส่งผลลัพธ์ให้ผู้รับผิดชอบ และเก็บเอกสารต้นฉบับไว้"
+        },
+        {
+          "repeat": 1,
+          "target": "ms",
+          "seconds": 17.583,
+          "sha256": "863cbf36c5e4db557c5ebf1dfe6d478afbf077be9cb3e43586d6a1bbf0379b26",
+          "text": "Mohon bertemu di Stasiun Banqiao pada pukul 16.30 besok, bukan di Stasiun Taipei. Mohon untuk pertama-tama mengkonfirmasi pesanan, lalu beritahukan kepada rekan-rekan Anda. Jika hujan, pertemuan akan diadakan di dalam ruangan, tetapi waktunya tetap sama. Untuk pertemuan ini, mohon bawa hanya dokumen dan laptop; jangan membeli peralatan tambahan. Setelah selesai melakukan pemeriksaan, mohon kirimkan hasilnya kepada orang yang bertanggung jawab dan simpan catatan aslinya."
+        }
+      ]
+    },
+    {
+      "threads": 6,
+      "results": [
+        {
+          "repeat": 0,
+          "target": "en",
+          "seconds": 6.822,
+          "sha256": "9ff50c16d26868722dd6b290d9c42123dbf4c4028c6e3ff9e1b2075c8e9d9d0b",
+          "text": "Please meet at Banqiao Station at 4:30 PM tomorrow, not at Taipei Station. Please first confirm the order, and then notify your colleagues. If it rains, the meeting will be held indoors, but the time will remain the same. This time, please only bring documents and a laptop; do not purchase any additional equipment. After completing the check, please send the results to the responsible person and keep the original records."
+        },
+        {
+          "repeat": 0,
+          "target": "th",
+          "seconds": 17.181,
+          "sha256": "ab7d75c1d3f3d67e639a13b76244735b7a4d74572d0204235d29bdb2f8d5af2d",
+          "text": "กรุณาพบกันที่สถานีบันกิโอ ในเวลา 16:30 น. ในวันพรุ่งนี้ ไม่ใช่ที่สถานีไทเป กรุณาตรวจสอบคำสั่งซื้อก่อน และแจ้งให้เพื่อนร่วมงานทราบ หากมีฝน กรุณาจัดกิจกรรมภายในอาคาร แต่เวลาจะยังคงเดิม ในครั้งนี้ กรุณานำเอกสารและแล็ปท็อปมาเท่านั้น ห้ามซื้ออุปกรณ์เพิ่มเติม หลังจากตรวจสอบเสร็จแล้ว กรุณาส่งผลการตรวจสอบไปยังผู้รับผิดชอบ และเก็บเอกสารต้นฉบับไว้"
+        },
+        {
+          "repeat": 0,
+          "target": "ms",
+          "seconds": 16.467,
+          "sha256": "4b6e0078c2e3420557eeda16b72242e126680606d35188e8d8b6707c6031ce4e",
+          "text": "Mohon bertemu di Stasiun Banqiao pada pukul 16.30 besok, bukan di Stasiun Taipei. Mohon untuk pertama-tama mengkonfirmasi pesanan, lalu beritahukan kepada rekan-rekan Anda. Jika hujan, pertemuan akan diadakan di dalam ruangan, tetapi waktunya tetap sama. Untuk pertemuan ini, mohon hanya membawa dokumen dan laptop; jangan membeli peralatan tambahan. Setelah selesai melakukan pemeriksaan, mohon kirimkan hasilnya kepada orang yang bertanggung jawab dan simpan catatan aslinya."
+        },
+        {
+          "repeat": 1,
+          "target": "en",
+          "seconds": 8.086,
+          "sha256": "9ff50c16d26868722dd6b290d9c42123dbf4c4028c6e3ff9e1b2075c8e9d9d0b",
+          "text": "Please meet at Banqiao Station at 4:30 PM tomorrow, not at Taipei Station. Please first confirm the order, and then notify your colleagues. If it rains, the meeting will be held indoors, but the time will remain the same. This time, please only bring documents and a laptop; do not purchase any additional equipment. After completing the check, please send the results to the responsible person and keep the original records."
+        },
+        {
+          "repeat": 1,
+          "target": "th",
+          "seconds": 18.735,
+          "sha256": "db15a39251d65bb7f5887f57635cf4713e920d9a21a9c1e4494ab05e989c6f9b",
+          "text": "กรุณาพบกันที่สถานีบันกิโอ ในเวลา 16:30 น. ในวันพรุ่งนี้ ไม่ใช่ที่สถานีไทเป กรุณาตรวจสอบคำสั่งซื้อก่อน แล้วแจ้งให้เพื่อนร่วมงานทราบ หากมีฝน กรุณาจัดกิจกรรมภายในอาคาร แต่เวลาจะยังคงเดิม ในครั้งนี้ กรุณานำเอกสารและแล็ปท็อปมาเท่านั้น ไม่จำเป็นต้องซื้ออุปกรณ์เพิ่มเติม หลังจากตรวจสอบเสร็จแล้ว กรุณาส่งผลลัพธ์ให้ผู้รับผิดชอบ และเก็บเอกสารต้นฉบับไว้"
+        },
+        {
+          "repeat": 1,
+          "target": "ms",
+          "seconds": 18.318,
+          "sha256": "863cbf36c5e4db557c5ebf1dfe6d478afbf077be9cb3e43586d6a1bbf0379b26",
+          "text": "Mohon bertemu di Stasiun Banqiao pada pukul 16.30 besok, bukan di Stasiun Taipei. Mohon untuk pertama-tama mengkonfirmasi pesanan, lalu beritahukan kepada rekan-rekan Anda. Jika hujan, pertemuan akan diadakan di dalam ruangan, tetapi waktunya tetap sama. Untuk pertemuan ini, mohon bawa hanya dokumen dan laptop; jangan membeli peralatan tambahan. Setelah selesai melakukan pemeriksaan, mohon kirimkan hasilnya kepada orang yang bertanggung jawab dan simpan catatan aslinya."
+        }
+      ]
+    },
+    {
+      "threads": 8,
+      "results": [
+        {
+          "repeat": 0,
+          "target": "en",
+          "seconds": 7.065,
+          "sha256": "9ff50c16d26868722dd6b290d9c42123dbf4c4028c6e3ff9e1b2075c8e9d9d0b",
+          "text": "Please meet at Banqiao Station at 4:30 PM tomorrow, not at Taipei Station. Please first confirm the order, and then notify your colleagues. If it rains, the meeting will be held indoors, but the time will remain the same. This time, please only bring documents and a laptop; do not purchase any additional equipment. After completing the check, please send the results to the responsible person and keep the original records."
+        },
+        {
+          "repeat": 0,
+          "target": "th",
+          "seconds": 17.744,
+          "sha256": "895caf9078a798145cdfadbd7f7b0234a7da6451f9c295b2bafcc9e977eea84d",
+          "text": "กรุณาพบกันที่สถานีบันกิโอ ในเวลา 16:30 น. ในวันพรุ่งนี้ ไม่ใช่ที่สถานีไทเป กรุณาตรวจสอบคำสั่งซื้อก่อน และแจ้งให้เพื่อนร่วมงานทราบ หากมีฝน กรุณาจัดกิจกรรมภายในอาคาร แต่เวลาจะยังคงเดิม ในครั้งนี้ กรุณานำเอกสารและแล็ปท็อปมาเท่านั้น ห้ามซื้ออุปกรณ์เพิ่มเติม หลังจากตรวจสอบเสร็จแล้ว กรุณาส่งผลลัพธ์ไปยังผู้รับผิดชอบ และเก็บเอกสารต้นฉบับไว้"
+        },
+        {
+          "repeat": 0,
+          "target": "ms",
+          "seconds": 16.949,
+          "sha256": "8f3bba3235bf768713b92b122fd49d0c8098c2ba6d9279c3afd4126c43823bfe",
+          "text": "Mohon bertemu di Stasiun Banqiao pada pukul 16.30 besok, bukan di Stasiun Taipei. Mohon untuk pertama-tama mengkonfirmasi pesanan, lalu beritahukan kepada rekan-rekan Anda. Jika hujan, pertemuan akan diadakan di dalam ruangan, tetapi waktunya tetap sama. Untuk pertemuan ini, mohon bawa hanya dokumen dan laptop; jangan membeli peralatan tambahan. Setelah selesai melakukan pemeriksaan, mohon kirimkan hasilnya kepada pihak yang bertanggung jawab dan simpan catatan aslinya."
+        },
+        {
+          "repeat": 1,
+          "target": "en",
+          "seconds": 8.122,
+          "sha256": "9ff50c16d26868722dd6b290d9c42123dbf4c4028c6e3ff9e1b2075c8e9d9d0b",
+          "text": "Please meet at Banqiao Station at 4:30 PM tomorrow, not at Taipei Station. Please first confirm the order, and then notify your colleagues. If it rains, the meeting will be held indoors, but the time will remain the same. This time, please only bring documents and a laptop; do not purchase any additional equipment. After completing the check, please send the results to the responsible person and keep the original records."
+        },
+        {
+          "repeat": 1,
+          "target": "th",
+          "seconds": 18.813,
+          "sha256": "92674446e981e100a0ab01ea52ceee19e6aea32b0b324fc0e63efbdd0ef74ea6",
+          "text": "กรุณาพบกันที่สถานีบันกิโอ ในเวลา 16:30 น. ในวันพรุ่งนี้ ไม่ใช่ที่สถานีไทเป กรุณาตรวจสอบคำสั่งซื้อก่อน แล้วแจ้งให้เพื่อนร่วมงานทราบ หากมีฝน กรุณาจัดกิจกรรมภายในอาคาร แต่เวลาจะยังคงเดิม ในครั้งนี้ กรุณานำเอกสารและแล็ปท็อปมาเท่านั้น ห้ามซื้ออุปกรณ์เพิ่มเติม หลังจากตรวจสอบเสร็จแล้ว กรุณาส่งผลลัพธ์ให้ผู้รับผิดชอบ และเก็บเอกสารต้นฉบับไว้"
+        },
+        {
+          "repeat": 1,
+          "target": "ms",
+          "seconds": 18.355,
+          "sha256": "3dc05a26c367517f2c03ab427860c985ba815e2350f9499b122e58f9849da741",
+          "text": "Mohon bertemu di Stasiun Banqiao pada pukul 16.30 besok, bukan di Stasiun Taipei. Mohon untuk pertama-tama mengkonfirmasi pesanan, lalu beritahukan kepada rekan-rekan Anda. Jika hujan, pertemuan akan diadakan di dalam ruangan, tetapi waktunya tetap sama. Untuk pertemuan ini, mohon bawa hanya dokumen dan laptop; jangan membeli peralatan tambahan. Setelah selesai melakukan pemeriksaan, mohon kirimkan hasilnya kepada pihak yang bertanggung jawab dan simpan salinan aslinya."
+        }
+      ]
+    },
+    {
+      "threads": 4,
+      "results": [
+        {
+          "repeat": 0,
+          "target": "en",
+          "seconds": 7.55,
+          "sha256": "9ff50c16d26868722dd6b290d9c42123dbf4c4028c6e3ff9e1b2075c8e9d9d0b",
+          "text": "Please meet at Banqiao Station at 4:30 PM tomorrow, not at Taipei Station. Please first confirm the order, and then notify your colleagues. If it rains, the meeting will be held indoors, but the time will remain the same. This time, please only bring documents and a laptop; do not purchase any additional equipment. After completing the check, please send the results to the responsible person and keep the original records."
+        },
+        {
+          "repeat": 0,
+          "target": "th",
+          "seconds": 17.882,
+          "sha256": "723c5d8eb4b1da9e00ff46ea9ec467e1d7b4339491b85ea2f882ee860522863f",
+          "text": "กรุณาพบกันที่สถานีบันกิโอ ในเวลา 16:30 น. ในวันพรุ่งนี้ ไม่ใช่ที่สถานีไทเป กรุณาตรวจสอบคำสั่งซื้อก่อน และแจ้งให้เพื่อนร่วมงานทราบ หากมีฝน กรุณาจัดกิจกรรมภายในอาคาร แต่เวลาจะยังคงเดิม ในครั้งนี้ กรุณานำเอกสารและแล็ปท็อปมาเท่านั้น ห้ามซื้ออุปกรณ์เพิ่มเติม หลังจากตรวจสอบเสร็จแล้ว กรุณาส่งผลลัพธ์ให้ผู้รับผิดชอบ และเก็บเอกสารต้นฉบับไว้"
+        },
+        {
+          "repeat": 0,
+          "target": "ms",
+          "seconds": 17.048,
+          "sha256": "863cbf36c5e4db557c5ebf1dfe6d478afbf077be9cb3e43586d6a1bbf0379b26",
+          "text": "Mohon bertemu di Stasiun Banqiao pada pukul 16.30 besok, bukan di Stasiun Taipei. Mohon untuk pertama-tama mengkonfirmasi pesanan, lalu beritahukan kepada rekan-rekan Anda. Jika hujan, pertemuan akan diadakan di dalam ruangan, tetapi waktunya tetap sama. Untuk pertemuan ini, mohon bawa hanya dokumen dan laptop; jangan membeli peralatan tambahan. Setelah selesai melakukan pemeriksaan, mohon kirimkan hasilnya kepada orang yang bertanggung jawab dan simpan catatan aslinya."
+        },
+        {
+          "repeat": 1,
+          "target": "en",
+          "seconds": 8.52,
+          "sha256": "9ff50c16d26868722dd6b290d9c42123dbf4c4028c6e3ff9e1b2075c8e9d9d0b",
+          "text": "Please meet at Banqiao Station at 4:30 PM tomorrow, not at Taipei Station. Please first confirm the order, and then notify your colleagues. If it rains, the meeting will be held indoors, but the time will remain the same. This time, please only bring documents and a laptop; do not purchase any additional equipment. After completing the check, please send the results to the responsible person and keep the original records."
+        },
+        {
+          "repeat": 1,
+          "target": "th",
+          "seconds": 19.143,
+          "sha256": "db15a39251d65bb7f5887f57635cf4713e920d9a21a9c1e4494ab05e989c6f9b",
+          "text": "กรุณาพบกันที่สถานีบันกิโอ ในเวลา 16:30 น. ในวันพรุ่งนี้ ไม่ใช่ที่สถานีไทเป กรุณาตรวจสอบคำสั่งซื้อก่อน แล้วแจ้งให้เพื่อนร่วมงานทราบ หากมีฝน กรุณาจัดกิจกรรมภายในอาคาร แต่เวลาจะยังคงเดิม ในครั้งนี้ กรุณานำเอกสารและแล็ปท็อปมาเท่านั้น ไม่จำเป็นต้องซื้ออุปกรณ์เพิ่มเติม หลังจากตรวจสอบเสร็จแล้ว กรุณาส่งผลลัพธ์ให้ผู้รับผิดชอบ และเก็บเอกสารต้นฉบับไว้"
+        },
+        {
+          "repeat": 1,
+          "target": "ms",
+          "seconds": 17.915,
+          "sha256": "863cbf36c5e4db557c5ebf1dfe6d478afbf077be9cb3e43586d6a1bbf0379b26",
+          "text": "Mohon bertemu di Stasiun Banqiao pada pukul 16.30 besok, bukan di Stasiun Taipei. Mohon untuk pertama-tama mengkonfirmasi pesanan, lalu beritahukan kepada rekan-rekan Anda. Jika hujan, pertemuan akan diadakan di dalam ruangan, tetapi waktunya tetap sama. Untuk pertemuan ini, mohon bawa hanya dokumen dan laptop; jangan membeli peralatan tambahan. Setelah selesai melakukan pemeriksaan, mohon kirimkan hasilnya kepada orang yang bertanggung jawab dan simpan catatan aslinya."
+        }
+      ]
+    }
+  ],
+  "restored": true,
+  "asr_unloaded_during_comparison": true,
+  "tunnel_preserved": true
+}
