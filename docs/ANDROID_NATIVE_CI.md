@@ -166,3 +166,13 @@ Android 錄音 28,320 bytes，PyAV 解碼 3.136 秒；資料庫只有一筆 done
 
 
 [重啟前](evidence/android-0.9.11/restart-seed.txt) · [重啟後](evidence/android-0.9.11/restart-verify.txt) · [正常後端流程](evidence/android-0.9.11/backend-ime-result.json) · [回應遺失流程](evidence/android-0.9.11/interrupted-backend-ime-result.json)。
+
+## 0.9.12 用詞建議原生操作：2026-09-28
+
+[工作 36403608472](https://github.com/DreamOne09/DreamType/actions/runs/36403608472) 在來源 `8defac34d732e9e812dff9bcfab4257a23b5ab96` 通過。測試真正開啟 EditActivity 與建議對話框，以 accessibility action 點選建議／保留原文，檢查重複詞只替換第一處、計數由 2 變 1、復原回到原文、完成後交回草稿、取消不保存，以及舊對話框不修改新草稿。其他編輯按鈕使用 performClick；不是實體手指或 TalkBack 驗收。
+
+[原生結果](evidence/android-0.9.12/result.txt) · [套用一處後的畫面](evidence/android-0.9.12/suggestions-applied.png)。人工查看模擬器截圖確認本次 320×640 畫面中的建議、復原、取消及完成按鈕可見；不代表各種字級、橫向或軟鍵盤展開時都已驗證。
+
+原有四條 IME 流程與跨程序保留錄音測試也通過。[正常 HTTPS 後端](evidence/android-0.9.12/backend-ime-result.json) 與 [遺失回應後恢復](evidence/android-0.9.12/interrupted-backend-ime-result.json) 均只上傳一次、呼叫 provider 一次，3.008 秒錄音計入 4 秒；故障組兩次回執沒有重複計費。[重啟驗證](evidence/android-0.9.12/restart-verify.txt)。
+
+這是從原始碼建立的可拋棄 instrumentation APK；不是直接安裝發布的維護者簽署 APK。AI 仍回傳合成文字，Pixel 9／Surfshark、真人辨識品質與安裝升級尚未通過。
