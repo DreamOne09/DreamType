@@ -109,7 +109,9 @@ class Store:
             old=db.execute('SELECT * FROM jobs WHERE uid=? AND id=?',(uid,jid)).fetchone()
             if old:
                 if old['digest']!=digest:raise StoreError(409,'同一請求代碼不能用於不同录音或設定')
-                if retry_failed and old['state']=='failed':db.execute('DELETE FROM jobs WHERE uid=? AND id=?',(uid,jid))
+                if retry_failed and old['state']=='failed':
+                    db.execute('DELETE FROM jobs WHERE uid=? AND id=?',(uid,jid))
+                    db.execute('DELETE FROM results WHERE uid=? AND id=?',(uid,jid))
                 else:return dict(old),False
             user=db.execute('SELECT * FROM users WHERE id=? AND enabled=1',(uid,)).fetchone()
             if not user:raise StoreError(403,'帳號已停用')
@@ -142,6 +144,16 @@ class Store:
                 data=json.loads(decrypt(self.payload_key,row['payload'],f"audio/{uid}/{jid}/{row['expires']}".encode()))
                 yield uid,jid,base64.b64decode(data['audio']),data['preferences']
             except Exception:self.state(uid,jid,'failed')
+    def fail_no_speech(self,uid,jid):
+        """Keep a bounded, encrypted failure reason without charging or audio."""
+        expires=time.time()+900
+        payload=encrypt(self.payload_key,b'{"error_code":"no_speech"}',f'{uid}/{jid}/{expires}'.encode())
+        with self.db() as db:
+            if not db.execute("UPDATE jobs SET state='failed' WHERE uid=? AND id=? AND state='running'",(uid,jid)).rowcount:
+                return
+            db.execute('INSERT OR REPLACE INTO results VALUES(?,?,?,?)',(uid,jid,payload,expires))
+            db.execute('DELETE FROM pending_audio WHERE uid=? AND id=?',(uid,jid))
+
     def complete(self,uid,jid,result):
         expires=time.time()+900
         context=f'{uid}/{jid}/{expires}'.encode()

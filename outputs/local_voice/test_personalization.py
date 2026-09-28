@@ -24,6 +24,18 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(server.model)
         self.assertTrue(server.KEY_PATH.is_relative_to(server.WORK))
 
+    async def test_silent_audio_returns_actionable_failure_without_formatting(self):
+        from unittest.mock import AsyncMock
+        formatter=AsyncMock()
+        for raw in ('','   ','\u3000'):
+            with self.subTest(raw=raw),patch.object(server,'isolated_pcm',lambda *a,**k:bytes(32000)), \
+                    patch.object(server,'recognize',lambda *a:(raw,'zh')),patch.object(server,'format_text',formatter):
+                response=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('silence.wav',b'fixture')})
+            self.assertEqual(response.status_code,422)
+            self.assertEqual(response.json()['error_code'],'no_speech')
+        formatter.assert_not_awaited()
+        self.assertFalse(server.gpu_lock.locked())
+
     async def test_apk_download_redirects_to_published_release_without_local_build(self):
         with patch.object(server,'verified_apk',return_value=None):
             response=await self.client.get('/download/localvoice.apk',follow_redirects=False)

@@ -33,6 +33,10 @@ class LocalProvider:
         async with httpx.AsyncClient(timeout=100) as client:
             r=await client.post(self.url+'/v1/audio/transcriptions',headers={'Authorization':'Bearer '+self.key},
                 files={'file':('voice.m4a',audio,'application/octet-stream')},data={'model':'local-dictation',**{k:v for k,v in prefs.items() if k!='word_replacements'}})
+            if r.status_code==422:
+                try:code=r.json().get('error_code')
+                except (ValueError,AttributeError):code=None
+                if code=='no_speech':raise StoreError(422,'未偵測到語音','no_speech')
             r.raise_for_status();return r.json()
 
 class Beta:
@@ -89,6 +93,9 @@ class Beta:
                 self.results[(uid,jid)]={'result':result,'expires':time.time()+900}
             except asyncio.CancelledError:
                 self.store.state(uid,jid,'queued');raise
+            except StoreError as error:
+                if error.status==422 and error.code=='no_speech':self.store.fail_no_speech(uid,jid)
+                else:self.store.state(uid,jid,'failed')
             except Exception:
                 self.store.state(uid,jid,'failed')
             finally:self.queue.task_done()
@@ -105,7 +112,9 @@ class Beta:
         if self.store.job(uid,jid)['state']=='failed':result['state']='failed';row['state']='failed'
         if stored:result.update(stored)
         elif row['state']=='done':result.update(state='expired',message='結果已過期或服務重啟；請勿自動重送錄音')
-        if row['state']=='failed':result['message']='處理失敗或服務重啟，這次未扣額度。可重新錄音。'
+        if row['state']=='failed':
+            result['message']=('未偵測到語音，這次未扣額度。請確認麥克風並重新錄音。'
+                if result.get('error_code')=='no_speech' else '處理失敗或服務重啟，這次未扣額度。可重新錄音。')
         return result
 
 def install_beta(app,work,provider,decoder):

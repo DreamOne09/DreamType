@@ -165,10 +165,11 @@ final class VoiceApi {
     }
     private static void error(HttpURLConnection connection) throws Exception {
         int code=connection.getResponseCode();
-        if(code==408||code==409||code==429||code==503){
+        if(code==408||code==409||code==422||code==429||code==503){
             String reason="";
             try {reason=new JSONObject(read(connection.getErrorStream())).optString("error_code","");}catch(Exception ignored){}
             // Show our own known messages, never arbitrary proxy/server response text.
+            if(code==422&&reason.equals("no_speech"))throw new ApiError(code,"未偵測到語音，請確認麥克風並重新錄音。");
             if(code==409&&reason.equals("result_unconfirmed"))throw new ApiError(code,"上一筆文字還沒取回，請到「更多 → 取回上一筆」確認，再繼續錄音。");
             if(code==429&&reason.equals("queue_full"))throw new ApiError(code,"目前使用的人較多，請稍後重試這段錄音；這次未扣額度。");
             if(code==429&&reason.equals("job_in_progress"))throw new ApiError(code,"上一段仍在處理，請稍後從「更多 → 取回上一筆」查看。");
