@@ -1,0 +1,22 @@
+[
+  {
+    "id": "existing-hard-wraps",
+    "input": "我們的社團適合商務人士。  \r\n大家可以在這裡交換資源、提出需求。  \r\n所以我們是在幫助別人，而不是要求別人參加。",
+    "line_count": 1,
+    "required": ["適合商務人士", "交換資源", "提出需求", "不是要求別人參加"]
+  },
+  {
+    "id": "list-with-intro-and-conclusion",
+    "input": "明天我邀請了兩位來賓。\r\n• 一位是做線上課程的小林，他希望認識合作夥伴。\r\n• 另一位是做金融服務的小黃，她希望交換資源。\r\n他們都很積極地爭取參加的機會。",
+    "paragraph_count": 3,
+    "bullet_count": 2,
+    "required": ["●　", "小林", "小黃", "他們都很積極地爭取參加的機會"]
+  },
+  {
+    "id": "custom-line-breaks",
+    "input": "明天開會。請準時到場。不要遲到。",
+    "personal_prompt": "每句話各一行，不要清單。",
+    "line_count": 3,
+    "required": ["明天開會", "請準時到場", "不要遲到"]
+  }
+]

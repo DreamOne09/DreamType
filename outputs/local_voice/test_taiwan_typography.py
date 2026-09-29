@@ -3,6 +3,22 @@ from taiwan_typography import normalize_taiwan_typography as clean
 
 
 class TaiwanTypographyTests(unittest.TestCase):
+    def test_readable_prose_and_list_boundaries_change_whitespace_only(self):
+        import re
+        from taiwan_typography import readable_layout as layout
+        source='社團適合商務人士。\n大家可以交換資源。\n我們是在幫助別人。'
+        self.assertEqual(layout(source),source.replace('\n',''))
+        source='明天有兩位來賓。\n●　小林做線上課程。\n●　小黃做金融服務。\n他們都希望交流。\n請準時到場。'
+        expected='明天有兩位來賓。\n\n●　小林做線上課程。\n●　小黃做金融服務。\n\n他們都希望交流。請準時到場。'
+        self.assertEqual(layout(source),expected)
+        self.assertEqual(layout(expected),expected)
+        self.assertEqual(re.sub(r'\s','',source),re.sub(r'\s','',expected))
+        self.assertEqual(layout('報告寄了。\n另外，明天休假。'),'報告寄了。\n\n另外，明天休假。')
+        for literal in ('第一段。\n\n第二段。','地址\n臺北市中正區','```\n中文。\n程式。',
+                        '他說「第一句。\n第二句。」','●　項目。\n  ●　子項目。','Hello.\nWorld.'):
+            self.assertEqual(layout(literal),literal)
+        self.assertEqual(layout(source,'每句換行'),source)
+
     def test_chinese_bullet_presentation_preserves_content_and_code(self):
         from taiwan_typography import chinese_bullet_style as bullets
         self.assertEqual(bullets('• 明天先去銀行。\n  • 不要取消。'), '●　明天先去銀行。\n  ●　不要取消。')

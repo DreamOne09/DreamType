@@ -77,3 +77,30 @@ def chinese_bullet_style(text):
     pattern = r'```[\s\S]*?(?:```|$)|`[^`]*(?:`|$)|(?m:^(?P<indent>[ \t]*)[•●][ \t\u3000]+(?=\S))'
     return re.sub(pattern, lambda match: match.group(0) if match['indent'] is None
                   else match['indent'] + '●\u3000', text)
+
+
+def readable_layout(text, personal_prompt=''):
+    """Whitespace-only defaults for Chinese prose and flat bullet lists.
+
+    Blank paragraphs, incomplete lines, quotations, code and custom styles
+    remain literal. This is not a semantic topic classifier.
+    """
+    if personal_prompt.strip() or re.search(r'[`「」『』]|(?m:^[ \t]+\S)', text):
+        return text
+    lines = text.replace('\r\n', '\n').replace('\r', '\n').split('\n')
+    bullet = re.compile(r'^[•●][ \t\u3000]+\S')
+    transition = re.compile(r'^(?:另外|另一方面|至於|除此之外|接下來談|換個話題)')
+    result = []
+    for line in lines:
+        if result and line and result[-1]:
+            previous = result[-1]
+            if bool(bullet.match(previous)) != bool(bullet.match(line)):
+                result.append('')
+            elif not bullet.match(line) and re.search(r'[。！？]$', previous) and HAN.match(line):
+                if transition.match(line):
+                    result.append('')
+                else:
+                    result[-1] += line
+                    continue
+        result.append(line)
+    return '\n'.join(result)
