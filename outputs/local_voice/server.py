@@ -27,6 +27,7 @@ from personalization import formatting_prompt, speech_hint, validate_preferences
 from taiwan_typography import normalize_taiwan_typography, preserve_prose_layout, chinese_bullet_style, readable_layout
 from speech_profile import speech_model_path
 from translation import validate_translation, translate_text
+from english_layout import english_paragraphs
 from beta_api import install_beta, LocalProvider
 from audio_process import isolated_audio_duration, isolated_pcm
 from request_limits import DecoderBudget
@@ -115,6 +116,8 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
         return ''
     if mode=='translate':
         translated=await translate_text(text,target_language,API_KEY,source_language)
+        if target_language=='en':
+            translated=await english_paragraphs(translated,API_KEY)
         return readable_layout(chinese_bullet_style(normalize_taiwan_typography(converter.convert(translated)))) if target_language=='zh-TW' else translated
     protected, identifiers, marker_prefix = protect_formatting_literals(text, personal_prompt, vocabulary, taiwan_places)
     instructions = formatting_prompt(PROMPT, personal_prompt, vocabulary, taiwan_places)
