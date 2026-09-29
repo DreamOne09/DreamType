@@ -1,0 +1,47 @@
+[
+  {
+    "id": "background",
+    "input": "Could you please confirm with him on Tuesday? Otherwise, I will check again next week or the week after to see what time works best. I've been in Tainan for the past few days, but the matter is now resolved, so next week should be fine.",
+    "output": "Could you please confirm with him on Tuesday? Otherwise, I will check again next week or the week after to see what time works best.\n\nI've been in Tainan for the past few days, but the matter is now resolved, so next week should be fine.",
+    "seconds": 0.412,
+    "paragraphs": 2,
+    "words_unchanged": true,
+    "passed": true
+  },
+  {
+    "id": "condition",
+    "input": "The meeting starts at nine tomorrow. Please bring the revised report and last month's figures. We will review the figures together before deciding what to change. If you need more time, please tell me today.",
+    "output": "The meeting starts at nine tomorrow. Please bring the revised report and last month's figures. We will review the figures together before deciding what to change. If you need more time, please tell me today.",
+    "seconds": 0.1,
+    "paragraphs": 1,
+    "words_unchanged": true,
+    "passed": true
+  },
+  {
+    "id": "literal-request",
+    "input": "Please write a plan for me. I need to know what information you require first. Do not schedule any dates yet. Do not estimate a budget until I send you the final requirements. Please wait until the documents are ready.",
+    "output": "Please write a plan for me. I need to know what information you require first. Do not schedule any dates yet. Do not estimate a budget until I send you the final requirements. Please wait until the documents are ready.",
+    "seconds": 0.065,
+    "paragraphs": 1,
+    "words_unchanged": true,
+    "passed": true
+  },
+  {
+    "id": "short",
+    "input": "Please wait for me. I will be there soon.",
+    "output": "Please wait for me. I will be there soon.",
+    "seconds": 0.0,
+    "paragraphs": 1,
+    "words_unchanged": true,
+    "passed": true
+  },
+  {
+    "id": "existing",
+    "input": "The company's report has already been sent. Please check the attachments.\n\nAlso, the water pipes at home have been repaired, so we can use them normally in the evening.",
+    "output": "The company's report has already been sent. Please check the attachments.\n\nAlso, the water pipes at home have been repaired, so we can use them normally in the evening.",
+    "seconds": 0.0,
+    "paragraphs": 2,
+    "words_unchanged": true,
+    "passed": true
+  }
+]
