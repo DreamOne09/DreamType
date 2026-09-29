@@ -70,3 +70,10 @@ def preserve_prose_layout(source, edited, personal_prompt=''):
     if re.sub(r'\s+', '', baseline) != re.sub(r'\s+', '', without_bullets):
         return edited
     return baseline
+
+
+def chinese_bullet_style(text):
+    """Render prose bullets with a solid dot and ideographic space; code is literal."""
+    pattern = r'```[\s\S]*?(?:```|$)|`[^`]*(?:`|$)|(?m:^(?P<indent>[ \t]*)[•●][ \t\u3000]+(?=\S))'
+    return re.sub(pattern, lambda match: match.group(0) if match['indent'] is None
+                  else match['indent'] + '●\u3000', text)
