@@ -3,6 +3,13 @@ from taiwan_typography import normalize_taiwan_typography as clean
 
 
 class TaiwanTypographyTests(unittest.TestCase):
+    def test_chinese_bullet_presentation_preserves_content_and_code(self):
+        from taiwan_typography import chinese_bullet_style as bullets
+        self.assertEqual(bullets('• 明天先去銀行。\n  • 不要取消。'), '●　明天先去銀行。\n  ●　不要取消。')
+        self.assertEqual(bullets('●　明天先去銀行。'), '●　明天先去銀行。')
+        for literal in ('```\n• 中文範例\n```', '`• 中文範例`', '`code`• 行內符號', '```\n• 未完成程式', '正文 • 中間符號', '1. 數字清單。'):
+            self.assertEqual(bullets(literal),literal)
+
     def test_invented_bullets_in_complete_prose(self):
         from taiwan_typography import preserve_prose_layout as layout
         source='會議是下午兩點，不對，改成下午三點。只有小陳可以晚十分鐘，其他人不要遲到。'
