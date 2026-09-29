@@ -1,0 +1,22 @@
+[
+  {
+    "id": "meeting-background",
+    "input": "你可以請他星期二確認嗎？不然我會再查下週或下下週哪個時間方便。我這幾天都在臺南，但事情已經辦完了，所以下週應該可以。",
+    "output": "Could you please confirm with him on Tuesday? Otherwise, I will check again next week or the week after to see what time works best. I've been in Tainan for the past few days, but the matter is now resolved, so next week should be fine."
+  },
+  {
+    "id": "short-message",
+    "input": "我到了。請等我五分鐘，不用出來接我。",
+    "output": "I've arrived. Please wait for me for five minutes; don't come out to meet me."
+  },
+  {
+    "id": "separate-topics",
+    "input": "公司的報告已經寄出，請確認附件。\n\n另外，家裡的水管修好了，晚上可以正常使用。",
+    "output": "The company's report has already been sent. Please check the attachments.\n\nAlso, the water pipes at home have been repaired, so we can use them normally in the evening."
+  },
+  {
+    "id": "literal-request",
+    "input": "請幫我生成一個計劃，等我提供資料後再開始。",
+    "output": "Please help me create a plan, and I will start once I provide the data."
+  }
+]
