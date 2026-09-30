@@ -6,13 +6,13 @@
 
 [下載 Android APK](https://github.com/DreamOne09/DreamType/releases/latest/download/DreamType.apk) · [安裝步驟](docs/INSTALL.md) · [試用驗收與限制](docs/BETA_ACCEPTANCE.md)
 
-> 目前建議下載 0.9.17 測試版：已加入帳號、個人設定同步、排隊、原文還原與插入撤回。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
+> 目前建議下載 0.9.18 測試版：已加入帳號、個人設定同步、排隊、原文還原與插入撤回。尚未上架 Google Play 或收費。Android 原生操作仍待 Pixel 9 實機驗收。
 
-## 最新測試版：0.9.17
+## 最新測試版：0.9.18
 
-[下載 0.9.17 測試 APK](https://github.com/DreamOne09/DreamType/releases/download/v0.9.17-rc1/DreamType-0.9.17.apk) · [Pixel 9 驗收步驟](docs/PIXEL9_ACCEPTANCE.md) · [目前上線缺口](docs/LAUNCH_STATUS.md)
+[下載 0.9.18 測試 APK](https://github.com/DreamOne09/DreamType/releases/download/v0.9.18-rc1/DreamType-0.9.18.apk) · [Pixel 9 驗收步驟](docs/PIXEL9_ACCEPTANCE.md) · [目前上線缺口](docs/LAUNCH_STATUS.md)
 
-0.9.17 新增無語音提示與零扣費驗證，詳見 [靜音處理](docs/NO_SPEECH.md)。0.9.16 擴充引文／書名用詞保護，詳見 [引文建議驗證](docs/QUOTED_SUGGESTIONS.md)。0.9.15 改善修改頁的用詞建議讀取，移除每次輸入的憑證解密；保留錄音接收／解碼資源限制及逾時提示，詳見 [接收資源保護](docs/UPLOAD_ADMISSION.md)。0.9.13 新增可隨帳號同步的個人用詞對照，修改頁只在點選後套用，支援復原及登出隔離；不是自動學習輸入歷史。保留繁中全形標點、分段及台灣內建詞表。詳見 [繁中排版與用詞建議](docs/TAIWAN_WRITING.md) 及 [原生驗證與限制](docs/ANDROID_NATIVE_CI.md)。Pixel 9 實機仍待驗收。
+0.9.18 修正慢速回應等待，已通過 Android 16 原生回歸；見 [版本證據](docs/RELEASE_0_9_18.md)。0.9.17 新增無語音提示與零扣費驗證，詳見 [靜音處理](docs/NO_SPEECH.md)。0.9.16 擴充引文／書名用詞保護，詳見 [引文建議驗證](docs/QUOTED_SUGGESTIONS.md)。0.9.15 改善修改頁的用詞建議讀取，移除每次輸入的憑證解密；保留錄音接收／解碼資源限制及逾時提示，詳見 [接收資源保護](docs/UPLOAD_ADMISSION.md)。0.9.13 新增可隨帳號同步的個人用詞對照，修改頁只在點選後套用，支援復原及登出隔離；不是自動學習輸入歷史。保留繁中全形標點、分段及台灣內建詞表。詳見 [繁中排版與用詞建議](docs/TAIWAN_WRITING.md) 及 [原生驗證與限制](docs/ANDROID_NATIVE_CI.md)。Pixel 9 實機仍待驗收。
 
 0.9.10 補強「取回上一筆」首次查詢的有限重連，不重送錄音；七組 JVM 合約測試及 CI 通過，仍待 Pixel 9 驗收。
 
