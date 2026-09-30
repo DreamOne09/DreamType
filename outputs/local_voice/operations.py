@@ -43,6 +43,13 @@ def summarize(maintenance, sync_configured=False, now=None):
                     if valid_space else '尚無近期磁碟空間紀錄，請檢查主機')
     add('storage','主機儲存空間',storage_ok,
         '可用空間至少 5 GB，仍需留意模型與備份成長',storage_detail)
+    available=state.get('memory_available_bytes');total=state.get('memory_total_bytes')
+    valid_memory=(fresh and type(available) is int and type(total) is int and 0<=available<=total and total>0)
+    memory_ok=valid_memory and available>=1024**3 and available/total>=0.1
+    memory_detail=('可用記憶體約 %.1f GB；偏低可能造成模型變慢或逾時。請檢查其他程式用量，勿僅憑服務啟動判定可正常翻譯' % (available/1024**3)
+        if valid_memory else '尚無近期有效記憶體紀錄，請檢查主機維護工作')
+    add('memory','主機記憶體',memory_ok,
+        '最近檢查尚有至少 1 GB 且 10% 可用記憶體；仍需以實際辨識及翻譯測試確認速度',memory_detail)
     files=state.get('backup_inventory')
     fields=('encrypted_archive_files','legacy_zip_files','incomplete_files','total_bytes','skipped_links','read_errors')
     valid_files=(fresh and isinstance(files,dict) and all(type(files.get(key)) is int and 0<=files[key]<2**63 for key in fields))

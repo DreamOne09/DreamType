@@ -3,6 +3,16 @@ from operations import summarize
 
 
 class OperationsTests(unittest.TestCase):
+    def test_memory_signal_rejects_pressure_invalid_and_stale_samples(self):
+        state={'checked_at':100,'memory_available_bytes':2*1024**3,'memory_total_bytes':16*1024**3}
+        self.assertEqual(self.states(summarize(state,now=110))['memory'],'ok')
+        for changed in ({'memory_available_bytes':379*1024**2},
+                        {'memory_total_bytes':64*1024**3},
+                        {'memory_available_bytes':True}, {'memory_available_bytes':-1},
+                        {'memory_total_bytes':0}, {'memory_available_bytes':20*1024**3},
+                        {'memory_available_bytes':None}, {'checked_at':1}):
+            self.assertEqual(self.states(summarize({**state,**changed},now=1000))['memory'],'attention')
+
     def test_r2_requires_current_snapshot_ledger_and_no_error(self):
         state={'checked_at':100,'r2_enabled':True,'last_r2_sync':100,'r2_ledger_at':100,
                'r2_deletion_export':100,'last_deletion_export':100,'backup_file':'a.dtbackup',
@@ -29,6 +39,7 @@ class OperationsTests(unittest.TestCase):
     def test_sync_copy_is_never_cloud_verification(self):
         state={key:100 for key in ('checked_at','last_backup','last_deletion_export','last_backup_copy','last_deletion_copy')}
         state.update(ready=True,tunnel_ready=True,errors=[],disk_free_bytes=10*1024**3,
+            memory_available_bytes=2*1024**3,memory_total_bytes=16*1024**3,
             backup_inventory={'encrypted_archive_files':1,'legacy_zip_files':0,'incomplete_files':0,'total_bytes':100,'skipped_links':0,'read_errors':0})
         state.update(last_backup_verified=100,backup_file='a.dtbackup',backup_verified_file='a.dtbackup')
         report=summarize(state,True,now=110)
