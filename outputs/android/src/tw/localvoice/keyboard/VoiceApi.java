@@ -31,7 +31,7 @@ final class VoiceApi {
         HttpURLConnection c=connection(config,"/v1/models");
         try {
             error(c);
-            JSONObject body=new JSONObject(read(c.getInputStream()));
+            JSONObject body=new JSONObject(readResponse(c,false));
             if(!body.has("data"))throw new IOException("電腦回應格式不正確。");
         } finally { c.disconnect(); }
     }
@@ -69,7 +69,7 @@ final class VoiceApi {
                 out.write(head);out.write(audio);out.write(tail);
             }
             error(c);
-            JSONObject result=new JSONObject(read(c.getInputStream()));
+            JSONObject result=new JSONObject(readResponse(c,false));
             if(!config.accountMode&&config.mode.equals("translate"))requireTranslation(config,result);
             return config.accountMode?awaitResult(config,result,progress,config.mode.equals("translate")):result(result);
         } finally {c.disconnect();}
@@ -149,17 +149,30 @@ final class VoiceApi {
                 c.setDoOutput(true);c.setRequestProperty("Content-Type","application/json");c.setFixedLengthStreamingMode(bytes.length);
                 try(OutputStream out=c.getOutputStream()){out.write(bytes);}
             }
-            error(c);return new JSONObject(read(c.getInputStream()));
+            error(c);return new JSONObject(readResponse(c,false));
         } finally {c.disconnect();}
     }
     private static void part(StringBuilder b,String boundary,String name,String value) {
         b.append("--").append(boundary).append("\r\nContent-Disposition: form-data; name=\"").append(name)
             .append("\"\r\n\r\n").append(value).append("\r\n");
     }
-    private static String read(InputStream source) throws Exception {
+    private static String readResponse(HttpURLConnection connection,boolean error) throws Exception {
+        // Bound a continuously trickling body as well as a silent read. Header,
+        // upload and polling budgets are separate from this body budget.
+        connection.setReadTimeout(15000);
+        return readBounded(error?connection.getErrorStream():connection.getInputStream(),15000000000L);
+    }
+    static String readBounded(InputStream source,long budgetNanos) throws Exception {
+        long started=System.nanoTime();
         try(InputStream in=source;ByteArrayOutputStream out=new ByteArrayOutputStream()) {
             byte[] bytes=new byte[4096];int count;
-            while((count=in.read(bytes))!=-1){out.write(bytes,0,count);if(out.size()>1024*1024)throw new IOException("回應太長。");}
+            while(true){
+                if(System.nanoTime()-started>=budgetNanos)throw new SocketTimeoutException("Response body deadline exceeded");
+                count=in.read(bytes);
+                if(System.nanoTime()-started>=budgetNanos)throw new SocketTimeoutException("Response body deadline exceeded");
+                if(count==-1)break;
+                out.write(bytes,0,count);if(out.size()>1024*1024)throw new IOException("回應太長。");
+            }
             return out.toString("UTF-8");
         }
     }
@@ -167,7 +180,7 @@ final class VoiceApi {
         int code=connection.getResponseCode();
         if(code==408||code==409||code==422||code==429||code==503){
             String reason="";
-            try {reason=new JSONObject(read(connection.getErrorStream())).optString("error_code","");}catch(Exception ignored){}
+            try {reason=new JSONObject(readResponse(connection,true)).optString("error_code","");}catch(Exception ignored){}
             // Show our own known messages, never arbitrary proxy/server response text.
             if(code==422&&reason.equals("no_speech"))throw new ApiError(code,"未偵測到語音，請確認麥克風並重新錄音。");
             if(code==409&&reason.equals("result_unconfirmed"))throw new ApiError(code,"上一筆文字還沒取回，請到「更多 → 取回上一筆」確認，再繼續錄音。");
