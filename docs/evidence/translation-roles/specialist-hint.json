@@ -1,0 +1,38 @@
+[
+  {
+    "id": "request-wait",
+    "source": "請幫我生成一個計劃，等我提供資料後再開始。",
+    "baseline": "Please help me create a plan, and we can start once I provide the necessary information.",
+    "roles": "Please help me create a plan, and I will start working on it once I provide the necessary information."
+  },
+  {
+    "id": "explicit-speaker",
+    "source": "我會等你提供資料後再開始，請你不用急。",
+    "baseline": "I will wait for you to provide the information before starting. Please don't rush.",
+    "roles": "I will wait for you to provide the data before starting. Please don't rush."
+  },
+  {
+    "id": "recipient-wait",
+    "source": "等我確認金額後，你再寄出報價單，不要先寄。",
+    "baseline": "Once I confirm the amount, please send me the quotation, but not before.",
+    "roles": "Once I confirm the amount, please send the quotation to me. Please do not send it before I confirm."
+  },
+  {
+    "id": "third-party",
+    "source": "他說他會等我確認後再寄出，不是請你現在寄。",
+    "baseline": "He said that he would send it to me after I confirmed, not that he was asking me to send it now.",
+    "roles": "He said that he would send it to me after I confirmed, not that he was asking me to send it now."
+  },
+  {
+    "id": "negated-promise",
+    "source": "我沒有答應明天交件，是你說下週才需要。",
+    "baseline": "I didn't agree to submit the documents tomorrow; you said it was needed by the following week.",
+    "roles": "I didn't promise to deliver it tomorrow; you said it was needed by next week."
+  },
+  {
+    "id": "quoted-request",
+    "source": "客戶說「等我提供資料後再開始」，所以我們先不要動工。",
+    "baseline": "The client said, \"Please wait until I provide the data before starting,\" so we should not begin work yet.",
+    "roles": "The client said, \"Please wait until I provide the data before you start,\" so we should not begin work yet."
+  }
+]
