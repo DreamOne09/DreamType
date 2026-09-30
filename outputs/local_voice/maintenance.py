@@ -10,6 +10,7 @@ import secrets
 from pathlib import Path
 from contextlib import closing
 import httpx
+import psutil
 from backup import create,export_deletions
 from backup_inventory import inventory
 from process_lock import exclusive,LockBusy
@@ -53,6 +54,12 @@ def _run(root,force_backup=False):
     now=time.time();state['checked_at']=now;state['errors']=[]
     try:state['disk_free_bytes']=shutil.disk_usage(work).free
     except OSError:state['disk_free_bytes']=None
+    try:
+        memory=psutil.virtual_memory()
+        state['memory_available_bytes']=memory.available
+        state['memory_total_bytes']=memory.total
+    except (OSError,psutil.Error):
+        state['memory_available_bytes']=None;state['memory_total_bytes']=None
     try:
         ready=httpx.get('http://127.0.0.1:19870/health',timeout=10).json().get('status')=='ready'
     except Exception:ready=False

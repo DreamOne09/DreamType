@@ -6,6 +6,19 @@ from unittest.mock import patch,Mock
 from maintenance import run,copy_encrypted
 
 class MaintenanceTests(unittest.TestCase):
+    def test_memory_collection_failure_clears_old_good_reading(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';work.mkdir()
+            (work/'maintenance-status.json').write_text(json.dumps({'memory_available_bytes':2**33,
+                'memory_total_bytes':2**34,'last_backup':100}))
+            with patch('maintenance.time.time',return_value=110), \
+                    patch('maintenance.psutil.virtual_memory',side_effect=OSError()), \
+                    patch('maintenance.httpx.get',return_value=Mock(json=lambda:{'status':'ready'})), \
+                    patch('maintenance.export_deletions'):
+                state=run(root)
+            self.assertIsNone(state['memory_available_bytes'])
+            self.assertIsNone(state['memory_total_bytes'])
+
     def test_parallel_pass_does_not_overwrite_running_status(self):
         from process_lock import exclusive
         with tempfile.TemporaryDirectory() as directory:
