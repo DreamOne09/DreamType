@@ -6,6 +6,47 @@ from unittest.mock import patch,Mock
 from maintenance import run,copy_encrypted
 
 class MaintenanceTests(unittest.TestCase):
+    def test_parallel_pass_does_not_overwrite_running_status(self):
+        from process_lock import exclusive
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';work.mkdir()
+            status=work/'maintenance-status.json';status.write_text('{"checked_at": 123}')
+            with exclusive(work/'maintenance.lock'),patch('maintenance.httpx.get') as request:
+                result=run(root)
+            self.assertEqual(result['skipped'],'maintenance_already_running')
+            self.assertEqual(status.read_text(),'{"checked_at": 123}');request.assert_not_called()
+
+    def test_r2_fresh_ledger_is_synced_without_new_daily_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';work.mkdir()
+            (work/'maintenance-status.json').write_text(json.dumps({'last_backup':100,'backup_file':'a.dtbackup'}))
+            (work/'r2-config.json').write_text('{}')
+            ledger=work/'backups/latest-deletions.dtledger';client=Mock()
+            with patch('maintenance.time.time',return_value=110), \
+                    patch('maintenance.httpx.get',return_value=Mock(status_code=200,json=lambda:{'status':'ready'})), \
+                    patch('maintenance.create') as create,patch('maintenance.export_deletions',return_value=ledger), \
+                    patch('maintenance.read_config',return_value={'enabled':True,'bucket':'test-backups'}), \
+                    patch('maintenance.client_for',return_value=client), \
+                    patch('maintenance.sync_latest',return_value={'checked_at':110,'ledger_at':110,'archive_sha256':'a'*64}) as sync:
+                state=run(root);create.assert_not_called()
+            self.assertEqual(state['errors'],[]);self.assertEqual(state['r2_backup_file'],'a.dtbackup')
+            self.assertEqual(sync.call_args.args[-1],ledger);client.close.assert_called_once()
+            self.assertEqual(state['r2_deletion_export'],state['last_deletion_export'])
+
+    def test_r2_failure_does_not_claim_new_verification_or_disable_local_backup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';work.mkdir()
+            (work/'maintenance-status.json').write_text(json.dumps({'last_backup':100,'backup_file':'a.dtbackup','last_r2_sync':90}))
+            (work/'r2-config.json').write_text('{}')
+            with patch('maintenance.time.time',return_value=110), \
+                    patch('maintenance.httpx.get',return_value=Mock(status_code=200,json=lambda:{'status':'ready'})), \
+                    patch('maintenance.export_deletions',return_value=work/'backups/latest-deletions.dtledger'), \
+                    patch('maintenance.read_config',return_value={'enabled':True,'bucket':'test-backups'}), \
+                    patch('maintenance.client_for',side_effect=ValueError('secret detail must not be logged')):
+                state=run(root)
+            self.assertEqual(state['last_backup'],100);self.assertEqual(state['last_r2_sync'],90)
+            self.assertEqual(state['errors'],['r2_sync_failed']);self.assertNotIn('secret detail',json.dumps(state))
+
     def test_explicit_backup_now_runs_even_with_recent_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);work=root/'work';work.mkdir()

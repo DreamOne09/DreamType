@@ -8,6 +8,7 @@ ERRORS = {
     'tunnel_restart_failed': '手機連線通道自動恢復失敗',
     'backup_or_copy_failed': '備份建立或複製失敗',
     'deletion_export_or_copy_failed': '刪除紀錄匯出或複製失敗',
+    'r2_sync_failed': 'R2 上傳、下載核對或還原驗證失敗，請檢查憑證與主機',
 }
 
 def summarize(maintenance, sync_configured=False, now=None):
@@ -15,7 +16,7 @@ def summarize(maintenance, sync_configured=False, now=None):
     state = maintenance if isinstance(maintenance, dict) else {}
     def recent(field, limit):
         value = state.get(field)
-        return type(value) in (int, float) and math.isfinite(value) and 0 <= now-value <= limit
+        return type(value) in (int, float) and math.isfinite(value) and value > 0 and 0 <= now-value <= limit
     fresh = recent('checked_at', 900)
     checks = []
     def add(code, title, ok, good, bad):
@@ -56,8 +57,17 @@ def summarize(maintenance, sync_configured=False, now=None):
         and bool(state.get('backup_file')) and state.get('backup_copy_verified_file')==state.get('backup_file')
         and recent('last_deletion_copy_verified',900)
         and state.get('last_deletion_copy_verified')==state.get('last_deletion_copy')==state.get('last_deletion_export'))
+    remote_ok=(state.get('r2_enabled') is True and recent('last_r2_sync',900)
+        and recent('r2_ledger_at',900) and state.get('r2_backup_file')==state.get('backup_file')
+        and bool(state.get('backup_file')) and state.get('r2_deletion_export')==state.get('last_deletion_export')
+        and 'r2_sync_failed' not in state.get('errors',[])) if isinstance(state.get('errors',[]),list) else False
+    if state.get('r2_enabled') is True:
+        add('r2','R2 雲端備份',remote_ok,
+            '目前快照與近期刪除紀錄已由 R2 下載、核對並通過記憶體還原驗證；金鑰仍須另行保管',
+            '目前備份或最新刪除紀錄尚無近期 R2 驗證，請檢查主機排程及憑證')
     checks.append({'code': 'offsite', 'title': '異機備援', 'state': 'unverified',
-        'detail': ('同步資料夾的備份與最新刪除紀錄已核對內容；雲端上傳與異機還原仍需驗證' if copy_verified else
+        'detail': 'R2 下載驗證已通過；另台電腦的完整復原與獨立金鑰保管仍需驗收' if remote_ok else
+        ('同步資料夾的備份與最新刪除紀錄已核對內容；雲端上傳與異機還原仍需驗證' if copy_verified else
                    '有同步資料夾複製紀錄，但尚無目前備份與最新刪除紀錄的內容核對；請重新複製驗證' if copied else
                    '同步資料夾的備份或刪除紀錄複製未更新，請檢查同步工作' if sync_configured else
                    '尚未設定同步資料夾；目前只有本機備份')})

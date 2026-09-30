@@ -8,9 +8,13 @@ import sys
 import time
 import secrets
 from pathlib import Path
+from contextlib import closing
 import httpx
 from backup import create,export_deletions
 from backup_inventory import inventory
+from process_lock import exclusive,LockBusy
+from r2_config import read_config,client_for
+from r2_sync import sync_latest
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -34,6 +38,15 @@ def copy_encrypted(source,target):
         temporary.unlink(missing_ok=True)
 
 def run(root=ROOT,force_backup=False):
+    root=Path(root)
+    try:
+        with exclusive(root/'work/maintenance.lock'):
+            return _run(root,force_backup)
+    except LockBusy:
+        return {'skipped':'maintenance_already_running','errors':[]}
+
+
+def _run(root,force_backup=False):
     work=root/'work';state_path=work/'maintenance-status.json'
     try:state=json.loads(state_path.read_text())
     except (OSError,ValueError):state={}
@@ -80,6 +93,7 @@ def run(root=ROOT,force_backup=False):
             state['last_backup']=0
     # Refresh separately from daily backups, so an older archive can be safely
     # reconciled with later account deletions. A local copy is not cloud proof.
+    ledger=None
     try:
         ledger=export_deletions(root)
         state['last_deletion_export']=now
@@ -92,6 +106,21 @@ def run(root=ROOT,force_backup=False):
             state['last_deletion_copy_verified']=now
     except Exception:
         state['errors'].append('deletion_export_or_copy_failed')
+    state['r2_enabled']=False
+    if (work/'r2-config.json').exists():
+        try:
+            config=read_config(root);state['r2_enabled']=config['enabled']
+            if config['enabled']:
+                name=state.get('backup_file','')
+                if not isinstance(name,str) or Path(name).name!=name or not name.endswith('.dtbackup') or ledger is None:
+                    raise ValueError('A verified backup and fresh deletion ledger are required')
+                with closing(client_for(root,config)) as client:
+                    remote=sync_latest(client,config['bucket'],root,work/'backups'/name,work/'backup-recovery.key',ledger)
+                state['last_r2_sync']=remote['checked_at'];state['r2_ledger_at']=remote['ledger_at']
+                state['r2_backup_file']=name;state['r2_archive_sha256']=remote['archive_sha256']
+                state['r2_deletion_export']=state['last_deletion_export']
+        except Exception:
+            state['errors'].append('r2_sync_failed')
     state['backup_inventory']=inventory(work/'backups')
     temporary=state_path.with_suffix('.tmp')
     temporary.write_text(json.dumps(state,indent=2),encoding='utf-8');temporary.replace(state_path)
