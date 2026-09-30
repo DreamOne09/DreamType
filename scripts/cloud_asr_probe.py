@@ -63,7 +63,9 @@ async def transcribe(provider, audio, credential, account_id=None, *, transport=
     start = time.perf_counter()
     try:
         async with asyncio.timeout(deadline):
-            async with httpx.AsyncClient(timeout=httpx.Timeout(30, connect=10), transport=transport,
+            # A silent inference may legitimately take longer than 30 seconds.
+            # The outer deadline bounds both silent and slowly streaming peers.
+            async with httpx.AsyncClient(timeout=httpx.Timeout(deadline, connect=min(10, deadline), read=None), transport=transport,
                                          follow_redirects=False, trust_env=False) as client:
                 async with client.stream('POST', url, headers={'Authorization': 'Bearer ' + credential}, **options) as response:
                     status = response.status_code
