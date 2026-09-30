@@ -9,7 +9,7 @@ import urllib.request
 
 JSON_SHA256 = '3ea61b2a06e31edf1c91134fe9106b0ebb16628be169f3db75bc7a2b06b45796'
 JSON_URL = 'https://repo.maven.apache.org/maven2/org/json/json/20250517/json-20250517.jar'
-TESTS = ('EmptyResultCheck', 'TranslationContractTest', 'VoiceRecoveryTest', 'EncryptedRecordingTest', 'ErrorMessageTest', 'ReceiptRecoveryTest', 'UpdateCheckTest', 'WordSuggestionsTest')
+TESTS = ('EmptyResultCheck', 'TranslationContractTest', 'VoiceRecoveryTest', 'EncryptedRecordingTest', 'ErrorMessageTest', 'ReceiptRecoveryTest', 'UpdateCheckTest', 'WordSuggestionsTest', 'ResponseDeadlineTest')
 
 
 def main():
@@ -46,7 +46,7 @@ def main():
         for name in TESTS:
             subprocess.run([java_tool('java'), '-cp', classpath, 'tw.localvoice.keyboard.' + name],
                            check=True, timeout=60)
-    print('PASS: eight JVM contract suites. This runner does not test native UI or Keystore.')
+    print('PASS: nine JVM contract suites. This runner does not test native UI or Keystore.')
 
 
 if __name__ == '__main__':
