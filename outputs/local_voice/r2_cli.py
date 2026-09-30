@@ -26,16 +26,18 @@ def main():
                   getpass.getpass('R2 Secret Access Key: '))
         print('R2 credentials protected with Windows DPAPI. Automatic sync remains disabled.')
         return 0
-    config = read_config(root)
     if args.action == 'disable':
-        config['enabled'] = False; atomic_json(root / 'work/r2-config.json', config)
+        with exclusive(root / 'work/maintenance.lock'):
+            config = read_config(root)
+            config['enabled'] = False; atomic_json(root / 'work/r2-config.json', config)
         print('Automatic R2 synchronization disabled; existing backups retained.')
         return 0
     if args.action == 'restore' and args.destination is None: parser.error('restore requires --destination')
     key = args.recovery_key or root / 'work/backup-recovery.key'
-    with closing(client_for(root, config)) as client:
-        if args.action in ('sync', 'enable'):
-            with exclusive(root / 'work/maintenance.lock'):
+    if args.action in ('sync', 'enable'):
+        with exclusive(root / 'work/maintenance.lock'):
+            config = read_config(root)
+            with closing(client_for(root, config)) as client:
                 archive = create(root); ledger = export_deletions(root); now = time.time()
                 status_path = root / 'work/maintenance-status.json'
                 try: state = json.loads(status_path.read_text(encoding='utf-8'))
@@ -43,14 +45,25 @@ def main():
                 state.update(last_backup=now, backup_file=archive.name, last_backup_verified=now,
                              backup_verified_file=archive.name, last_deletion_export=now)
                 atomic_json(status_path, state)
-                result = sync_latest(client, config['bucket'], root, archive, key, ledger)
+                errors = state.get('errors', [])
+                if not isinstance(errors, list): errors = ['invalid_maintenance_record']
+                try:
+                    result = sync_latest(client, config['bucket'], root, archive, key, ledger)
+                except Exception:
+                    state['errors'] = [error for error in errors if error != 'r2_sync_failed'] + ['r2_sync_failed']
+                    state['r2_enabled'] = config['enabled']
+                    atomic_json(status_path, state)
+                    raise
+                state['errors'] = [error for error in errors if error != 'r2_sync_failed']
                 state.update(last_r2_sync=result['checked_at'], r2_ledger_at=result['ledger_at'],
                              r2_backup_file=archive.name, r2_archive_sha256=result['archive_sha256'],
                              r2_deletion_export=now)
                 if args.action == 'enable':
                     config['enabled'] = True; atomic_json(root / 'work/r2-config.json', config)
                 state['r2_enabled'] = config['enabled']; atomic_json(status_path, state)
-        else:
+    else:
+        config = read_config(root)
+        with closing(client_for(root, config)) as client:
             result = restore_latest(client, config['bucket'], root, key,
                 destination=args.destination if args.action == 'restore' else None,
                 accept_stale=args.accept_stale_ledger)

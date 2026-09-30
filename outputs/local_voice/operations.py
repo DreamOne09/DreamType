@@ -57,7 +57,7 @@ def summarize(maintenance, sync_configured=False, now=None):
         and bool(state.get('backup_file')) and state.get('backup_copy_verified_file')==state.get('backup_file')
         and recent('last_deletion_copy_verified',900)
         and state.get('last_deletion_copy_verified')==state.get('last_deletion_copy')==state.get('last_deletion_export'))
-    remote_ok=(fresh and state.get('r2_enabled') is True and recent('last_r2_sync',900)
+    remote_ok=(state.get('r2_enabled') is True and recent('last_r2_sync',900)
         and recent('r2_ledger_at',900) and state.get('r2_backup_file')==state.get('backup_file')
         and bool(state.get('backup_file')) and state.get('r2_deletion_export')==state.get('last_deletion_export')
         and 'r2_sync_failed' not in state.get('errors',[])) if isinstance(state.get('errors',[]),list) else False
