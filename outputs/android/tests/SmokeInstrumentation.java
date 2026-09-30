@@ -220,6 +220,30 @@ public final class SmokeInstrumentation extends Instrumentation {
   Bitmap image=getUiAutomation().takeScreenshot();if(image==null)throw new AssertionError("Screenshot unavailable");
   try(FileOutputStream stream=new FileOutputStream(new File(getTargetContext().getExternalFilesDir(null),name+".png"))){image.compress(Bitmap.CompressFormat.PNG,100,stream);}finally{image.recycle();}
  }
+ private void responseDeadlineCheck(Bundle result)throws Exception {
+  java.net.ServerSocket listener=new java.net.ServerSocket(0,1,java.net.InetAddress.getByName("127.0.0.1"));
+  java.util.concurrent.atomic.AtomicInteger sent=new java.util.concurrent.atomic.AtomicInteger();
+  Thread fixture=new Thread(()->{
+   try(java.net.Socket socket=listener.accept()){
+    socket.setSoTimeout(5000);
+    BufferedReader request=new BufferedReader(new InputStreamReader(socket.getInputStream(),java.nio.charset.StandardCharsets.US_ASCII));
+    String line;while((line=request.readLine())!=null&&!line.isEmpty()){}
+    OutputStream stream=socket.getOutputStream();
+    stream.write("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 172\r\nConnection: close\r\n\r\n{".getBytes(java.nio.charset.StandardCharsets.US_ASCII));stream.flush();
+    for(int i=0;i<170;i++){Thread.sleep(100);stream.write(' ');stream.flush();sent.incrementAndGet();}
+    stream.write('}');stream.flush();
+   }catch(Exception expectedDisconnect){}
+  },"synthetic-slow-response");
+  fixture.setDaemon(true);fixture.start();
+  try{
+   AppConfig config=new AppConfig("http://127.0.0.1:"+listener.getLocalPort(),"synthetic",false,"","",true,true);
+   try{VoiceApi.json(config,"GET","/v2/me",null);throw new AssertionError("Native slow response was accepted");}
+   catch(java.net.SocketTimeoutException expected){
+    if(sent.get()<100)throw new AssertionError("Fixture did not continuously deliver a slow response");
+    result.putString("response_deadline","passed");
+   }
+  }finally{listener.close();fixture.interrupt();fixture.join(6000);}
+ }
  @Override public void onStart(){
   Bundle result=new Bundle();
   try{
@@ -231,6 +255,7 @@ public final class SmokeInstrumentation extends Instrumentation {
     if(new File(context.getNoBackupFilesDir(),"pending-recording.bin.tmp").exists())throw new AssertionError("Temporary recording still retained");
     result.putString("delivered","passed");finish(Activity.RESULT_OK,result);return;
    }
+   if(!configureVoice)responseDeadlineCheck(result);
    AppConfig.clearSession(context);
    Activity home=open(HomeActivity.class);
    final TextView[] login={null};runOnMainSync(()->{login[0]=find(home.getWindow().getDecorView(),"登入開始使用");});
