@@ -9,6 +9,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install fastapi==0.141.1 httpx==0.28.1 python-multipart==0.0.32 cryptography==50.0.1 av==18.1.0 psutil==7.2.2 numpy==2.5.3 opencc-python-reimplemented==0.1.7
+      - run: pip install -r outputs/local_voice/requirements-r2-lock.txt
       - run: python -m unittest discover -s scripts -p 'test_*.py'
       - run: python -m unittest discover -s outputs/local_voice -p 'test_*.py'
 

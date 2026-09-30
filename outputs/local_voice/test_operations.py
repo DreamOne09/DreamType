@@ -3,6 +3,16 @@ from operations import summarize
 
 
 class OperationsTests(unittest.TestCase):
+    def test_r2_requires_current_snapshot_ledger_and_no_error(self):
+        state={'checked_at':100,'r2_enabled':True,'last_r2_sync':100,'r2_ledger_at':100,
+               'r2_deletion_export':100,'last_deletion_export':100,'backup_file':'a.dtbackup',
+               'r2_backup_file':'a.dtbackup','errors':[]}
+        self.assertEqual(self.states(summarize(state,now=110))['r2'],'ok')
+        self.assertEqual(self.states(summarize(state,now=110))['offsite'],'unverified')
+        for changed in ({'last_r2_sync':0},{'r2_ledger_at':0},{'r2_backup_file':'old.dtbackup'},
+                        {'last_deletion_export':105},{'errors':['r2_sync_failed']}):
+            self.assertEqual(self.states(summarize({**state,**changed},now=110))['r2'],'attention')
+
     def states(self, report):
         return {item['code']: item['state'] for item in report['checks']}
 

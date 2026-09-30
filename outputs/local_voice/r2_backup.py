@@ -22,11 +22,11 @@ def _encrypted_bytes(path, suffix, magic, limit):
     return value
 
 
-def _put_verified(client, bucket, name, value):
+def _put_verified(client, bucket, name, value, **conditions):
     digest = hashlib.sha256(value).hexdigest()
     client.put_object(Bucket=bucket, Key=name, Body=value,
                       ContentType='application/octet-stream',
-                      Metadata={'sha256': digest})
+                      Metadata={'sha256': digest}, **conditions)
     response = client.get_object(Bucket=bucket, Key=name)
     stream = response['Body']
     try:

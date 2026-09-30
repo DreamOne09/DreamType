@@ -1,4 +1,5 @@
 # DreamType maintenance
+Latest domain choice: use dreamone.li for DreamType; never change dreamcube.tw for this product. dreamone.li currently delegates DNS to Gandi and is not in the selected Cloudflare account. Named Tunnel, Access and DNS changes remain pending; no domain purchase is authorized.
 User-facing language: Traditional Chinese. Keep the UI simple, monochrome, and explicit about connection state.
 Never commit work/, credentials, signing keys, pairing pages/QRs, audio samples, or machine-specific paths. Distribute APKs through GitHub Releases.
 Preserve Android package tw.localvoice.keyboard and the maintainer signing key for upgrades. Do not claim native device verification unless actually performed.
