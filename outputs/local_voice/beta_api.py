@@ -50,6 +50,7 @@ class Beta:
         self.admin=path.read_text().strip()
         self.queue=self.new_queue();self.results={};self.tasks=[];self.logins=deque()
         self.login_slots=asyncio.Semaphore(2)
+        self.auth_receivers=0;self.auth_receive_limit=4
         self.uploads=set();self.upload_limit=4;self.body_timeout=30
         self.decoders=DecoderBudget()
     def new_queue(self):
@@ -135,6 +136,7 @@ def install_beta(app,work,provider,decoder):
         finally:
             uid=getattr(request.state,'upload_uid',None)
             if uid is not None:beta.uploads.discard(uid)
+            if getattr(request.state,'auth_admitted',False):beta.auth_receivers-=1
 
     async def guarded_request(request,call_next):
         if request.url.path.startswith('/v2/'):
@@ -144,6 +146,14 @@ def install_beta(app,work,provider,decoder):
                 if length<0:return JSONResponse({'detail':'無效請求'},status_code=400)
                 if length>cap:return JSONResponse({'detail':'請求太大'},status_code=413)
                 if request.method in ('POST','PATCH','DELETE') and 'content-length' not in request.headers:return JSONResponse({'detail':'需要 Content-Length'},status_code=411)
+                if request.url.path in ('/v2/login','/v2/password-reset') and request.method in ('POST','PATCH','DELETE'):
+                    now=time.monotonic()
+                    while beta.logins and beta.logins[0]<now-60:beta.logins.popleft()
+                    if len(beta.logins)>=20:
+                        return JSONResponse({'detail':'登入嘗試太頻繁，請一分鐘後重試','error_code':'auth_rate_limit'},status_code=429,headers={'Retry-After':'60','Cache-Control':'no-store'})
+                    if beta.auth_receivers>=beta.auth_receive_limit:
+                        return JSONResponse({'detail':'正在處理其他登入請求，請稍後重試','error_code':'auth_rate_limit'},status_code=429,headers={'Retry-After':'2','Cache-Control':'no-store'})
+                    beta.logins.append(now);beta.auth_receivers+=1;request.state.auth_admitted=True
                 if request.url.path.startswith('/v2/admin/'):
                     beta.admin_check(request)
                 elif request.url.path not in ('/v2/login','/v2/password-reset'):
@@ -177,10 +187,6 @@ def install_beta(app,work,provider,decoder):
     async def account_page():return FileResponse(Path(__file__).with_name('account.html'))
     @app.post('/v2/login')
     async def login(request:Request):
-        now=time.monotonic()
-        while beta.logins and beta.logins[0]<now-60:beta.logins.popleft()
-        if len(beta.logins)>=20:raise StoreError(429,'登入嘗試太頻繁，請一分鐘後重試','auth_rate_limit')
-        beta.logins.append(now)
         body=await object_body(request)
         async with beta.login_slots:return await asyncio.to_thread(beta.store.login,body.get('username',''),body.get('password',''))
     @app.post('/v2/logout')
@@ -188,10 +194,6 @@ def install_beta(app,work,provider,decoder):
         beta.store.logout(request.headers.get('authorization','').removeprefix('Bearer '));return {'ok':True}
     @app.post('/v2/password-reset')
     async def reset_password(request:Request):
-        now=time.monotonic()
-        while beta.logins and beta.logins[0]<now-60:beta.logins.popleft()
-        if len(beta.logins)>=20:raise StoreError(429,'請稍後再試')
-        beta.logins.append(now)
         body=await object_body(request)
         async with beta.login_slots:
             await asyncio.to_thread(beta.store.reset_password,body.get('code'),body.get('new_password'))
