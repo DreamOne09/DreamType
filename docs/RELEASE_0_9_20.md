@@ -1,8 +1,8 @@
-# 0.9.20：簽章服務網址查詢（候選）
+# 0.9.20：簽章服務網址查詢（封閉試用）
 
 首次設定會從固定 GitHub 位置查詢管理者簽署的最新地址；查詢失敗保留畫面原值。已保存自訂網址不會在開啟畫面時被覆蓋，可主動按「取得最新服務網址」。帳號頁提供「更新服務網址並重新登入」。查詢只改網址欄位，不搬移登入 token，不上傳錄音，也不自動儲存連線。重新登入成功沿用既有 session 替換機制；有未完成錄音時先提醒清除影響。
 
-`ServiceDiscovery` 固定公開資料來源與 P-256 公鑰，驗證 SHA256withECDSA 簽章、服務 ID、24 小時期限、未來時間與單調序號，只接受單層 trycloudflare.com 或 dreamone.li HTTPS origin。拒絕帳密、路徑、port、query、fragment、轉址與過大回應。手機時鐘嚴重錯誤會拒絕資料。下載不帶產品憑證。簽章证明發布者授權該網址，不代表服務永久在線。
+`ServiceDiscovery` 固定公開資料來源與 P-256 公鑰，驗證 SHA256withECDSA 簽章、服務 ID、24 小時期限、未來時間與單調序號，只接受單層 trycloudflare.com 或 dreamone.li HTTPS origin。拒絕帳密、路徑、port、query、fragment、轉址與過大回應。手機時鐘嚴重錯誤會拒絕資料。下載不帶產品憑證。簽章證明發布者授權該網址，不代表服務永久在線。
 
 ## 主機發布
 
@@ -14,6 +14,10 @@
 
 ## 驗證狀態
 
-10 組 Python 簽章／發布測試與 14 組維護回歸通過。11 組 JVM 測試包含 Python 簽章與 Java 驗證互通。主機實際簽署、GitHub 發布、無登入下載驗證及維護流程已測，ready/tunnel_ready 為 true，errors 為空。
+11 組 Python 簽章／發布測試與 14 組維護回歸通過。11 組 JVM 測試包含 Python 簽章與 Java 驗證互通。主機實際簽署、GitHub 發布、無登入下載驗證及維護流程已測，ready/tunnel_ready 為 true，errors 為空。
 
-新增原生畫面競態案例並已編譯，Android 模擬器仍待執行。0.9.20 APK（versionCode 30）已本機打包，保持原簽章；尚未公開發布。Pixel 9 行動網路及 Surfshark 仍待實機驗收。
+Android 16 原生驗證通過：[執行記錄](https://github.com/DreamOne09/DreamType/actions/runs/37098057443)，提交 `78f07ef2854c117238e52ec1d4285f701af4020f`。包含 discovery_crypto、discovery_ui、預設網址、自訂網址保留、修改競態、序號倒退、帳號隔離、Keystore 及程序重啟錄音恢復；私人／帳號／正式 API 隔離環境與斷線恢復皆通過。AI 使用合成 provider，不是語音品質或 Pixel 9 證據。
+
+[0.9.20-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.20-rc1) 已公開，versionCode 30，70429 bytes。公開未登入下載 SHA-256 為 `fd43c77d6de479584476eaa14480e0eaf9f8e041320f82ef0ce9944887b7062f`，原簽章 SHA-256 為 `8af01d69be8604c2f4a288d55651bb72bed42a391c546f04db4a2a0deb14fc98`。APK 未包含測試 instrumentation、測試 CA 或檢查範圍內的主機憑證；此項不是獨立安全審查。
+
+Pixel 9 行動網路及 Surfshark 仍待實機驗收。
