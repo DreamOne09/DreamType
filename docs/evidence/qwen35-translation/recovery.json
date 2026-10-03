@@ -1,0 +1,18 @@
+{
+  "reason": "Two completed requests exhausted 2048 output tokens with empty translation; remaining cases deliberately stopped",
+  "parent_terminated": true,
+  "recovery": "independent watchdog",
+  "health": {
+    "status": "ready",
+    "speech_ready": true,
+    "speech_profile": "turbo",
+    "formatting_ready": true,
+    "translation_ready": true,
+    "workers_ready": true,
+    "processing": "local",
+    "audio_decoding": "isolated-process",
+    "version": 1
+  },
+  "lease_removed": true,
+  "observed_unix": 1791001262.6790407
+}
