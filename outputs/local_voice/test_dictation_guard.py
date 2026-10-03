@@ -2,6 +2,21 @@ import unittest
 from dictation_guard import validate_edit
 
 class DictationGuardTests(unittest.TestCase):
+    def test_english_logic_in_mixed_dictation_is_not_removed_added_or_moved(self):
+        for source,edited in [
+            ('明天的文件 do not send to the client，先讓我確認附件。','明天的文件 do now send to the client，先讓我確認附件。'),
+            ("Please don't send the final proposal to the client tomorrow.","Please send the final proposal to the client tomorrow."),
+            ('Only send the attachment after approval from the client.','Send the attachment before approval from the client.'),
+            ('明天可以寄出完整附件給客戶確認。','明天不行，never 寄出完整附件給客戶確認。'),
+            ('Do not send the proposal; archive the attachment.','Do send the proposal; do not archive the attachment.'),
+            ('You cannot cancel the reservation for tomorrow.','You can cancel the reservation for tomorrow.')]:
+            with self.subTest(source=source),self.assertRaises(ValueError):validate_edit(source,edited)
+
+    def test_english_logic_allows_typography_and_does_not_match_inside_words(self):
+        validate_edit("請標註 don't send，明天再確認。","請標註 DON’T send。明天再確認。")
+        validate_edit('請使用 notebook 整理資料給大家參考。','請使用 notebooks 整理資料給大家參考。')
+        validate_edit('如果如果下雨，please do not send the file。','如果下雨，please do not send the file。')
+
     def test_action_sequence_cues_cannot_be_removed_or_moved(self):
         source='第一明天先去銀行領錢。第二回家拿證件。第三到診所拿藥。如果下雨，全部改到後天。'
         correct='• 明天先去銀行領錢。\n• 回家拿證件。\n• 到診所拿藥。\n如果下雨，全部改到後天。'
