@@ -3,6 +3,21 @@ from operations import summarize
 
 
 class OperationsTests(unittest.TestCase):
+    def test_discovery_requires_fresh_valid_publication_without_error(self):
+        state={'checked_at':100,'discovery_enabled':True,'discovery_last_checked':100,
+               'discovery_expires':86500,'discovery_serial':1,'errors':[]}
+        self.assertEqual(self.states(summarize(state,now=110))['discovery'],'ok')
+        for changed in ({'discovery_enabled':False},{'discovery_enabled':1},
+                        {'checked_at':-1000},{'discovery_last_checked':-1000},
+                        {'discovery_expires':110},{'discovery_expires':True},
+                        {'discovery_expires':float('nan')},{'discovery_expires':float('inf')},
+                        {'discovery_expires':1000000},{'discovery_serial':True},
+                        {'discovery_serial':0},{'discovery_serial':2**53},
+                        {'errors':['discovery_publish_failed']},{'errors':None}):
+            with self.subTest(changed=changed):
+                self.assertEqual(self.states(summarize({**state,**changed},now=110))['discovery'],'attention')
+        self.assertIn('GitHub',summarize({**state,'errors':['discovery_publish_failed']},now=110)['errors'][0])
+
     def test_memory_signal_rejects_pressure_invalid_and_stale_samples(self):
         state={'checked_at':100,'memory_available_bytes':2*1024**3,'memory_total_bytes':16*1024**3}
         self.assertEqual(self.states(summarize(state,now=110))['memory'],'ok')
