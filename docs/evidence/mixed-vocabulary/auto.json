@@ -1,0 +1,101 @@
+{
+  "scope": "Four previously inspected ASCEND clips; spelling hints supplied from reference; targeted diagnostic, not accuracy benchmark. Derived transcripts CC BY-SA 4.0; attribution in tests/quality/ascend96/README.md.",
+  "cases": [
+    {
+      "index": 2,
+      "reference": "所以我上學期也學了python",
+      "condition": "none",
+      "vocabulary": "",
+      "text": "所以我上學期也學了python",
+      "seconds": 0.791
+    },
+    {
+      "index": 2,
+      "reference": "所以我上學期也學了python",
+      "condition": "relevant",
+      "vocabulary": "Python",
+      "text": "所以我上學期也學了python",
+      "seconds": 2.415
+    },
+    {
+      "index": 2,
+      "reference": "所以我上學期也學了python",
+      "condition": "unrelated",
+      "vocabulary": "DreamType,Cloudflare",
+      "text": "所以我上學期也學了python",
+      "seconds": 0.508
+    },
+    {
+      "index": 24,
+      "reference": "from our department如果我們要去申請",
+      "condition": "none",
+      "vocabulary": "",
+      "text": "from our department,如果我們要去申請",
+      "seconds": 0.511
+    },
+    {
+      "index": 24,
+      "reference": "from our department如果我們要去申請",
+      "condition": "relevant",
+      "vocabulary": "department",
+      "text": "from our department如果我們要去申請",
+      "seconds": 0.663
+    },
+    {
+      "index": 24,
+      "reference": "from our department如果我們要去申請",
+      "condition": "unrelated",
+      "vocabulary": "DreamType,Cloudflare",
+      "text": "from our department,如果我們要去申請",
+      "seconds": 0.515
+    },
+    {
+      "index": 26,
+      "reference": "not what I expected in the beginning but just對最後就回到這裡",
+      "condition": "none",
+      "vocabulary": "",
+      "text": "It's not what I expected in the beginning, but just, right, I'll just return to this point.",
+      "seconds": 0.547
+    },
+    {
+      "index": 26,
+      "reference": "not what I expected in the beginning but just對最後就回到這裡",
+      "condition": "relevant",
+      "vocabulary": "expected,beginning",
+      "text": "It's not what I expected in the beginning, but just,最後就回到這裡",
+      "seconds": 0.534
+    },
+    {
+      "index": 26,
+      "reference": "not what I expected in the beginning but just對最後就回到這裡",
+      "condition": "unrelated",
+      "vocabulary": "DreamType,Cloudflare",
+      "text": "It's not what I expected in the beginning, but just, right,最後就回到這裡",
+      "seconds": 0.546
+    },
+    {
+      "index": 55,
+      "reference": "you can not wear your呃clothes",
+      "condition": "none",
+      "vocabulary": "",
+      "text": "you can now wear your clothes.",
+      "seconds": 0.499
+    },
+    {
+      "index": 55,
+      "reference": "you can not wear your呃clothes",
+      "condition": "relevant",
+      "vocabulary": "clothes",
+      "text": "you can now wear your clothes",
+      "seconds": 0.502
+    },
+    {
+      "index": 55,
+      "reference": "you can not wear your呃clothes",
+      "condition": "unrelated",
+      "vocabulary": "DreamType,Cloudflare",
+      "text": "you can now wear your clothes",
+      "seconds": 0.501
+    }
+  ]
+}
