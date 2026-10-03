@@ -3,6 +3,7 @@ import math
 import time
 
 ERRORS = {
+    'discovery_publish_failed': '手機網址發布或續期失敗，請檢查主機的 GitHub 登入與網路',
     'maintenance_not_run': '尚未取得維護紀錄',
     'host_restart_failed': '主機服務自動恢復失敗',
     'tunnel_restart_failed': '手機連線通道自動恢復失敗',
@@ -27,6 +28,22 @@ def summarize(maintenance, sync_configured=False, now=None):
         '最近一次維護檢查正常', '需要確認主機與模型服務；舊紀錄不能代表目前正常')
     add('tunnel', '手機連線', fresh and state.get('tunnel_ready') is True,
         '最近一次通道檢查正常', '需要確認連線通道；重新啟動後網址可能改變')
+    if 'discovery_enabled' in state:
+        expiry=state.get('discovery_expires');serial=state.get('discovery_serial')
+        valid_expiry=type(expiry) in (int,float) and math.isfinite(expiry) and 0<expiry-now<=86400
+        valid_serial=type(serial) is int and 0<serial<2**53
+        errors=state.get('errors',[])
+        discovery_ok=(state.get('discovery_enabled') is True and fresh and
+            recent('discovery_last_checked',900) and valid_expiry and valid_serial and
+            isinstance(errors,list) and 'discovery_publish_failed' not in errors)
+        if state.get('discovery_enabled') is not True:
+            detail='尚未啟用網址自動發布；手機需向管理者取得服務網址'
+        elif not valid_expiry:
+            detail='簽章網址已過期或缺少有效期限；請檢查主機的 GitHub 登入與維護排程'
+        else:
+            detail='網址發布缺少近期成功紀錄或最近續期失敗；請檢查 GitHub 登入與網路'
+        add('discovery','手機網址更新',discovery_ok,
+            '主機最近檢查的已發布網址仍在有效期內；不代表手機目前可連線',detail)
     add('backup', '本機加密備份', recent('last_backup', 129600),
         '最近 36 小時內有成功備份紀錄', '超過 36 小時未成功備份或尚無紀錄，請檢查備份工作')
     verified = (recent('last_backup_verified',129600) and isinstance(state.get('backup_file'),str) and bool(state.get('backup_file'))

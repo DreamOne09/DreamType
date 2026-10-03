@@ -21,3 +21,5 @@ Android 16 原生驗證通過：[執行記錄](https://github.com/DreamOne09/Dre
 [0.9.20-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.20-rc1) 已公開，versionCode 30，70429 bytes。公開未登入下載 SHA-256 為 `fd43c77d6de479584476eaa14480e0eaf9f8e041320f82ef0ce9944887b7062f`，原簽章 SHA-256 為 `8af01d69be8604c2f4a288d55651bb72bed42a391c546f04db4a2a0deb14fc98`。APK 未包含測試 instrumentation、測試 CA 或檢查範圍內的主機憑證；此項不是獨立安全審查。
 
 Pixel 9 行動網路及 Surfshark 仍待實機驗收。
+
+管理頁新增「手機網址更新」狀態：僅在近期維護、有效期限與序號正常、且無發布錯誤時顯示正常。這是主機發布紀錄，不代表手機可連線。過期或失敗會提醒檢查 GitHub 登入、網路與排程。
