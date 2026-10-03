@@ -39,6 +39,24 @@ class PublicationTests(unittest.TestCase):
                 publication.publish(work,1800000000,client,api)
             self.assertFalse((work/'endpoint-published.json').exists())
 
+    def test_compare_and_swap_failure_preserves_previous_success(self):
+        with tempfile.TemporaryDirectory() as directory:
+            work=Path(directory)
+            previous={'url':'https://old.trycloudflare.com','serial':10,'expires':1800000000}
+            saved=work/'endpoint-published.json'
+            saved.write_text(json.dumps(previous))
+            def respond(request):
+                return httpx.Response(200,json={'hostname':'fixture.trycloudflare.com'} if request.url.path=='/quicktunnel' else {'status':'ready'})
+            def prepare(work,url,now):
+                (work/'endpoint-public.json').write_text('{"payload":"new","signature":"signed"}')
+                return dict(url=url,serial=now,expires=now+86400)
+            def api(method,path,body=None):
+                if method=='GET':return {'sha':'old-revision'}
+                raise OSError('revision conflict')
+            with httpx.Client(transport=httpx.MockTransport(respond)) as client,patch.object(publication,'prepare',prepare),self.assertRaises(OSError):
+                publication.publish(work,1800000000,client,api)
+            self.assertEqual(json.loads(saved.read_text()),previous)
+
     def test_unready_service_is_not_published(self):
         with tempfile.TemporaryDirectory() as directory:
             def respond(request):return httpx.Response(200,json={'hostname':'fixture.trycloudflare.com'} if request.url.path=='/quicktunnel' else {'status':'loading'})

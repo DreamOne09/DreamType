@@ -298,7 +298,7 @@ public final class SmokeInstrumentation extends Instrumentation {
     if(new File(context.getNoBackupFilesDir(),"pending-recording.bin.tmp").exists())throw new AssertionError("Temporary recording still retained");
     result.putString("delivered","passed");finish(Activity.RESULT_OK,result);return;
    }
-   if(!configureVoice){responseDeadlineCheck(result);defaultServerForms(context);discoveryUiChecks(context);result.putString("discovery_ui","passed");result.putString("default_server_forms","passed");}
+   if(!configureVoice){ServiceDiscoveryTest.main(new String[0]);result.putString("discovery_crypto","passed");responseDeadlineCheck(result);defaultServerForms(context);discoveryUiChecks(context);result.putString("discovery_ui","passed");result.putString("default_server_forms","passed");}
    AppConfig.clearSession(context);
    Activity home=open(HomeActivity.class);
    final TextView[] login={null};runOnMainSync(()->{login[0]=find(home.getWindow().getDecorView(),"登入開始使用");});

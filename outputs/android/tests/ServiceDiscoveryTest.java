@@ -19,6 +19,10 @@ public class ServiceDiscoveryTest {
  public static void main(String[] args)throws Exception {
   KeyPairGenerator generator=KeyPairGenerator.getInstance("EC");generator.initialize(new ECGenParameterSpec("secp256r1"));key=generator.generateKeyPair();byte[] pub=key.getPublic().getEncoded();
   String good=signed(payload());
+  byte[] plain="signed metadata".getBytes(StandardCharsets.UTF_8);
+  if(!ServiceDiscovery.readDocument(new java.io.ByteArrayInputStream(plain)).equals("signed metadata"))throw new AssertionError("Metadata read changed");
+  reject(()->ServiceDiscovery.readDocument(new java.io.ByteArrayInputStream(new byte[10001])));
+  reject(()->ServiceDiscovery.readDocument(new java.io.ByteArrayInputStream(new byte[]{(byte)0xc3,0x28})));
   if(!ServiceDiscovery.verify(good,pub,NOW,5).url.equals("https://fixture.trycloudflare.com"))throw new AssertionError("Valid discovery rejected");
   reject(()->ServiceDiscovery.verify(good,generator.generateKeyPair().getPublic().getEncoded(),NOW,0));
   reject(()->ServiceDiscovery.verify(good,pub,NOW+86400,0));
