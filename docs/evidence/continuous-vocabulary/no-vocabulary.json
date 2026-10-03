@@ -1,0 +1,18 @@
+{
+  "scope": "Concatenated CC0 public clips, not natural continuous speech",
+  "seconds": 1.4430178999973577,
+  "result": {
+    "text": "我們的人口結構極速老化。新電端。則正確地說明瞭星球的大小。開源服務。東華大學連外道路。我今天和明天都要上課。室內建的瀏覽器功能。我們的人口結構極速老化。新電端。則正確地說明瞭星球的大小。開源服務東華大學連外道路我今天和明天都要上課室內建的瀏覽器功能",
+    "raw_text": "我們的人口結構極速老化。新電端。則正確地說明瞭星球的大小。開源服務。東華大學連外道路。我今天和明天都要上課。室內建的瀏覽器功能。我們的人口結構極速老化。新電端。則正確地說明瞭星球的大小。開源服務東華大學連外道路我今天和明天都要上課室內建的瀏覽器功能",
+    "language": "zh",
+    "duration": 67.008,
+    "timings": {
+      "speech_seconds": 1.19,
+      "format_seconds": 0.0,
+      "total_seconds": 1.425
+    },
+    "warning": null,
+    "mode": "organize",
+    "target_language": "zh-TW"
+  }
+}

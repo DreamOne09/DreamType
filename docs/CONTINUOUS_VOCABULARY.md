@@ -9,3 +9,5 @@
 [舊輸出](evidence/continuous-vocabulary/before.json) 第二次出現「聯外道路」時變成「連外道路」；[新輸出](evidence/continuous-vocabulary/after.json) 兩次皆保留「聯外道路」。仍有「急速／極速」和「是內建／室內建」誤辨，未宣稱全面改善。這是串接短句，不等於自然長口述或使用者問題重現；延遲單次數值也不能證明速度提升。
 
 25 組個人化回歸測試通過。本機服務已載入此修正，不需更新手機 APK。仍待更多自然音訊、無關詞干擾與使用者實例驗證。
+
+追加同一段音訊的[無個人詞庫](evidence/continuous-vocabulary/no-vocabulary.json)與[無關詞庫](evidence/continuous-vocabulary/distractor.json)比較。無關詞為「夢想方塊、長輝、陳昀霏、台積電、聯發科」，當次輸出未插入這些詞。兩種條件仍有「新電端」「連外道路」錯字，正確詞庫才恢復寫法。此單案不能證明所有提示皆無干擾。
