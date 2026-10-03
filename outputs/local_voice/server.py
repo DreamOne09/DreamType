@@ -162,7 +162,9 @@ def speech_token_count(text):
 def recognize(audio, language, prompt):
     segments, info = model.transcribe(audio, language=language, beam_size=1,
         vad_filter=True, vad_parameters={'min_silence_duration_ms': 350},
-        condition_on_previous_text=False, initial_prompt=prompt)
+        # With previous-text conditioning disabled, initial_prompt disappears
+        # after the first decoding window. Bounded hints must reach every window.
+        condition_on_previous_text=False, hotwords=prompt)
     text = ''.join(segment.text for segment in segments).strip()
     return (converter.convert(text) if info.language=='zh' else text), info.language
 
