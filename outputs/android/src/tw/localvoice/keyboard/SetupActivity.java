@@ -44,13 +44,15 @@ public final class SetupActivity extends Activity {
         connection.setVisibility(View.VISIBLE);
         text(connection,"目前服務網址已預填；填入你的專用金鑰後測試連線。若使用帳號，請回首頁登入。也可從配對連結帶入設定。",15);
         text(connection,"電腦網址（HTTPS）",14);
-        server=new EditText(this);server.setSingleLine(true);server.setTextSize(15);server.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI);server.setHint("https://…trycloudflare.com");connection.addView(server);
+        server=new EditText(this);server.setContentDescription("服務網址（https://…）");server.setSingleLine(true);server.setTextSize(15);server.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI);server.setHint("https://…trycloudflare.com");connection.addView(server);
         text(connection,"專用金鑰",14);
         key=new EditText(this);key.setSingleLine(true);key.setTextSize(15);key.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);key.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);connection.addView(key);
         auto=new CheckBox(this);auto.setText("說完後自動放進原本輸入框");auto.setTextSize(16);connection.addView(auto);
         AppConfig config=AppConfig.load(this);server.setText(AppConfig.setupServer(config.server));key.setText(config.accountMode?"":config.key);auto.setChecked(config.autoInsert);
+        button(connection,"取得最新服務網址",v->DiscoverySetup.refresh(this,server,status,worker));
         save=button(connection,"儲存並測試連線",v->saveAndTest());
         Ui.button(save,true);
+        if(config.server.isEmpty())DiscoverySetup.refresh(this,server,status,worker);
         button(column,"返回首頁",v->{startActivity(new Intent(this,HomeActivity.class));finish();});
         text(column,"網址變更時只需更新這裡。電腦需保持開啟；錄音經你設定的 HTTPS 通道傳輸。",14);
         importPairing(getIntent());

@@ -14,7 +14,7 @@ public final class AccountActivity extends Activity {
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
  private TextView status;
  private LinearLayout page;
- private boolean busy;
+ private boolean busy,reconnect,replacePendingConfirmed;
  private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
  private void text(String s,int size){TextView t=new TextView(this);t.setText(s);t.setTextColor(Ui.INK);t.setTextSize(size);t.setPadding(0,dp(12),0,dp(8));page.addView(t);}
  private EditText field(String hint,String value,boolean password){
@@ -35,10 +35,11 @@ public final class AccountActivity extends Activity {
   scroll.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
   text("我的帳號",28);AppConfig current=AppConfig.load(this);
   status=new TextView(this);status.setTextColor(Ui.MUTED);status.setTextSize(16);status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-  if(current.ready()&&current.accountMode){
+  if(current.ready()&&current.accountMode&&!reconnect){
    text("封閉試用中 · 尚未收費",17);text("錄音由管理者的電腦處理。你的手機只需要網路。",15);page.addView(status);
    button("查看本月用量",true,v->task(()->{JSONObject me=VoiceApi.json(current,"GET","/v2/me",null);return "帳號："+me.getString("name")+"\n已用 "+Math.ceil(me.getDouble("used_seconds")/60)+" 分鐘／"+(me.getInt("limit_seconds")/60)+" 分鐘\n尚可使用約 "+(me.getInt("remaining_seconds")/60)+" 分鐘\n額度每月依 UTC 重算。";},false));
    button("同步我的偏好",false,v->task(()->{JSONObject me=VoiceApi.json(current,"GET","/v2/me",null);AppConfig.savePreferences(this,current,me.getJSONObject("preferences"),null);return "已取回帳號的提示詞與常用詞。";},false));
+   button("更新服務網址並重新登入",false,v->{reconnect=true;replacePendingConfirmed=false;show();});
    button("修改密碼",false,v->{LinearLayout fields=new LinearLayout(this);fields.setOrientation(1);EditText oldPass=new EditText(this),newPass=new EditText(this);oldPass.setHint("目前密碼");newPass.setHint("新密碼（至少 12 字元）");for(EditText e:new EditText[]{oldPass,newPass}){e.setInputType(129);e.setSaveEnabled(false);e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);fields.addView(e);}
     new AlertDialog.Builder(this).setTitle("修改密碼").setMessage("完成後，所有裝置都需要重新登入。").setView(fields).setPositiveButton("儲存",(d,w)->{final String oldValue=oldPass.getText().toString(),newValue=newPass.getText().toString();oldPass.setText("");newPass.setText("");task(()->{VoiceApi.json(current,"POST","/v2/me/password",new JSONObject().put("current_password",oldValue).put("new_password",newValue));AppConfig.clearSessionIfCurrent(this,current);return "密碼已更新，請重新登入。";},true);}).setNegativeButton("取消",null).show();});
    button("登出",false,v->task(()->{VoiceApi.json(current,"POST","/v2/logout",new JSONObject());AppConfig.clearSessionIfCurrent(this,current);return "已登出，手機上的帳號設定已清除。";},true));
@@ -50,16 +51,23 @@ public final class AccountActivity extends Activity {
    text("輸入管理者提供的網址與試用帳號。",16);
    EditText server=field("服務網址（https://…）",AppConfig.setupServer(current.server),false);
    EditText username=field("帳號","",false),password=field("密碼","",true);page.addView(status);
-   button("登入",true,v->{final String host=server.getText().toString(),name=username.getText().toString(),pass=password.getText().toString();password.setText("");
+   button("取得最新服務網址",false,v->DiscoverySetup.refresh(this,server,status,worker));
+   button("登入",true,v->{
+    if(current.ready()&&!replacePendingConfirmed&&new java.io.File(getNoBackupFilesDir(),"pending-recording.bin").exists()){
+     new AlertDialog.Builder(this).setTitle("仍有未完成錄音").setMessage("重新登入成功後，舊登入的未完成錄音會清除。若需要保留，請取消並先回鍵盤處理。").setPositiveButton("清除舊錄音並登入",(dialog,which)->{replacePendingConfirmed=true;v.performClick();}).setNegativeButton("取消",null).show();return;
+    }
+    final String host=server.getText().toString(),name=username.getText().toString(),pass=password.getText().toString();password.setText("");
+    replacePendingConfirmed=false;
     task(()->{
      String normalized=AppConfig.normalize(host);
      JSONObject session=VoiceApi.json(new AppConfig(normalized,"",false),"POST","/v2/login",new JSONObject().put("username",name).put("password",pass));
      AppConfig config=new AppConfig(normalized,session.getString("token"),false,"","",true,true);
      JSONObject me=VoiceApi.json(config,"GET","/v2/me",null);
-     AppConfig.replaceSession(this,current,config,me.getJSONObject("preferences"));return "登入成功。回到首頁，繼續啟用鍵盤。";
+     AppConfig.replaceSession(this,current,config,me.getJSONObject("preferences"));reconnect=false;return "登入成功。回到首頁，繼續啟用鍵盤。";
     },true);
    });
    text("目前由管理者建立帳號，不開放自行註冊。登入有效七天，到期後重新登入。",14);
+   if(current.server.isEmpty()||reconnect)DiscoverySetup.refresh(this,server,status,worker);
   }
   button("資料與隱私",false,v->startActivity(new android.content.Intent(this,PrivacyActivity.class)));
   button("返回",false,v->finish());

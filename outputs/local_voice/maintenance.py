@@ -81,6 +81,20 @@ def _run(root,force_backup=False):
             subprocess.run([sys.executable,str(root/'outputs/local_voice/control.py'),'tunnel'],check=True,timeout=45,capture_output=True)
             state['last_tunnel_restart']=now;state['phone_url_may_have_changed']=True
         except Exception:state['errors'].append('tunnel_restart_failed')
+    state['discovery_enabled']=False
+    if (work/'endpoint-discovery.json').exists():
+        try:
+            settings=json.loads((work/'endpoint-discovery.json').read_text())
+            if settings.get('enabled') is True:
+                state['discovery_enabled']=True
+                if ready and tunnel:
+                    from endpoint_publish import publish
+                    result=publish(work,now=int(now))
+                    state['discovery_expires']=result['expires']
+                    state['discovery_serial']=result['serial']
+                    state['discovery_last_checked']=now
+        except Exception:
+            state['errors'].append('discovery_publish_failed')
     # Create the snapshot first: create() also refreshes the local ledger.
     if force_backup or now-state.get('last_backup',0)>86400:
         try:
