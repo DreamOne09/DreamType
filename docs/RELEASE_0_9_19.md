@@ -8,7 +8,7 @@
 
 - JVM 測試涵蓋空設定、既有網址保留、HTTPS 格式與仍需憑證。
 - 原生模擬器案例檢查登入及私人配對兩個實際畫面的預填、保留自訂網址，以及開啟畫面不儲存設定或建立登入。
-- 原生案例尚待執行，候選 APK 尚未發布；Pixel 9 安裝與升級尚未實測。
+- [Android 16 原生案例](https://github.com/DreamOne09/DreamType/actions/runs/37093934791) 已通過，包含 default_server_forms=passed；[測試版已發布](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.19-rc1)，公開下載雜湊與原簽章已核對。Pixel 9 安裝與升級尚未實測。
 
 ## 詞庫仍待改善
 
