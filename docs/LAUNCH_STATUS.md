@@ -2,7 +2,7 @@
 
 目前是可下載的封閉測試產品，尚不能公開付費上線，也沒有證據證明整體比 Typeless 更好。本文彙整當前差距，歷史版本文件的完成項目不能代替這些門檻。
 
-最新預覽版為 [0.9.18-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.18-rc1)，versionCode 28。修正慢速回應內容等待，九組 JVM 契約與 Android 16 原生回歸通過；公開 APK 下載雜湊與原簽章已核對。原生測試不是 Pixel 9 升級或 Surfshark 驗收，詳見 [版本證據](RELEASE_0_9_18.md)。
+最新預覽版為 [0.9.19-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.19-rc1)，versionCode 29。首次安裝預填服務網址，十組 JVM 契約與 Android 16 原生回歸通過；公開 APK 下載雜湊與原簽章已核對。臨時網址變更仍需更新設定，Pixel 9 與 Surfshark 尚待驗收，詳見 [版本證據](RELEASE_0_9_19.md)。
 
 | 要求 | 已有證據 | 尚缺 |
 |---|---|---|
