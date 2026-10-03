@@ -48,7 +48,7 @@ public final class AccountActivity extends Activity {
     new AlertDialog.Builder(this).setTitle("永久刪除帳號？").setMessage("線上帳號、所有登入、個人偏好與用量紀錄將刪除。歷史備份不會立即改寫，主機保留帳號 ID 與刪除時間供還原核對。詳見「資料與隱私」。").setView(password).setPositiveButton("永久刪除",(d,w)->{final String pass=password.getText().toString();password.setText("");task(()->{VoiceApi.json(current,"DELETE","/v2/me",new JSONObject().put("password",pass));AppConfig.clearSessionIfCurrent(this,current);return "帳號已刪除。";},true);}).setNegativeButton("取消",null).show();});
   }else{
    text("輸入管理者提供的網址與試用帳號。",16);
-   EditText server=field("服務網址（https://…）",current.server,false);
+   EditText server=field("服務網址（https://…）",AppConfig.setupServer(current.server),false);
    EditText username=field("帳號","",false),password=field("密碼","",true);page.addView(status);
    button("登入",true,v->{final String host=server.getText().toString(),name=username.getText().toString(),pass=password.getText().toString();password.setText("");
     task(()->{

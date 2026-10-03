@@ -13,6 +13,9 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
 final class AppConfig {
+    // Public endpoint only. Never embed credentials or override a saved server.
+    static final String DEFAULT_SERVER="https://hotel-coupons-arlington-korean.trycloudflare.com";
+    static String setupServer(String saved){return saved==null||saved.trim().isEmpty()?DEFAULT_SERVER:saved;}
     final String server, key, personalPrompt, vocabulary, mode, targetLanguage, sourceLanguage, wordReplacements;
     static final String[] LANGUAGE_CODES={"zh-TW","en","ja","th","ms","ko","vi","id"};
     static final String[] LANGUAGE_NAMES={"台灣繁中","英文","日文","泰文","馬來文","韓文","越南文","印尼文"};
