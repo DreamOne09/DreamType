@@ -42,13 +42,13 @@ public final class SetupActivity extends Activity {
         status=text(column,AppConfig.load(this).ready()?"已儲存連線 · 電腦需保持開啟":"完成以下設定，就能開始說話",15);
         connection=new LinearLayout(this);connection.setOrientation(LinearLayout.VERTICAL);column.addView(connection);
         connection.setVisibility(View.VISIBLE);
-        text(connection,"填入電腦提供的網址與金鑰，只需設定一次。也可從配對連結自動填入，日常使用不用開網頁。",15);
+        text(connection,"目前服務網址已預填；填入你的專用金鑰後測試連線。若使用帳號，請回首頁登入。也可從配對連結帶入設定。",15);
         text(connection,"電腦網址（HTTPS）",14);
         server=new EditText(this);server.setSingleLine(true);server.setTextSize(15);server.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI);server.setHint("https://…trycloudflare.com");connection.addView(server);
         text(connection,"專用金鑰",14);
         key=new EditText(this);key.setSingleLine(true);key.setTextSize(15);key.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);key.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);connection.addView(key);
         auto=new CheckBox(this);auto.setText("說完後自動放進原本輸入框");auto.setTextSize(16);connection.addView(auto);
-        AppConfig config=AppConfig.load(this);server.setText(config.server);key.setText(config.accountMode?"":config.key);auto.setChecked(config.autoInsert);
+        AppConfig config=AppConfig.load(this);server.setText(AppConfig.setupServer(config.server));key.setText(config.accountMode?"":config.key);auto.setChecked(config.autoInsert);
         save=button(connection,"儲存並測試連線",v->saveAndTest());
         Ui.button(save,true);
         button(column,"返回首頁",v->{startActivity(new Intent(this,HomeActivity.class));finish();});

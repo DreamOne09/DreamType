@@ -80,6 +80,24 @@ public final class SmokeInstrumentation extends Instrumentation {
   if(context.getSharedPreferences("connection",0).getAll().toString().contains(active.key))throw new AssertionError("UI login token stored unencrypted");
   runOnMainSync(()->account.finish());waitForIdleSync();
  }
+ private void defaultServerForms(Context context)throws Exception {
+  AppConfig.clearSession(context);
+  for(String saved:new String[]{"","https://custom.example"}){
+   context.getSharedPreferences("connection",0).edit().putString("server",saved).commit();
+   for(Class<?> page:new Class<?>[]{AccountActivity.class,SetupActivity.class}){
+    Activity activity=open(page);
+    runOnMainSync(()->{
+     TextView address=find(activity.getWindow().getDecorView(),AppConfig.setupServer(saved));
+     if(!(address instanceof EditText))throw new AssertionError("Setup address missing from "+page.getSimpleName());
+     activity.finish();
+    });
+    waitForIdleSync();
+    if(AppConfig.load(context).ready())throw new AssertionError("Opening setup authenticated the user");
+    if(!AppConfig.load(context).server.equals(saved))throw new AssertionError("Opening setup changed stored server");
+   }
+  }
+  context.getSharedPreferences("connection",0).edit().clear().commit();
+ }
  private Activity open(Class<?> page){Activity a=startActivitySync(new Intent(getTargetContext(),page).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();return a;}
  private interface LateAction {void run()throws Exception;}
  private void rejected(LateAction action)throws Exception {
@@ -255,7 +273,7 @@ public final class SmokeInstrumentation extends Instrumentation {
     if(new File(context.getNoBackupFilesDir(),"pending-recording.bin.tmp").exists())throw new AssertionError("Temporary recording still retained");
     result.putString("delivered","passed");finish(Activity.RESULT_OK,result);return;
    }
-   if(!configureVoice)responseDeadlineCheck(result);
+   if(!configureVoice){responseDeadlineCheck(result);defaultServerForms(context);result.putString("default_server_forms","passed");}
    AppConfig.clearSession(context);
    Activity home=open(HomeActivity.class);
    final TextView[] login={null};runOnMainSync(()->{login[0]=find(home.getWindow().getDecorView(),"登入開始使用");});
