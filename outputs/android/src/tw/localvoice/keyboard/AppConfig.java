@@ -14,7 +14,7 @@ import javax.crypto.spec.GCMParameterSpec;
 
 final class AppConfig {
     // Public endpoint only. Never embed credentials or override a saved server.
-    static final String DEFAULT_SERVER="https://hotel-coupons-arlington-korean.trycloudflare.com";
+    static final String DEFAULT_SERVER="https://stephanie-alert-calling-pamela.trycloudflare.com";
     static String setupServer(String saved){return saved==null||saved.trim().isEmpty()?DEFAULT_SERVER:saved;}
     final String server, key, personalPrompt, vocabulary, mode, targetLanguage, sourceLanguage, wordReplacements;
     static final String[] LANGUAGE_CODES={"zh-TW","en","ja","th","ms","ko","vi","id"};

@@ -87,8 +87,9 @@ public final class SmokeInstrumentation extends Instrumentation {
    for(Class<?> page:new Class<?>[]{AccountActivity.class,SetupActivity.class}){
     Activity activity=open(page);
     runOnMainSync(()->{
-     TextView address=find(activity.getWindow().getDecorView(),AppConfig.setupServer(saved));
-     if(!(address instanceof EditText))throw new AssertionError("Setup address missing from "+page.getSimpleName());
+     TextView address=labeled(activity.getWindow().getDecorView(),"服務網址（https://…）");
+     if(!(address instanceof EditText)||address.length()==0)throw new AssertionError("Setup address missing from "+page.getSimpleName());
+     if(!saved.isEmpty()&&!saved.equals(address.getText().toString()))throw new AssertionError("Custom server changed");
      activity.finish();
     });
     waitForIdleSync();
@@ -97,6 +98,30 @@ public final class SmokeInstrumentation extends Instrumentation {
    }
   }
   context.getSharedPreferences("connection",0).edit().clear().commit();
+ }
+ private void discoveryUiChecks(Context context)throws Exception {
+  AppConfig.clearSession(context);
+  context.getSharedPreferences("connection",0).edit().putString("server","https://custom.example").commit();
+  context.getSharedPreferences("discovery",0).edit().clear().commit();
+  Activity activity=open(AccountActivity.class);AppConfig original=AppConfig.load(context);
+  runOnMainSync(()->{
+   EditText address=labeled(activity.getWindow().getDecorView(),"服務網址（https://…）");TextView status=new TextView(activity);
+   long now=System.currentTimeMillis()/1000;
+   ServiceDiscovery.Endpoint fresh=new ServiceDiscovery.Endpoint("https://fixture.trycloudflare.com",20,now+600);
+   address.setText("https://edited.example");
+   DiscoverySetup.apply(activity,address,status,"https://custom.example",original,fresh);
+   if(!address.getText().toString().equals("https://edited.example"))throw new AssertionError("Late discovery replaced typed address");
+   address.setText("https://custom.example");
+   DiscoverySetup.apply(activity,address,status,"https://custom.example",original,fresh);
+   if(!address.getText().toString().equals(fresh.url)||!AppConfig.load(context).server.equals("https://custom.example")||AppConfig.load(context).ready())throw new AssertionError("Discovery saved a connection or failed to fill field");
+   DiscoverySetup.apply(activity,address,status,fresh.url,original,new ServiceDiscovery.Endpoint("https://old.trycloudflare.com",19,now+600));
+   if(!address.getText().toString().equals(fresh.url))throw new AssertionError("Rollback accepted in UI");
+   context.getSharedPreferences("connection",0).edit().putString("server","https://switched.example").commit();
+   DiscoverySetup.apply(activity,address,status,fresh.url,original,new ServiceDiscovery.Endpoint("https://late.trycloudflare.com",21,now+600));
+   if(!address.getText().toString().equals(fresh.url))throw new AssertionError("Late discovery crossed sessions");
+   activity.finish();
+  });
+  waitForIdleSync();context.getSharedPreferences("connection",0).edit().clear().commit();context.getSharedPreferences("discovery",0).edit().clear().commit();
  }
  private Activity open(Class<?> page){Activity a=startActivitySync(new Intent(getTargetContext(),page).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();return a;}
  private interface LateAction {void run()throws Exception;}
@@ -273,7 +298,7 @@ public final class SmokeInstrumentation extends Instrumentation {
     if(new File(context.getNoBackupFilesDir(),"pending-recording.bin.tmp").exists())throw new AssertionError("Temporary recording still retained");
     result.putString("delivered","passed");finish(Activity.RESULT_OK,result);return;
    }
-   if(!configureVoice){responseDeadlineCheck(result);defaultServerForms(context);result.putString("default_server_forms","passed");}
+   if(!configureVoice){ServiceDiscoveryTest.main(new String[0]);result.putString("discovery_crypto","passed");responseDeadlineCheck(result);defaultServerForms(context);discoveryUiChecks(context);result.putString("discovery_ui","passed");result.putString("default_server_forms","passed");}
    AppConfig.clearSession(context);
    Activity home=open(HomeActivity.class);
    final TextView[] login={null};runOnMainSync(()->{login[0]=find(home.getWindow().getDecorView(),"登入開始使用");});
