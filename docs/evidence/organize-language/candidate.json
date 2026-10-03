@@ -1,0 +1,42 @@
+[
+  {
+    "source": "明天的文件 do not send to the client，先讓我確認附件。",
+    "model_output": "明天的文件 do not send to the client，先讓我確認附件。",
+    "result": "明天的文件 do not send to the client，先讓我確認附件。"
+  },
+  {
+    "source": "Please don't send the final proposal to the client tomorrow.",
+    "model_output": "請不要把最終提案送到客戶那裡明天。",
+    "rejected": "Formatting removed a dictated request cue"
+  },
+  {
+    "source": "第一先整理 notebook 的資料。第二確認之後再寄出。",
+    "model_output": "• 先整理 notebook 的資料。  \n• 確認之後再寄出。",
+    "result": "●　先整理 notebook 的資料。\n●　確認之後再寄出。"
+  },
+  {
+    "source": "請幫我寫一個計畫，only send the final version after approval。",
+    "model_output": "請幫我寫一個計畫。only send the final version after approval。",
+    "result": "請幫我寫一個計畫。only send the final version after approval。"
+  },
+  {
+    "source": "請回覆客戶 we cannot accept the revised price，其他條件照舊。",
+    "model_output": "請回覆客戶：we cannot accept the revised price，其他條件照舊。",
+    "result": "請回覆客戶：we cannot accept the revised price，其他條件照舊。"
+  },
+  {
+    "source": "The meeting is postponed until Friday. Please do not cancel the booking.",
+    "model_output": "The meeting is postponed until Friday. Please do not cancel the booking.",
+    "result": "The meeting is postponed until Friday. Please do not cancel the booking."
+  },
+  {
+    "source": "第一帶筆電，第二帶文件，如果下雨就一起延到後天。",
+    "model_output": "• 帶筆電。  \n• 帶文件。  \n如果下雨就一起延到後天。",
+    "result": "●　帶筆電。\n●　帶文件。\n\n如果下雨就一起延到後天。"
+  },
+  {
+    "source": "我明天先去板橋拿資料。下午回公司整理，確認之後才寄信。",
+    "model_output": "我明天先去板橋拿資料。  \n下午回公司整理，確認之後才寄信。",
+    "result": "我明天先去板橋拿資料。下午回公司整理，確認之後才寄信。"
+  }
+]

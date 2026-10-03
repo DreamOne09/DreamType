@@ -1,0 +1,42 @@
+[
+  {
+    "source": "Please help me generate a plan for next week.",
+    "model_output": "請幫我生成一個下周的計劃。",
+    "rejected": "Formatting changed a numeric literal"
+  },
+  {
+    "source": "請告訴他 we will not renew the contract，押金照原約定退還。",
+    "model_output": "請告訴他 we will not renew the contract，押金照原約定退還。",
+    "result": "請告訴他 we will not renew the contract，押金照原約定退還。"
+  },
+  {
+    "source": "第一先備份資料，第二確認備份完成之後才刪除舊檔。",
+    "model_output": "• 先備份資料。  \n• 確認備份完成之後才刪除舊檔。",
+    "result": "●　先備份資料。\n●　確認備份完成之後才刪除舊檔。"
+  },
+  {
+    "source": "請在 Friday before noon 回覆，否則下週再處理。",
+    "model_output": "請在周五中午前回覆，否則下週再處理。",
+    "rejected": "Formatting changed a negation or condition"
+  },
+  {
+    "source": "那個人還沒付款，不要先寄出文件。",
+    "model_output": "那個人還沒付款，不要先寄出文件。",
+    "result": "那個人還沒付款，不要先寄出文件。"
+  },
+  {
+    "source": "嗯那個我我想要兩杯拿鐵，啊不是，一杯就好。",
+    "model_output": "我想要一杯拿鐵。",
+    "result": "我想要一杯拿鐵。"
+  },
+  {
+    "source": "請寄到 hi@example.com，電話 0912-003-456，訂單 AB-007。",
+    "model_output": "請寄到 DTKEEP0END，電話 DTKEEP1END，訂單 DTKEEP2END。",
+    "result": "請寄到 hi@example.com，電話 0912-003-456，訂單 AB-007。"
+  },
+  {
+    "source": "會議改到明天。家裡的洗衣機也修好了，晚上記得拿衣服。",
+    "model_output": "會議改到明天。  \n家裡的洗衣機也修好了，晚上記得拿衣服。",
+    "result": "會議改到明天。家裡的洗衣機也修好了，晚上記得拿衣服。"
+  }
+]
