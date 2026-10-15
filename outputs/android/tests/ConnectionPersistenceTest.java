@@ -72,7 +72,7 @@ public final class ConnectionPersistenceTest {
    {Ctx c=new Ctx(dir);AppConfig expected=AppConfig.load(c);c.style.failAt=2;checks.put("style_failure_after_login_reported",fails(()->AppConfig.replaceSession(c,expected,next,prefs))&&AppConfig.load(c).sameSession(next));}
    {Ctx c=new Ctx(dir);AppConfig expected=AppConfig.load(c);AppConfig.replaceSession(c,expected,next,prefs);c.connection.memory=new HashMap<>(c.connection.disk);c.style.memory=new HashMap<>(c.style.disk);checks.put("successful_replace_survives_simulated_reload",AppConfig.load(c).sameSession(next)&&"new synthetic word".equals(AppConfig.load(c).vocabulary));}
   }finally{Security.removeProvider(provider.getName());Files.deleteIfExists(dir.resolve("pending-recording.bin"));Files.deleteIfExists(dir.resolve("pending-recording.bin.tmp"));Files.delete(dir);}
-  boolean passed=true;for(String n:checks.keySet())passed &= checks.getBoolean(n);
+  boolean passed=true;for(java.util.Iterator<String> it=checks.keys();it.hasNext();)passed &= checks.getBoolean(it.next());
   JSONObject result=new JSONObject().put("scope","Actual AppConfig.save/saveConnection/replaceSession, real JCE AES-GCM; synthetic KeyStore, Base64 bridge, Context and memory/disk stores. Not Android Keystore/disk/UI.").put("checks",checks).put("passed",passed).put("synthetic_provider_removed",Security.getProvider(provider.getName())==null).put("temporary_directory_removed",!Files.exists(dir));
   Files.write(report,result.toString(2).getBytes(java.nio.charset.StandardCharsets.UTF_8),StandardOpenOption.CREATE_NEW);
   System.out.println("Connection persistence: passed="+passed+"; evidence saved");if(!passed)throw new AssertionError("See persistence evidence");

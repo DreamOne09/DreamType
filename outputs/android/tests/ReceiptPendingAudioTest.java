@@ -57,7 +57,7 @@ public final class ReceiptPendingAudioTest {
    PendingAudio.clearIfRequest(context,config,recovered.id);
    checks.put("matching_confirmed_result_can_clear",!Files.exists(encrypted));
   }finally{server.stop(0);Security.removeProvider(provider.getName());Files.deleteIfExists(dir.resolve("source.bin"));Files.deleteIfExists(dir.resolve("pending-recording.bin"));Files.deleteIfExists(dir.resolve("pending-recording.bin.tmp"));Files.delete(dir);}
-  boolean passed=true;for(String name:checks.keySet())passed &= checks.getBoolean(name);
+  boolean passed=true;for(java.util.Iterator<String> it=checks.keys();it.hasNext();)passed &= checks.getBoolean(it.next());
   JSONObject report=new JSONObject().put("scope","Actual PendingAudio prepare/read/clearIfRequest and VoiceApi upload/recover on JVM with synthetic AndroidKeyStore/Context and HTTP; explicit caller sequencing, not VoiceIme/UI/TLS.")
     .put("checks",checks).put("passed",passed).put("uploads",uploads.get()).put("receipts",receipts.get()).put("lookups",lookups.get())
     .put("temporary_state_removed",!Files.exists(dir)).put("synthetic_provider_removed",Security.getProvider(provider.getName())==null);

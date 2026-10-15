@@ -10,6 +10,10 @@ import urllib.request
 JSON_SHA256 = '3ea61b2a06e31edf1c91134fe9106b0ebb16628be169f3db75bc7a2b06b45796'
 JSON_URL = 'https://repo.maven.apache.org/maven2/org/json/json/20250517/json-20250517.jar'
 TESTS = ('EmptyResultCheck', 'TranslationContractTest', 'VoiceRecoveryTest', 'EncryptedRecordingTest', 'ErrorMessageTest', 'ReceiptRecoveryTest', 'UpdateCheckTest', 'WordSuggestionsTest', 'ResponseDeadlineTest', 'DefaultServerTest', 'ServiceDiscoveryTest')
+RECOVERY_TESTS = ('AccountPlanTest', 'PurchaseRecoveryTest', 'ConnectionPersistenceTest',
+                  'ConnectionVerificationTest', 'PendingAudioSessionTest', 'PreferenceSyncTest',
+                  'ReceiptPendingAudioTest', 'ResponseIntegrityTest', 'SessionClearFailureTest',
+                  'UploadResponseFailureTest')
 
 
 def main():
@@ -38,15 +42,23 @@ def main():
         classes = work / 'classes'
         classes.mkdir()
         sources = [source / (name + '.java') for name in
-                   ('AppConfig', 'Draft', 'PendingAudio', 'EncryptedRecording', 'VoiceApi', 'UpdateCheck', 'WordSuggestions', 'ServiceDiscovery')]
-        sources += [tests / (name + '.java') for name in TESTS]
+                   ('AppConfig', 'Draft', 'PendingAudio', 'EncryptedRecording', 'VoiceApi', 'UpdateCheck', 'WordSuggestions', 'ServiceDiscovery', 'AccountPlan', 'PurchaseRecovery', 'PreferenceSync')]
+        # Only this host-JVM runner uses these bridges. APK builders compile src/,
+        # never tests/stubs/, and native instrumentation uses the real framework.
+        sources += list((tests / 'stubs').rglob('*.java'))
         subprocess.run([java_tool('javac'), '-encoding', 'UTF-8', '-cp', str(args.android_jar),
                         '-d', str(classes), *map(str, sources)], check=True, timeout=90)
         classpath = os.pathsep.join(map(str, (classes, dependency, args.android_jar)))
-        for name in TESTS:
-            subprocess.run([java_tool('java'), '-cp', classpath, 'tw.localvoice.keyboard.' + name],
+        # Fixtures use the host JSON implementation; compile production classes
+        # above against Android's API first so host-only APIs cannot slip in.
+        test_sources = [tests / (name + '.java') for name in TESTS + RECOVERY_TESTS]
+        subprocess.run([java_tool('javac'), '-encoding', 'UTF-8', '-cp', classpath,
+                        '-d', str(classes), *map(str, test_sources)], check=True, timeout=90)
+        for name in TESTS + RECOVERY_TESTS:
+            evidence = [str(work / (name + '.json'))] if name in RECOVERY_TESTS and name not in ('AccountPlanTest', 'PurchaseRecoveryTest') else []
+            subprocess.run([java_tool('java'), '-cp', classpath, 'tw.localvoice.keyboard.' + name, *evidence],
                            check=True, timeout=60)
-    print('PASS: eleven JVM contract suites. This runner does not test native UI or Keystore.')
+    print(f'PASS: {len(TESTS) + len(RECOVERY_TESTS)} JVM contract suites. This runner does not test native UI or Keystore.')
 
 
 if __name__ == '__main__':

@@ -54,7 +54,7 @@ public final class UploadResponseFailureTest {
        .put("returned_text",received==null?JSONObject.NULL:received.text));
    }
   }finally{server.stop(0);Files.deleteIfExists(audio);}
-  boolean passed=true;for(String key:checks.keySet())passed &= checks.getBoolean(key);
+  boolean passed=true;for(java.util.Iterator<String> it=checks.keys();it.hasNext();)passed &= checks.getBoolean(it.next());
   result.put("checks",checks).put("observations",observations).put("posts",posts.get()).put("passed",passed)
         .put("temporary_audio_removed",!Files.exists(audio));
   Files.write(report,result.toString(2).getBytes(StandardCharsets.UTF_8),StandardOpenOption.CREATE_NEW);
