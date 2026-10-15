@@ -41,7 +41,16 @@ select it in GitHub Actions and run it for the intended revision. Download the
 unsigned artifact only from a successful run; the lint report is also retained
 on failure. Do not treat YAML validation as a successful GitHub build.
 
-2026-10-16: workflow syntax and the two JVM contract programs were checked locally.
-The new workflow has not yet been run on GitHub. Local full builds remain blocked
-by Windows memory pressure; the most recent purchase recovery change is not yet
-proven to be included in a successfully rebuilt APK/AAB pair.
+2026-10-16: GitHub run 38815358793 succeeded for source
+`07d513899a58f7cf3dbd305f7cae068a5aaca32c`, including the purchase recovery change.
+Both release formats and release lint passed after fixing API 26 theme resources
+and layout constants. Lint warnings remain, including backup extraction rules
+and accessibility; passing the build is not production acceptance.
+
+Downloaded artifacts were independently SHA-256 checked:
+
+- APK: `fce6a2495a20351a292be89f2b27109b0cdb508bd90933b693cc592e857b5ddf`
+- AAB: `c8614b9e3d74c0e49918ffb024b5a20e290ca2555312c45831a51a26a313c2cb`
+
+These are unsigned candidates, not an installable upgrade or a store release.
+Local full builds remain constrained by Windows memory pressure.
