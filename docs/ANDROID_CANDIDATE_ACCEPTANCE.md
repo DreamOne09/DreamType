@@ -25,3 +25,7 @@ GitHub Android emulator probe [38816135939](https://github.com/DreamOne09/DreamT
 檔案僅保存在私人工作目錄，未發布 GitHub Release，尚未在 Pixel 9 安裝。真實升級、系統備份排除、付款及商店驗收仍未完成。AAB 尚未簽署上傳。簽署不會啟用主機尚未部署的付款端點。
 
 `f34c750`（只追加測試入口與證據）的 PR 建置、Android contracts、backend unit、speech hint windows 已在 GitHub 全數通過；模擬器結果仍對應 `ce4f99f` 的應用程式來源。
+
+## rc10 清除失敗回報
+
+審查發現 `PendingAudio.clear` 忽略檔案刪除失敗。rc10 改為兩份檔案都嘗試清除，任一失敗便回報；登出不再誤報完整清除，鍵盤手動刪除則顯示可操作的錯誤。以非空目錄模擬無法刪除目標，驗證錯誤回報及另一份暫存檔仍嘗試清理，21 組 JVM 測試通過。此更新的版本編號為 39，尚待新一輪 APK/模擬器驗證；上面 rc9 的簽署雜湊不包含此修正。

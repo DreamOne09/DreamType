@@ -53,7 +53,14 @@ public final class SessionClearFailureTest {
       .put("style_disk_still_has_vocabulary",c.style.disk.containsKey("vocabulary")));
     passed &= ok;
    }
-  }finally{Files.deleteIfExists(dir.resolve("pending-recording.bin"));Files.deleteIfExists(dir.resolve("pending-recording.bin.tmp"));Files.delete(dir);}
+   Path blocked=dir.resolve("pending-recording.bin");Files.createDirectory(blocked);
+   Files.write(blocked.resolve("obstruction"),new byte[]{1});
+   Files.write(dir.resolve("pending-recording.bin.tmp"),new byte[]{2});
+   boolean rejected=false;try{AppConfig.clearSession(new TestContext(dir));}catch(java.io.IOException expected){rejected=true;}
+   boolean deletionFailure=rejected&&Files.exists(blocked.resolve("obstruction"))&&!Files.exists(dir.resolve("pending-recording.bin.tmp"));
+   cases.put("recording_delete_failure_reported_and_temp_cleanup_attempted",deletionFailure);passed &= deletionFailure;
+   Files.delete(blocked.resolve("obstruction"));Files.delete(blocked);
+  }finally{Files.deleteIfExists(dir.resolve("pending-recording.bin/obstruction"));Files.deleteIfExists(dir.resolve("pending-recording.bin"));Files.deleteIfExists(dir.resolve("pending-recording.bin.tmp"));Files.delete(dir);}
   JSONObject result=new JSONObject().put("scope","Actual clearSession; synthetic Context/preferences, disk-vs-memory simulation. No native disk/Keystore or real accounts.").put("cases",cases).put("passed",passed);
   Files.write(report,result.toString(2).getBytes(java.nio.charset.StandardCharsets.UTF_8),StandardOpenOption.CREATE_NEW);
   System.out.println("Session clear: passed="+passed+"; evidence saved");if(!passed)throw new AssertionError("See session clear evidence");

@@ -32,7 +32,14 @@ final class PendingAudio {
   requireCurrent(c,config);
   return EncryptedRecording.read(file(c),AppConfig.secret(),owner(config),System.currentTimeMillis());
  }
- static synchronized void clear(Context c){file(c).delete();new File(file(c).getPath()+".tmp").delete();}
+ static synchronized void clear(Context c)throws java.io.IOException {
+  java.io.IOException failure=null;
+  for(File target:new File[]{file(c),new File(file(c).getPath()+".tmp")}){
+   try{Files.deleteIfExists(target.toPath());}
+   catch(java.io.IOException error){if(failure==null)failure=error;else failure.addSuppressed(error);}
+  }
+  if(failure!=null)throw new java.io.IOException("手機未能完整刪除保留錄音，請稍後再試；若持續失敗，請到系統設定清除 DreamType 儲存空間。",failure);
+ }
  static synchronized void clearIfRequest(Context c,AppConfig config,String id){
   try{if(config.accountMode&&AppConfig.load(c).sameSession(config)&&EncryptedRecording.matches(file(c),owner(config),id))clear(c);}catch(Exception ignored){}
  }
