@@ -19,7 +19,7 @@ public class TranslationContractTest {
    if(e.getRequestURI().getPath().endsWith("/receipt")){receipts.incrementAndGet();body="{\"ok\":true}";}
    else {
     if(!"translate".equals(e.getRequestHeaders().getFirst("X-DreamType-Mode"))||!"ja".equals(e.getRequestHeaders().getFirst("X-DreamType-Target")))throw new AssertionError("Missing mode headers");
-    body="{\"id\":\"test-job\",\"state\":\"done\",\"text\":\"hello\",\"receipt_required\":true"+(stage[0]==0?"":",\"mode\":\"translate\",\"target_language\":\""+(stage[0]==1?"ja":"th")+"\"")+"}";
+    body="{\"id\":\"request-123456789\",\"state\":\"done\",\"text\":\"hello\",\"receipt_required\":true"+(stage[0]==0?"":",\"mode\":\"translate\",\"target_language\":\""+(stage[0]==1?"ja":"th")+"\"")+"}";
    }
    byte[] b=body.getBytes(StandardCharsets.UTF_8);e.sendResponseHeaders(200,b.length);e.getResponseBody().write(b);e.close();
   });server.start();

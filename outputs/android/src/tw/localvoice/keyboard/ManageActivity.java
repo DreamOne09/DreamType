@@ -50,10 +50,13 @@ public final class ManageActivity extends Activity {
    try{rules=WordSuggestions.validate(replacements.getText().toString());}catch(IllegalArgumentException error){status.setText(error.getMessage());return;}
    final String outputMode=mode.getSelectedItemPosition()==1?"translate":"organize",targetCode=AppConfig.LANGUAGE_CODES[target.getSelectedItemPosition()],sourceCode=source.getSelectedItemPosition()==0?"auto":AppConfig.LANGUAGE_CODES[source.getSelectedItemPosition()-1];
    v.setEnabled(false);status.setText("正在儲存…");worker.execute(()->{String message;
-    try{AppConfig active=AppConfig.load(this);if(!active.key.equals(config.key))throw new Exception("帳號已切換，請重新開啟設定。");
+    try{
      org.json.JSONObject prefs=new org.json.JSONObject().put("word_replacements",rules).put("personal_prompt",personal).put("vocabulary",vocabulary).put("taiwan_places",places).put("mode",outputMode).put("target_language",targetCode).put("source_language",sourceCode);
-     if(active.accountMode)VoiceApi.json(active,"POST","/v2/me/preferences",prefs);
-     AppConfig.savePreferences(this,config,prefs,auto);message="已儲存，下次錄音生效。";
+     PreferenceSync.save(config,prefs,auto,new PreferenceSync.Store(){
+      public AppConfig current(){return AppConfig.load(ManageActivity.this);}
+      public void persist(AppConfig expected,org.json.JSONObject value,boolean insert)throws Exception{AppConfig.savePreferences(ManageActivity.this,expected,value,insert);}
+     },(expected,value)->VoiceApi.json(expected,"POST","/v2/me/preferences",value));
+     message="已儲存，下次錄音生效。";
     }catch(Exception e){message=VoiceApi.friendly(e);}final String result=message;runOnUiThread(()->{if(!isDestroyed()){status.setText(result);v.setEnabled(true);}});
    });
   });Ui.button(save,true);
