@@ -17,7 +17,7 @@ public final class HomeActivity extends Activity {
  private TextView text(LinearLayout p,String s,int size){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(Ui.INK);t.setPadding(0,dp(12),0,dp(8));p.addView(t);return t;}
  private Button button(LinearLayout p,String s,boolean primary,View.OnClickListener click){Button b=new Button(this);b.setText(s);b.setTextSize(17);Ui.button(b,primary);b.setMinHeight(dp(58));b.setPadding(dp(16),dp(12),dp(16),dp(12));b.setOnClickListener(click);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,LinearLayout.LayoutParams.WRAP_CONTENT);lp.setMargins(0,dp(8),0,dp(8));p.addView(b,lp);return b;}
  @Override public void onCreate(Bundle saved){super.onCreate(saved);
-  ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(Ui.PAPER);LinearLayout p=new LinearLayout(this);p.setOrientation(1);p.setPadding(dp(28),dp(32),dp(28),dp(24));scroll.addView(p);setContentView(scroll);
+  ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(Ui.PAPER);LinearLayout p=new LinearLayout(this);p.setOrientation(LinearLayout.VERTICAL);p.setPadding(dp(28),dp(32),dp(28),dp(24));scroll.addView(p);setContentView(scroll);
   scroll.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
   ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.voice_icon);logo.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);p.addView(logo,new LinearLayout.LayoutParams(dp(72),dp(72)));
   text(p,"DreamType",24);text(p,"自然說，清楚寫。",32);

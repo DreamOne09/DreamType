@@ -33,10 +33,10 @@ public final class PlayBillingActivity extends Activity {
   super.onCreate(state);getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
   session=AppConfig.load(this);
   if(!session.ready()||!session.accountMode){finish();return;}
-  ScrollView scroll=new ScrollView(this);LinearLayout page=new LinearLayout(this);page.setOrientation(1);page.setPadding(dp(24),dp(24),dp(24),dp(24));scroll.addView(page);setContentView(scroll);
+  ScrollView scroll=new ScrollView(this);LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(24),dp(24),dp(24),dp(24));scroll.addView(page);setContentView(scroll);
   page.setBackgroundColor(Ui.PAPER);TextView title=new TextView(this);title.setText("訂閱 DreamType");title.setTextSize(28);page.addView(title);
   status=new TextView(this);status.setTextSize(16);status.setText("正在確認可用方案…");status.setAccessibilityLiveRegion(android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE);page.addView(status);
-  offers=new LinearLayout(this);offers.setOrientation(1);page.addView(offers);
+  offers=new LinearLayout(this);offers.setOrientation(LinearLayout.VERTICAL);page.addView(offers);
   button(page,"恢復購買",this::restore);
   button(page,"管理 Google Play 訂閱",()->{try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://play.google.com/store/account/subscriptions")));}catch(Exception e){message("無法開啟 Google Play，請從 Play 商店管理訂閱。");}});
   button(page,"資料與隱私",()->startActivity(new Intent(this,PrivacyActivity.class)));

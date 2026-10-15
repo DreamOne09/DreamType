@@ -31,7 +31,7 @@ public final class AccountActivity extends Activity {
  }
  @Override public void onCreate(Bundle state){super.onCreate(state);getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);show();}
  private void show(){
-  ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Ui.PAPER);page=new LinearLayout(this);page.setOrientation(1);page.setPadding(dp(24),dp(20),dp(24),dp(24));scroll.addView(page);setContentView(scroll);
+  ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Ui.PAPER);page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(24),dp(20),dp(24),dp(24));scroll.addView(page);setContentView(scroll);
   scroll.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
   text("我的帳號",28);AppConfig current=AppConfig.load(this);
   status=new TextView(this);status.setTextColor(Ui.MUTED);status.setTextSize(16);status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
@@ -41,7 +41,7 @@ public final class AccountActivity extends Activity {
    button("查看方案與用量",true,v->task(()->{JSONObject me=VoiceApi.json(current,"GET","/v2/me",null);return AccountPlan.describe(me.optString("plan"),me.optString("entitlement_status"))+"\n帳號："+me.getString("name")+"\n本月已用 "+AccountPlan.minutes(me.getLong("used_seconds"))+" 分鐘\n處理中保留 "+AccountPlan.minutes(me.getLong("reserved_seconds"))+" 分鐘\n尚可使用 "+AccountPlan.minutes(me.getLong("remaining_seconds"))+" 分鐘\n額度每月依 UTC 重算。";},false));
    button("同步我的偏好",false,v->task(()->{JSONObject me=VoiceApi.json(current,"GET","/v2/me",null);AppConfig.savePreferences(this,current,me.getJSONObject("preferences"),null);return "已取回帳號的提示詞與常用詞。";},false));
    button("更新服務網址並重新登入",false,v->{reconnect=true;replacePendingConfirmed=false;show();});
-   button("修改密碼",false,v->{LinearLayout fields=new LinearLayout(this);fields.setOrientation(1);EditText oldPass=new EditText(this),newPass=new EditText(this);oldPass.setHint("目前密碼");newPass.setHint("新密碼（至少 12 字元）");for(EditText e:new EditText[]{oldPass,newPass}){e.setInputType(129);e.setSaveEnabled(false);e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);fields.addView(e);}
+   button("修改密碼",false,v->{LinearLayout fields=new LinearLayout(this);fields.setOrientation(LinearLayout.VERTICAL);EditText oldPass=new EditText(this),newPass=new EditText(this);oldPass.setHint("目前密碼");newPass.setHint("新密碼（至少 12 字元）");for(EditText e:new EditText[]{oldPass,newPass}){e.setInputType(129);e.setSaveEnabled(false);e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);fields.addView(e);}
     new AlertDialog.Builder(this).setTitle("修改密碼").setMessage("完成後，所有裝置都需要重新登入。").setView(fields).setPositiveButton("儲存",(d,w)->{final String oldValue=oldPass.getText().toString(),newValue=newPass.getText().toString();oldPass.setText("");newPass.setText("");task(()->{VoiceApi.json(current,"POST","/v2/me/password",new JSONObject().put("current_password",oldValue).put("new_password",newValue));AppConfig.clearSessionIfCurrent(this,current);return "密碼已更新，請重新登入。";},true);}).setNegativeButton("取消",null).show();});
    button("登出",false,v->task(()->{VoiceApi.json(current,"POST","/v2/logout",new JSONObject());AppConfig.clearSessionIfCurrent(this,current);return "已登出，手機上的帳號設定已清除。";},true));
    button("移除手機登入資料",false,v->new AlertDialog.Builder(this).setTitle("清除這支手機的登入？").setMessage("連不到服務時可使用。只清除手機資料，不會撤銷其他裝置的登入，也不會刪除帳號。")

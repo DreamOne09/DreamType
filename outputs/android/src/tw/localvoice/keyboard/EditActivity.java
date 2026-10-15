@@ -25,7 +25,7 @@ public final class EditActivity extends Activity {
   original=retained==null?Draft.text:retained.original;
   sessionKey=retained==null?AppConfig.load(this).key:retained.key;
   draftRevision=retained==null?Draft.revision:retained.revision;
-  LinearLayout p=new LinearLayout(this);p.setOrientation(1);p.setPadding(dp(20),dp(16),dp(20),dp(16));p.setBackgroundColor(Ui.PAPER);setContentView(p);
+  LinearLayout p=new LinearLayout(this);p.setOrientation(LinearLayout.VERTICAL);p.setPadding(dp(20),dp(16),dp(20),dp(16));p.setBackgroundColor(Ui.PAPER);setContentView(p);
   p.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(dp(20)+i.getSystemWindowInsetLeft(),dp(16)+i.getSystemWindowInsetTop(),dp(20)+i.getSystemWindowInsetRight(),dp(16)+i.getSystemWindowInsetBottom());return i;});
   TextView title=new TextView(this);title.setText("修改文字");title.setTextColor(Ui.INK);title.setTextSize(24);p.addView(title);
   TextView hint=new TextView(this);hint.setText("可切換 Gboard 修改。完成後回到原 App，切回 DreamType，再按「插入」。");hint.setTextColor(Ui.MUTED);hint.setTextSize(15);p.addView(hint);
