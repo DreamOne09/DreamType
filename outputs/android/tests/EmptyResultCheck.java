@@ -17,7 +17,7 @@ public final class EmptyResultCheck {
    try(java.io.OutputStream out=exchange.getResponseBody()){out.write(bytes);}
   });
   server.createContext("/v2/dictations/test/receipt",exchange->{
-   receipts.incrementAndGet();byte[] bytes="{}".getBytes("UTF-8");
+   receipts.incrementAndGet();byte[] bytes="{\"ok\":true}".getBytes("UTF-8");
    exchange.sendResponseHeaders(200,bytes.length);
    try(java.io.OutputStream out=exchange.getResponseBody()){out.write(bytes);}
   });

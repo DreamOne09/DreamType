@@ -1,0 +1,53 @@
+name: Android Play candidate
+on:
+  workflow_dispatch:
+  push:
+    branches: [delivery/android-play-candidate]
+    paths:
+      - 'outputs/android/**'
+      - '.github/workflows/android-play-build.yml'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install matching Android SDK
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"'
+      - name: Check account display and purchase recovery
+        run: |
+          mkdir -p work/play-contracts
+          javac -d work/play-contracts outputs/android/src/tw/localvoice/keyboard/AccountPlan.java outputs/android/src/tw/localvoice/keyboard/PurchaseRecovery.java outputs/android/tests/AccountPlanTest.java outputs/android/tests/PurchaseRecoveryTest.java
+          java -cp work/play-contracts tw.localvoice.keyboard.AccountPlanTest
+          java -cp work/play-contracts tw.localvoice.keyboard.PurchaseRecoveryTest
+      - name: Build unsigned APK and AAB and run Android lint
+        working-directory: outputs/android/play-build
+        run: bash gradlew --no-daemon --console plain assembleRelease bundleRelease lintRelease
+      - name: Record exact artifact digests and source revision
+        run: |
+          mkdir -p work/play-release
+          cp outputs/android/play-build/build/outputs/apk/release/*-unsigned.apk work/play-release/
+          cp outputs/android/play-build/build/outputs/bundle/release/*.aab work/play-release/
+          git rev-parse HEAD > work/play-release/SOURCE_COMMIT.txt
+          printf '%s\n' 'Unsigned build candidates. Not installable upgrades or a verified Play release. Real device and purchase testing required.' > work/play-release/STATUS.txt
+          cd work/play-release
+          sha256sum *.apk *.aab > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dreamtype-play-unsigned-${{ github.sha }}
+          path: work/play-release/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dreamtype-play-lint-${{ github.sha }}
+          path: outputs/android/play-build/build/reports/lint-results-release.*
+          if-no-files-found: warn
+          retention-days: 14

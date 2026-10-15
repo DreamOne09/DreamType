@@ -89,15 +89,17 @@ final class AppConfig {
         synchronized(PendingAudio.class) {
         Cipher cipher=Cipher.getInstance("AES/GCM/NoPadding"); cipher.init(Cipher.ENCRYPT_MODE,secret());
         String encrypted=Base64.encodeToString(cipher.doFinal(key.getBytes(java.nio.charset.StandardCharsets.UTF_8)),Base64.NO_WRAP);
-        c.getSharedPreferences("connection",Context.MODE_PRIVATE).edit().putString("server",server)
+        boolean saved=c.getSharedPreferences("connection",Context.MODE_PRIVATE).edit().putString("server",server)
             .putString("cipher",encrypted).putString("iv",Base64.encodeToString(cipher.getIV(),Base64.NO_WRAP))
             .putBoolean("auto",autoInsert).putBoolean("account",accountMode).commit();
+        if(!saved)throw new java.io.IOException("手機未能完整儲存登入或連線資料，請重新開啟設定並確認。部分資料可能已變更，請勿視為登入完成。");
         }
     }
-    static void saveStyle(Context c,org.json.JSONObject prefs) {
+    static void saveStyle(Context c,org.json.JSONObject prefs) throws java.io.IOException {
         synchronized(PendingAudio.class) {
-        c.getSharedPreferences("style",Context.MODE_PRIVATE).edit().putString("prompt",prefs.optString("personal_prompt",""))
+        boolean saved=c.getSharedPreferences("style",Context.MODE_PRIVATE).edit().putString("prompt",prefs.optString("personal_prompt",""))
             .putString("word_replacements",prefs.optString("word_replacements","" )).putString("vocabulary",prefs.optString("vocabulary","" )).putBoolean("taiwan",prefs.optBoolean("taiwan_places",true)).putString("mode",prefs.optString("mode","organize")).putString("target_language",prefs.optString("target_language","en")).putString("source_language",prefs.optString("source_language","zh-TW")).commit();
+        if(!saved)throw new java.io.IOException("手機未能完整儲存偏好，請重試。帳號模式可重新同步確認。");
         }
     }
     // Share the recording lock: prepare/read already take this lock before loading
@@ -109,7 +111,8 @@ final class AppConfig {
     }
     static void savePreferences(Context c,AppConfig expected,org.json.JSONObject prefs,Boolean auto)throws Exception {
         synchronized(PendingAudio.class){requireSession(c,expected);saveStyle(c,prefs);
-            if(auto!=null)c.getSharedPreferences("connection",Context.MODE_PRIVATE).edit().putBoolean("auto",auto).commit();}
+            if(auto!=null&&!c.getSharedPreferences("connection",Context.MODE_PRIVATE).edit().putBoolean("auto",auto).commit())
+                throw new java.io.IOException("手機未能儲存自動插入設定，其他偏好可能已更新，請重試。");}
     }
     static void clearSessionIfCurrent(Context c,AppConfig expected)throws Exception {
         synchronized(PendingAudio.class){requireSession(c,expected);clearSession(c);}
@@ -120,13 +123,14 @@ final class AppConfig {
     static void saveConnection(Context c,AppConfig expected,AppConfig next)throws Exception {
         synchronized(PendingAudio.class){requireSession(c,expected);if(expected.accountMode)clearSession(c);next.save(c);}
     }
-    static void clearSession(Context c) {
+    static void clearSession(Context c) throws java.io.IOException {
         synchronized(PendingAudio.class) {
         String server=load(c).server;
-        c.getSharedPreferences("connection",Context.MODE_PRIVATE).edit().clear().putString("server",server).commit();
-        c.getSharedPreferences("style",Context.MODE_PRIVATE).edit().clear().commit();
+        boolean connectionCleared=c.getSharedPreferences("connection",Context.MODE_PRIVATE).edit().clear().putString("server",server).commit();
+        boolean styleCleared=c.getSharedPreferences("style",Context.MODE_PRIVATE).edit().clear().commit();
         Draft.clear();
         PendingAudio.clear(c);
+        if(!connectionCleared||!styleCleared)throw new java.io.IOException("手機未能完整清除登入或偏好資料；部分資料已清除，請稍後重試。線上帳號狀態請重新確認。");
         }
     }
 }

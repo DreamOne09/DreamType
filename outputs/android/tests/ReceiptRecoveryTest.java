@@ -10,7 +10,7 @@ public final class ReceiptRecoveryTest {
   HttpServer server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
   AtomicInteger receipts=new AtomicInteger(),otherPosts=new AtomicInteger(),scenario=new AtomicInteger();
   server.createContext("/v2/",exchange->{
-   int code=200;String body="{}";String path=exchange.getRequestURI().getPath();
+   int code=200;String body="{\"ok\":true}";String path=exchange.getRequestURI().getPath();
    if(path.equals("/v2/me/latest-dictation"))body="{\"id\":\"receipt-job\",\"state\":\"done\",\"receipt_required\":true,\"text\":\"明天到板橋。\"}";
    else if(path.equals("/v2/dictations/receipt-job/receipt")&&exchange.getRequestMethod().equals("POST")){
     int count=receipts.incrementAndGet();

@@ -1,0 +1,44 @@
+plugins { id 'com.android.application' version '9.4.1' }
+
+def generatedManifest = layout.buildDirectory.file('generated/dreamtype/AndroidManifest.xml')
+tasks.register('prepareDreamTypeManifest') {
+    inputs.file('../AndroidManifest.xml')
+    outputs.file(generatedManifest)
+    doLast {
+        def target = generatedManifest.get().asFile
+        target.parentFile.mkdirs()
+        target.text = file('../AndroidManifest.xml').getText('UTF-8')
+            .replace(' package="tw.localvoice.keyboard"', '')
+            .replaceAll(/<uses-sdk\b[^>]*\/>/, '')
+            .replace('</application>', '<activity android:name="tw.localvoice.keyboard.PlayBillingActivity" android:exported="false" /></application>')
+    }
+}
+
+android {
+    namespace 'tw.localvoice.keyboard'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'tw.localvoice.keyboard'
+        minSdk 26
+        targetSdk 36
+        versionCode 39
+        versionName '0.9.20-rc10'
+    }
+    sourceSets {
+        main {
+            manifest.srcFile generatedManifest
+            java.srcDirs = ['../src', 'src/main/java']
+            res.srcDirs = ['../res']
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    // Release is intentionally unsigned until the existing maintainer key is
+    // wired in explicitly. Never generate a replacement production identity.
+    buildTypes { release { minifyEnabled false } }
+}
+tasks.named('preBuild').configure { dependsOn 'prepareDreamTypeManifest' }
+dependencies { implementation 'com.android.billingclient:billing:9.1.0' }
+dependencyLocking { lockAllConfigurations() }

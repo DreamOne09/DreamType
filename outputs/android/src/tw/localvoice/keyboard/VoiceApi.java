@@ -32,7 +32,13 @@ final class VoiceApi {
         try {
             error(c);
             JSONObject body=new JSONObject(readResponse(c,false));
-            if(!body.has("data"))throw new IOException("電腦回應格式不正確。");
+            org.json.JSONArray models=body.optJSONArray("data");
+            if(models==null||models.length()==0)throw new IOException("電腦未回傳有效模型清單，請確認服務網址與主機狀態。");
+            for(int i=0;i<models.length();i++){
+                JSONObject model=models.optJSONObject(i);
+                Object id=model==null?null:model.opt("id");
+                if(!(id instanceof String)||((String)id).trim().isEmpty())throw new IOException("電腦回應的模型清單格式不正確，請確認服務網址與版本。");
+            }
         } finally { c.disconnect(); }
     }
     static Result upload(AppConfig config,File audio) throws Exception {
@@ -71,7 +77,7 @@ final class VoiceApi {
             error(c);
             JSONObject result=new JSONObject(readResponse(c,false));
             if(!config.accountMode&&config.mode.equals("translate"))requireTranslation(config,result);
-            return config.accountMode?awaitResult(config,result,progress,config.mode.equals("translate")):result(result);
+            return config.accountMode?awaitResult(config,result,progress,config.mode.equals("translate"),requestId):result(result);
         } finally {c.disconnect();}
     }
     static Result recover(AppConfig config,Progress progress) throws Exception {
@@ -85,7 +91,7 @@ final class VoiceApi {
                 progress.update("網路暫時中斷，正在重新連接…");Thread.sleep(failures*1000L);
             }
         }
-        return awaitResult(config,latest,progress,false);
+        return awaitResult(config,latest,progress,false,null);
     }
     static boolean retryable(IOException error) {
         return !(error instanceof ApiError)||((ApiError)error).code>=500;
@@ -93,22 +99,28 @@ final class VoiceApi {
     private static void requireTranslation(AppConfig config,JSONObject body)throws IOException {
         if(!"translate".equals(body.optString("mode"))||!config.targetLanguage.equals(body.optString("target_language")))throw new IOException("電腦未回傳指定的翻譯，請確認主機已更新至 0.8.0。未自動插入原文。");
     }
-    private static Result awaitResult(AppConfig config,JSONObject body,Progress progress,boolean requireTranslation) throws Exception {
+    private static Result awaitResult(AppConfig config,JSONObject body,Progress progress,boolean requireTranslation,String expectedId) throws Exception {
         long deadline=System.nanoTime()+180000000000L;int failures=0;
         while(true) {
             String state=body.optString("state");
+            if("failed".equals(state)||"expired".equals(state)||"none".equals(state))throw new IOException(body.optString("message","無法取回結果。"));
+            if(!"done".equals(state)&&!"queued".equals(state)&&!"running".equals(state))throw new IOException("服務回應格式不正確。");
+            Object identifier=body.opt("id");
+            if(!(identifier instanceof String)||!((String)identifier).matches("[A-Za-z0-9_-]{1,80}"))throw new IOException("服務回應缺少有效的錄音編號，請取回上一筆。");
+            String id=(String)identifier;
+            if(expectedId==null)expectedId=id;
+            if(!expectedId.equals(id))throw new IOException("服務回傳了不同錄音的結果，未輸入文字，請取回上一筆。");
             if("done".equals(state)){
                 if(requireTranslation)requireTranslation(config,body);
+                if(body.has("receipt_required")&&!(body.opt("receipt_required") instanceof Boolean))throw new IOException("服務的接收確認格式不正確，請取回上一筆。");
                 Result received=result(body);
-                if(body.optBoolean("receipt_required",false))confirmReceipt(config,body.getString("id"),progress);
+                if(body.optBoolean("receipt_required",false))confirmReceipt(config,id,progress);
                 return received;
             }
-            if("failed".equals(state)||"expired".equals(state)||"none".equals(state))throw new IOException(body.optString("message","無法取回結果。"));
-            if(!"queued".equals(state)&&!"running".equals(state))throw new IOException("服務回應格式不正確。");
             if(System.nanoTime()>deadline)throw new IOException("等候已超過三分鐘，可稍後從「更多 → 取回上一筆」查看。");
             progress.update("queued".equals(state)?"正在排隊，服務有 "+body.optInt("queue_size",0)+" 段等待中…":(config.mode.equals("translate")?"正在辨識與翻譯…":"正在辨識與整理…"));
             Thread.sleep(1000);
-            try {body=json(config,"GET","/v2/dictations/"+body.getString("id"),null);failures=0;}
+            try {body=json(config,"GET","/v2/dictations/"+expectedId,null);failures=0;}
             catch(IOException e){
                 if(!retryable(e)||++failures>3)throw e;
                 progress.update("網路暫時中斷，正在重新連接…");Thread.sleep(failures*1000L);
@@ -119,11 +131,15 @@ final class VoiceApi {
         // The server's receipt is idempotent. Retry only this confirmation,
         // never the audio upload, when the confirmation response is lost.
         for(int attempt=0;;attempt++){
-            try{json(config,"POST","/v2/dictations/"+id+"/receipt",new JSONObject());return;}
+            JSONObject confirmation;
+            try{confirmation=json(config,"POST","/v2/dictations/"+id+"/receipt",new JSONObject());}
             catch(IOException error){
                 if(!retryable(error)||attempt>=2)throw error;
                 progress.update("文字已完成，正在確認接收…");Thread.sleep((attempt+1)*1000L);
+                continue;
             }
+            if(!Boolean.TRUE.equals(confirmation.opt("ok")))throw new IOException("尚未確認接收文字，請取回上一筆；不要重新錄製同一段。");
+            return;
         }
     }
     private static Result result(JSONObject body) throws Exception {
@@ -173,7 +189,14 @@ final class VoiceApi {
                 if(count==-1)break;
                 out.write(bytes,0,count);if(out.size()>1024*1024)throw new IOException("回應太長。");
             }
-            return out.toString("UTF-8");
+            try {
+                return StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                    .decode(java.nio.ByteBuffer.wrap(out.toByteArray())).toString();
+            } catch(java.nio.charset.CharacterCodingException invalid) {
+                throw new IOException("電腦回應的文字編碼不完整，請重試或取回上一筆。",invalid);
+            }
         }
     }
     private static void error(HttpURLConnection connection) throws Exception {

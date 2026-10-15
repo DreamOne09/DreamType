@@ -18,7 +18,7 @@ public final class ManageActivity extends Activity {
  private Button button(LinearLayout p,String s,View.OnClickListener action){Button b=new Button(this);b.setText(s);Ui.button(b,false);b.setOnClickListener(action);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(56));lp.setMargins(0,dp(8),0,dp(8));p.addView(b,lp);return b;}
  private EditText field(LinearLayout p,String hint,String value,int max){EditText e=new EditText(this);e.setTextSize(16);e.setText(value);e.setHint(hint);e.setMinLines(3);e.setGravity(Gravity.TOP);e.setFilters(new InputFilter[]{new InputFilter.LengthFilter(max)});e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);p.addView(e);return e;}
  @Override public void onCreate(Bundle state){super.onCreate(state);
-  ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Ui.PAPER);LinearLayout p=new LinearLayout(this);p.setOrientation(1);p.setPadding(dp(24),dp(16),dp(24),dp(24));scroll.addView(p);setContentView(scroll);
+  ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Ui.PAPER);LinearLayout p=new LinearLayout(this);p.setOrientation(LinearLayout.VERTICAL);p.setPadding(dp(24),dp(16),dp(24),dp(24));scroll.addView(p);setContentView(scroll);
   scroll.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
   AppConfig config=AppConfig.load(this);
   text(p,"我的 DreamType",28);text(p,config.accountMode?"偏好儲存在你的帳號，可在其他裝置取回。":"設定只保存在這支手機；其他人的偏好不會被改動。",16);
@@ -50,10 +50,13 @@ public final class ManageActivity extends Activity {
    try{rules=WordSuggestions.validate(replacements.getText().toString());}catch(IllegalArgumentException error){status.setText(error.getMessage());return;}
    final String outputMode=mode.getSelectedItemPosition()==1?"translate":"organize",targetCode=AppConfig.LANGUAGE_CODES[target.getSelectedItemPosition()],sourceCode=source.getSelectedItemPosition()==0?"auto":AppConfig.LANGUAGE_CODES[source.getSelectedItemPosition()-1];
    v.setEnabled(false);status.setText("正在儲存…");worker.execute(()->{String message;
-    try{AppConfig active=AppConfig.load(this);if(!active.key.equals(config.key))throw new Exception("帳號已切換，請重新開啟設定。");
+    try{
      org.json.JSONObject prefs=new org.json.JSONObject().put("word_replacements",rules).put("personal_prompt",personal).put("vocabulary",vocabulary).put("taiwan_places",places).put("mode",outputMode).put("target_language",targetCode).put("source_language",sourceCode);
-     if(active.accountMode)VoiceApi.json(active,"POST","/v2/me/preferences",prefs);
-     AppConfig.savePreferences(this,config,prefs,auto);message="已儲存，下次錄音生效。";
+     PreferenceSync.save(config,prefs,auto,new PreferenceSync.Store(){
+      public AppConfig current(){return AppConfig.load(ManageActivity.this);}
+      public void persist(AppConfig expected,org.json.JSONObject value,boolean insert)throws Exception{AppConfig.savePreferences(ManageActivity.this,expected,value,insert);}
+     },(expected,value)->VoiceApi.json(expected,"POST","/v2/me/preferences",value));
+     message="已儲存，下次錄音生效。";
     }catch(Exception e){message=VoiceApi.friendly(e);}final String result=message;runOnUiThread(()->{if(!isDestroyed()){status.setText(result);v.setEnabled(true);}});
    });
   });Ui.button(save,true);
