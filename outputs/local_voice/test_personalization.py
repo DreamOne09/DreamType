@@ -6,6 +6,7 @@ from unittest.mock import patch
 import httpx
 import os
 import tempfile
+from types import SimpleNamespace
 
 # Import the real gateway against disposable state, never the owner's accounts.
 _gateway_state = tempfile.TemporaryDirectory(prefix='dreamtype-gateway-test-')
@@ -91,12 +92,39 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
         client_type=httpx.AsyncClient
         def engine(request):return httpx.Response(200,json={'status':'ok'})
         with patch.object(server.httpx,'AsyncClient',lambda **kwargs:client_type(transport=httpx.MockTransport(engine))), \
-                patch.object(server,'model',object()):
+                patch.object(server,'model',SimpleNamespace(status=lambda: {'ready': True, 'stage': 'idle'})):
             for alive in (True,False):
                 with patch.object(server.beta,'workers_ready',return_value=alive):
                     report=await server.health()
                     self.assertEqual(report['status']=='ready',alive)
                     self.assertEqual(report['workers_ready'],alive)
+
+    async def test_health_reports_failed_speech_worker_even_with_healthy_models(self):
+        client_type = httpx.AsyncClient
+        def engine(request):return httpx.Response(200, json={'status':'ok'})
+        state = {'ready': False, 'stage': 'stopped', 'failures': 1}
+        with patch.object(server.httpx, 'AsyncClient', lambda **kwargs: client_type(transport=httpx.MockTransport(engine))), \
+                patch.object(server, 'model', SimpleNamespace(status=lambda: state)), \
+                patch.object(server.beta, 'workers_ready', return_value=True):
+            report = await server.health()
+            self.assertNotEqual(report['status'], 'ready')
+            self.assertFalse(report['speech_ready'])
+            self.assertEqual(report['speech_worker'], state)
+
+    async def test_failed_speech_is_retryable_without_formatting_and_releases_gpu(self):
+        from unittest.mock import AsyncMock
+        from speech_process import SpeechUnavailable
+        formatter = AsyncMock()
+        def failed(*args):raise SpeechUnavailable('synthetic failure')
+        with patch.object(server, 'isolated_pcm', lambda *a: bytes(32000)), \
+                patch.object(server, 'recognize', failed), patch.object(server, 'format_text', formatter):
+            response = await self.client.post('/v1/audio/transcriptions', headers=self.auth,
+                files={'file': ('probe.wav', b'fixture')})
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()['error_code'], 'speech_unavailable')
+        self.assertNotIn('synthetic failure', response.text)
+        self.assertFalse(server.gpu_lock.locked())
+        formatter.assert_not_awaited()
 
     async def test_identifiers_are_hidden_from_model_and_restored_before_return(self):
         import json
@@ -184,6 +212,11 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
         r=await self.client.post('/v1/audio/transcriptions',headers=self.auth,files={'file':('x.wav',b'fake')},data={'mode':'translate','model':'local-raw'})
         self.assertEqual(r.status_code,400)
     async def asyncSetUp(self):
+        # Route tests use synthetic recognition, without loading GPU weights.
+        tokenizer = SimpleNamespace(encode=lambda text, **kwargs: SimpleNamespace(ids=list(text)))
+        self.tokenizer_patch = patch.object(server, 'speech_tokenizer', tokenizer)
+        self.tokenizer_patch.start()
+        self.addCleanup(self.tokenizer_patch.stop)
         self.client = httpx.AsyncClient(transport=httpx.ASGITransport(app=server.app),base_url='http://local')
         self.auth={'Authorization':'Bearer '+server.API_KEY}
     async def asyncTearDown(self):
@@ -195,7 +228,7 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
             def encode(self,text,add_special_tokens=False):
                 encoded.append(text)
                 return SimpleNamespace(ids=list(range(len(text)*3)))
-        with patch.object(server,'model',SimpleNamespace(hf_tokenizer=Tokenizer())), \
+        with patch.object(server,'speech_tokenizer',Tokenizer()), \
              patch.object(server,'isolated_pcm',lambda *a,**k:bytes(32000)), \
              patch.object(server,'recognize',lambda *a:('測試。','zh')):
             response=await self.client.post('/v1/audio/transcriptions',headers=self.auth,
