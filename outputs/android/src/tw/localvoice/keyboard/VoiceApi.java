@@ -72,13 +72,26 @@ final class VoiceApi {
             c.setRequestProperty("Content-Type","multipart/form-data; boundary="+boundary);
             c.setFixedLengthStreamingMode((long)head.length+audio.length+tail.length);
             try(OutputStream out=c.getOutputStream()) {
-                out.write(head);out.write(audio);out.write(tail);
+                out.write(head);writeAudio(out,audio,progress);out.write(tail);
             }
+            progress.update("錄音已傳送，等待服務確認…");
             error(c);
             JSONObject result=new JSONObject(readResponse(c,false));
             if(!config.accountMode&&config.mode.equals("translate"))requireTranslation(config,result);
             return config.accountMode?awaitResult(config,result,progress,config.mode.equals("translate"),requestId):result(result);
         } finally {c.disconnect();}
+    }
+    static void writeAudio(OutputStream out,byte[] audio,Progress progress)throws IOException {
+        // Count bytes accepted by the transport, not model work or server receipt.
+        // Bounded chunks avoid one opaque write on slow mobile connections.
+        int previous=-1;
+        for(int offset=0;offset<audio.length;){
+            int count=Math.min(32768,audio.length-offset);
+            out.write(audio,offset,count);offset+=count;
+            int percent=(int)(100L*offset/audio.length);
+            int step=Math.min(9,percent/10);
+            if(step!=previous){previous=step;progress.update("正在傳送錄音 "+(step*10)+"%…");}
+        }
     }
     static Result recover(AppConfig config,Progress progress) throws Exception {
         if(!config.accountMode)throw new IOException("取回結果需要使用帳號登入。");

@@ -106,7 +106,7 @@ async def health():
     except httpx.HTTPError:pass
     workers_ready=beta.workers_ready()
     return {'status': 'ready' if model is not None and llm_ready and workers_ready and (translation_ready or not translation_configured) else 'starting',
-            'speech_ready': model is not None, 'speech_profile': SPEECH_PROFILE, 'formatting_ready': llm_ready,
+            'organizer': 'faithful-v1', 'speech_ready': model is not None, 'speech_profile': SPEECH_PROFILE, 'formatting_ready': llm_ready,
             'translation_ready':translation_ready,
             'workers_ready':workers_ready,
             'processing': 'local', 'audio_decoding': 'isolated-process', 'version': 1}
@@ -153,6 +153,10 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
         validate_edit(converter.convert(text), edited)
         validate_identifiers(text, edited)
         return readable_layout(chinese_bullet_style(edited), personal_prompt)
+
+from organizing.service import bind_formatter
+format_text = bind_formatter(format_text, API_KEY)
+
 
 def speech_token_count(text):
     tokenizer=getattr(model,'hf_tokenizer',None)

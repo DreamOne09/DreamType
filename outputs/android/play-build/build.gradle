@@ -21,8 +21,8 @@ android {
         applicationId 'tw.localvoice.keyboard'
         minSdk 26
         targetSdk 36
-        versionCode 39
-        versionName '0.9.20-rc10'
+        versionCode 40
+        versionName '0.9.20-rc11'
     }
     sourceSets {
         main {
