@@ -39,15 +39,15 @@
 | 層級 | 已核對狀態 | 不代表 |
 |---|---|---|
 | 家用正式主機 | 固定 HTTPS 入口、schema 4 免費邀請帳號、中文整理／翻譯、常駐 ASR、R2 加密同步；新版管理頁已部署 | 付費服務、無人值守可用性或異機復原完成 |
-| GitHub main | PR #90–#100 的付款儲存、權益、購買 API、背景查驗、通知、設定入口及手機購買恢復修正已合併 | 這些付款後端模組已部署或 Google 已驗收 |
-| Android 候選 | PR #100 的 23 組 JVM 契約及 unsigned Play APK/AAB/lint 通過，來源見下方 CI | 已發布新的簽章 APK、已在 Pixel 9 使用，或真實付款通過 |
+| GitHub main | PR #90–#107 的付款模組、Google 身分驗證／schema 11–12、Android 與網頁登入／再驗證刪除候選 | 這些付款後端模組已部署或 Google 已驗收 |
+| Android 候選 | PR #106 已加入 Credential Manager Google 登入與刪除，23 組 JVM 契約及 unsigned Play APK/AAB/lint 通過 | 已發布新的簽章 APK、已在 Pixel 9 使用，或真實付款通過 |
 | 已發布 APK | 上方 0.9.21-rc1 仍為下載版本 | 包含之後 main 的所有修正 |
 
 付款相關部署必須先完成 [設定條件](BILLING_CONFIGURATION.md)、[schema 4→9 離線遷移](BILLING_STORAGE.md) 與 [9→10 通知遷移](NOTIFICATION_STORAGE.md)。預設啟動不自動遷移；不能為展示功能直接把線上試用資料庫切成收費模式。
 
 證據：[PR #100](https://github.com/DreamOne09/DreamType/pull/100)、[後端與網頁檢查](https://github.com/DreamOne09/DreamType/actions/runs/39115925085)、[Play 建置與 lint](https://github.com/DreamOne09/DreamType/actions/runs/39115919388)。這些是程式與隔離測試證據；正式退款審查、失敗佇列及離機告警仍見 [付款維運缺口](BILLING_OPERATIONS.md)。
 
-正式交付還需要完成公開註冊與身分恢復、外部離線通知、離機金鑰保管與異機還原、自然語音及 Pixel 9 驗收。商店帳號與實機尚未提供，先繼續不依賴這些條件的工作；不以增加測試數量或合併次數當作可商用證明。
+正式交付還需要完成真實 OAuth 設定／公開註冊驗收與身分恢復、外部離線通知、離機金鑰保管與異機還原、自然語音及 Pixel 9 驗收。商店帳號與實機尚未提供，先繼續不依賴這些條件的工作；不以增加測試數量或合併次數當作可商用證明。
 
 ## 最新可接續狀態
 
@@ -60,3 +60,10 @@
 - 下一輪重點仍是 Pixel 9 實機驗收、獨立保管復原金鑰及異機還原、台灣自然長口述、辨識否定／專有名詞品質，以及 Play Console／正式付款。尚無證據支持公開付費上線或整體優於 Typeless。
 
 本輪接收資源審查已修正 queue 前的上傳／解碼併發缺口，並新增取消與逾時測試；剩餘安全範圍見 [接收資源審查](UPLOAD_ADMISSION.md)。不因這項修正將獨立安全審查或公開上線標為完成。
+
+
+## Google 帳號整合候選
+
+[PR #106 Android](https://github.com/DreamOne09/DreamType/pull/106) 與 [PR #107 網頁](https://github.com/DreamOne09/DreamType/pull/107) 已補上 Google 登入、明確註冊與再次驗證刪除。Android 最終來源 Play 建置見 [39118297785](https://github.com/DreamOne09/DreamType/actions/runs/39118297785)。網頁使用官方 GIS 按鈕，只有主動選擇時載入 Google script；Google-only 帳號不顯示無法使用的密碼刪除，並清楚告知 Play 訂閱須另行取消。
+
+正式主機仍是 schema 4，沒有 OAuth client 設定，這些功能未在線上啟用；下載 APK 仍是原版本。下一次部署必須先演練逐級 4→9→10→11→12 遷移／還原，準備 OAuth client 與 Android 簽章設定，完成 Google 帳號建立、跨裝置登入、取消、停用、刪除及恢復購買的真人驗收。Google 登入本身不開通付費權益，註冊新帳號預設零額度。不得只部署網頁按鈕就宣告服務可商用。詳見 [Google 登入文件](GOOGLE_SIGNIN.md)。
