@@ -27,6 +27,7 @@ from personalization import formatting_prompt, speech_hint, validate_preferences
 from taiwan_typography import normalize_taiwan_typography, preserve_prose_layout, chinese_bullet_style, readable_layout
 from speech_profile import speech_model_path
 from speech_process import SpeechProcess, SpeechUnavailable, finish_before_cancel
+from processing_budget import format_before_deadline
 from translation import validate_translation, translate_text
 from english_layout import english_paragraphs
 from beta_api import install_beta, LocalProvider
@@ -236,8 +237,8 @@ async def transcribe(file: UploadFile = File(...), model: str = Form('local-dict
         text, warning = raw, None
         if raw and model != 'local-raw':
             try:
-                text = await format_text(raw, personal_prompt, vocabulary, taiwan_places,mode,target_language,detected)
-            except (httpx.HTTPError, ValueError, KeyError, IndexError):
+                text = await format_before_deadline(format_text, raw, personal_prompt, vocabulary, taiwan_places,mode,target_language,detected)
+            except (httpx.HTTPError, ValueError, KeyError, IndexError, TimeoutError):
                 if mode=='translate':raise HTTPException(503,'Translation unavailable; please retry. No translated result was produced.')
                 warning = 'Formatting unavailable; returning original transcription'
         timings = {'speech_seconds': round(speech_seconds, 3),
@@ -269,8 +270,8 @@ async def cleanup(request: Request):
     await acquire()
     try:
         try:
-            result = await format_text(text, *preferences)
-        except (httpx.HTTPError, ValueError, KeyError, IndexError):
+            result = await format_before_deadline(format_text, text, *preferences)
+        except (httpx.HTTPError, ValueError, KeyError, IndexError, TimeoutError):
             raise HTTPException(503, 'Formatting unavailable; original text was not changed.')
         return {'id': 'local-' + secrets.token_hex(6), 'object': 'chat.completion',
             'created': int(time.time()), 'model': 'local-format',

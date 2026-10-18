@@ -74,6 +74,17 @@ class SpeechProcessTests(unittest.TestCase):
         self.assertIsNone(self.worker.child)
         self.assertFalse(self.worker.status()['ready'])
 
+    def test_cold_start_and_recognition_share_one_deadline(self):
+        slow = "import time; time.sleep(.4)\n" + WORKER.replace('time.sleep(60)', 'time.sleep(.4)')
+        self.script.write_text(slow, encoding='utf-8')
+        self.worker.timeout = .6
+        # Each stage alone fits .6s; their combined .8s must not succeed.
+        with self.assertRaises(SpeechUnavailable):
+            self.worker.recognize(b'\0'*4, 'zh', 'hang')
+        self.assertIsNone(self.worker.child)
+        self.script.write_text(WORKER, encoding='utf-8')
+        self.assertEqual(self.worker.recognize(b'\0'*4, 'zh', 'next'), ('next', 'zh'))
+
     def test_deadline_covers_blocked_pipe_write(self):
         self.script.write_text("import time; print('{\"ready\": true}',flush=True); time.sleep(60)",encoding='utf-8')
         self.worker.start()

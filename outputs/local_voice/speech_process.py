@@ -14,6 +14,7 @@ import threading
 import time
 
 from child_lifetime import attach
+from processing_budget import SPEECH_SECONDS
 
 
 class SpeechUnavailable(RuntimeError):
@@ -39,7 +40,7 @@ async def finish_before_cancel(function, *args):
 
 
 class SpeechProcess:
-    def __init__(self, model_path, *, timeout=60, startup_timeout=60, command=None):
+    def __init__(self, model_path, *, timeout=SPEECH_SECONDS, startup_timeout=60, command=None):
         self.command = command or [sys.executable, '-I',
             str(Path(__file__).with_name('speech_worker.py')), str(model_path), str(os.getpid())]
         self.timeout = timeout
@@ -49,16 +50,19 @@ class SpeechProcess:
         self.lock = threading.Lock()
         self.stage = 'stopped'
         self.started_at = None
+        self.expires_at = None
         self.failures = 0
 
     def status(self):
         # Health is read by the event loop while the worker thread can replace
         # these references. Snapshot before dereferencing a nullable value.
-        child, started_at, stage = self.child, self.started_at, self.stage
-        age = time.monotonic() - started_at if started_at is not None else 0
+        child, started_at, stage, expires_at = self.child, self.started_at, self.stage, self.expires_at
+        now = time.monotonic()
+        age = now - started_at if started_at is not None else 0
         limit = self.startup_timeout if stage == 'loading' else self.timeout
         alive = child is not None and child.poll() is None
-        return {'ready': alive and stage in ('idle', 'recognizing') and age < limit,
+        return {'ready': alive and stage in ('idle', 'recognizing') and age < limit
+                        and (expires_at is None or now < expires_at),
                 'stage': stage, 'elapsed_seconds': round(age, 1), 'failures': self.failures}
 
     def _stop(self):
@@ -76,6 +80,7 @@ class SpeechProcess:
         self.child = self.close_job = None
         self.stage = 'stopped'
         self.started_at = None
+        self.expires_at = None
 
     def close(self):
         with self.lock:
@@ -83,6 +88,7 @@ class SpeechProcess:
 
     def _bounded(self, action, timeout, stage):
         self.stage, self.started_at = stage, time.monotonic()
+        self.expires_at = self.started_at + timeout
         expired = threading.Event()
         child = self.child
         def expire():
@@ -102,6 +108,7 @@ class SpeechProcess:
             if expired.is_set():
                 raise SpeechUnavailable('Speech deadline exceeded')
             self.stage, self.started_at = 'idle', None
+            self.expires_at = None
             return result
         except Exception:
             self.failures += 1
@@ -117,7 +124,7 @@ class SpeechProcess:
             raise SpeechUnavailable('Invalid speech response')
         return json.loads(raw)
 
-    def _start(self):
+    def _start(self, deadline=None):
         if self.child is not None and self.child.poll() is None:
             return
         self._stop()
@@ -126,7 +133,11 @@ class SpeechProcess:
             creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
         try:
             self.close_job = attach(self.child)
-            ready = self._bounded(self._read, self.startup_timeout, 'loading')
+            remaining = self.startup_timeout if deadline is None else min(
+                self.startup_timeout, deadline - time.monotonic())
+            if remaining <= 0:
+                raise SpeechUnavailable('Speech deadline exceeded during process creation')
+            ready = self._bounded(self._read, remaining, 'loading')
             if ready != {'ready': True}:
                 raise SpeechUnavailable('Speech startup failed')
         except Exception:
@@ -144,7 +155,13 @@ class SpeechProcess:
         if len(header) > 65536:
             raise ValueError('Speech hints too large')
         with self.lock:
-            self._start()
+            deadline = time.monotonic() + self.timeout
+            self._start(deadline=deadline)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                self.failures += 1
+                self._stop()
+                raise SpeechUnavailable('Speech deadline exceeded during startup')
             def request():
                 self.child.stdin.write(header)
                 self.child.stdin.write(pcm)
@@ -154,4 +171,4 @@ class SpeechProcess:
                         or not isinstance(result.get('language'), str)):
                     raise SpeechUnavailable('Invalid speech result')
                 return result['text'], result['language']
-            return self._bounded(request, self.timeout, 'recognizing')
+            return self._bounded(request, remaining, 'recognizing')
