@@ -37,3 +37,15 @@ iOS 尚需自己的原生登入與 App Store 要求評估，不能以 Android Go
 加密備份保留 provider/subject 對應；不保留登入 challenge 或 session。還原會再次清除 challenge，並依最新刪除紀錄連動移除身分。schema 9／10 的備份繼續支援。遷移或 session 寫入失敗須回滾整個交易，不能只留下空帳號或提早消耗 challenge。
 
 這些目前是可測試的儲存服務，仍未接 HTTP、設定或手機 UI。開放前還必須完成原生 Google 登入、發起者綁定與 login CSRF、接收／驗證限流、身分連結及 Google-only 帳號以重新驗證身分刪除帳號的流程；既有密碼刪除介面不能直接套用 Google-only 帳號。不得先開放註冊再補資料刪除。
+
+## Google 身分重新確認與刪除（schema 12 候選）
+
+`reauth_migration.prepare_reauth(root)` 明確離線升級 11→12；沿用加密預備份、維護／寫入鎖、錄音與收件檢查及 DDL 失敗回滾。現有登入 challenge 不改用途，另設 `deletion_challenges`，防止一般登入憑證被當成刪除確認。線上尚未遷移。
+
+`GoogleAccountDeletion` 只接受已登入且綁定 Google 的啟用帳號。每個帳號最多一筆五分鐘刪除確認，綁定發起的 session 雜湊、隨機秘密雜湊與 Google nonce；重新發起會使前一筆失效。確認時要重新驗證同一個 Google subject。網路驗證之後，在寫入交易內再次檢查 session、啟用狀態、身分與 challenge，才刪除帳號、連動資料、全部 session 及帳號 audit，並寫入既有 uid-only 刪除紀錄。刪除紀錄寫入失敗會回滾帳號刪除。
+
+登出／撤銷 session 會連動移除其刪除確認；備份不保存刪除確認，還原也再次清除。最新刪除紀錄會移除舊快照的帳號及 Google 身分對應。這不是異機復原驗收。
+
+回應明確為 `deleted=true`、`subscription_cancelled=false`。**刪除 DreamType 帳號不會取消 Google Play 訂閱或自動退款。** 客戶端在送出刪除前必須告知並提供商店訂閱管理入口，讓使用者自行決定；不得宣稱付款停止。重新註冊不復活舊資料或自動搬移舊購買權益。
+
+儲存層已補刪除能力，HTTP、Google OAuth 設定、原生／網頁重新驗證與清楚的刪除確認介面仍未接線。未接齊前不能開放自助註冊。

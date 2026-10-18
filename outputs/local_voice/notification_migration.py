@@ -10,7 +10,7 @@ DDL='''CREATE TABLE play_notifications(message_hash TEXT PRIMARY KEY,payload_has
 uid TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,created REAL NOT NULL)'''
 
 def validate_notifications(db):
-    if db.execute('PRAGMA user_version').fetchone()[0] not in (10,11) or {r[1] for r in db.execute('PRAGMA table_info(play_notifications)')}!={'message_hash','payload_hash','uid','created'}:
+    if db.execute('PRAGMA user_version').fetchone()[0] not in (10,11,12) or {r[1] for r in db.execute('PRAGMA table_info(play_notifications)')}!={'message_hash','payload_hash','uid','created'}:
         raise ValueError('Explicit notification storage preparation required.')
 
 def _upgrade(db):
