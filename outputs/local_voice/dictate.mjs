@@ -7,7 +7,7 @@ let busy = false, recorder = null, stream = null, timer = null, canceled = false
 let original = '', undo = '', receiptId = '', operation = 0;
 const say = text => { $('status').textContent = text; };
 function controls() {
-  $('record').disabled = busy || !!session.pending;
+  $('record').disabled = busy || !!session.pending || !!receiptId;
   $('record').setAttribute('aria-pressed', String(!!recorder));
   $('record-label').textContent = recorder ? '停止錄音' : '開始錄音';
   $('cancel').hidden = !recorder;
@@ -21,7 +21,7 @@ function clearPage() {
   if (recorder?.state === 'recording') recorder.stop();
   recorder = null; releaseMicrophone();
   original = undo = receiptId = '';
-  for (const id of ['text','password']) $(id).value = '';
+  for (const id of ['text','password','username']) $(id).value = '';
   $('raw').textContent = $('identity').textContent = '';
   $('workspace').hidden = $('result').hidden = true; $('signin').hidden = false;
   $('receipt').hidden = true; controls();
@@ -115,7 +115,8 @@ $('record').onclick = () => {
 $('cancel').onclick = () => { canceled = true; if (recorder?.state === 'recording') recorder.stop(); };
 $('retry').onclick = () => run(async () => { say('正在重試同一筆錄音…'); await follow(await session.upload()); });
 $('recover').onclick = () => run(async () => {
-  const path = session.pending ? 'dictations/' + encodeURIComponent(session.pending.id) : 'me/latest-dictation';
+  const id = session.pending?.id || receiptId;
+  const path = id ? 'dictations/' + encodeURIComponent(id) : 'me/latest-dictation';
   await follow(await session.api(path));
 });
 $('discard').onclick = () => {

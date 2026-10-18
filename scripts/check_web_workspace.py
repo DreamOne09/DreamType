@@ -63,12 +63,14 @@ def check(executable,output):
             page.locator('#retry').click();page.locator('#result').wait_for(state='visible')
             page.locator('#receipt').wait_for(state='visible')
             assert page.locator('#text').input_value()=='明日、計画を確認します。'
+            assert page.locator('#record').is_disabled()
             assert len(uploads)==2 and uploads[0]['id']==uploads[1]['id']
             # Multipart boundaries differ; the audio payload and settings do not.
             audio=lambda body:body.split(b'\r\n\r\n',1)[1].rsplit(b'\r\n--',1)[0]
             assert audio(uploads[0]['body'])==audio(uploads[1]['body']) and len(audio(uploads[0]['body']))>100
             assert uploads[0]['target']==uploads[1]['target']=='ja'
             page.locator('#receipt').click();page.locator('#receipt').wait_for(state='hidden')
+            assert page.locator('#record').is_enabled()
             page.locator('#erase').click();assert page.locator('#text').input_value()==''
             page.locator('#undo').click();assert page.locator('#text').input_value()=='明日、計画を確認します。'
             page.get_by_text('辨識原文',exact=True).click();page.locator('#restore').click()
