@@ -16,6 +16,7 @@ from backup_inventory import inventory
 from process_lock import exclusive,LockBusy
 from r2_config import read_config,client_for
 from r2_sync import sync_latest
+from tunnel_runtime import configuration as tunnel_configuration
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -71,15 +72,18 @@ def _run(root,force_backup=False):
             subprocess.run([sys.executable,str(root/'outputs/local_voice/control.py'),'start'],check=True,timeout=45,capture_output=True)
             state['last_restart']=now
         except Exception:state['errors'].append('host_restart_failed')
+    tunnel_settings=None
     try:
-        tunnel=httpx.get('http://127.0.0.1:19872/ready',timeout=5).status_code==200
+        tunnel_settings=tunnel_configuration(work)
+        tunnel=httpx.get(tunnel_settings['ready_url'],timeout=5).status_code==200
     except Exception:tunnel=False
+    if tunnel_settings is None:state['errors'].append('tunnel_configuration_invalid')
     state['tunnel_ready']=tunnel
     # Restarting a Quick Tunnel changes the phone URL; expose this explicitly in status.
-    if not tunnel and now-state.get('last_tunnel_restart',0)>900:
+    if tunnel_settings and not tunnel and now-state.get('last_tunnel_restart',0)>900:
         try:
             subprocess.run([sys.executable,str(root/'outputs/local_voice/control.py'),'tunnel'],check=True,timeout=45,capture_output=True)
-            state['last_tunnel_restart']=now;state['phone_url_may_have_changed']=True
+            state['last_tunnel_restart']=now;state['phone_url_may_have_changed']=tunnel_settings['mode']=='quick'
         except Exception:state['errors'].append('tunnel_restart_failed')
     state['discovery_enabled']=False
     if (work/'endpoint-discovery.json').exists():

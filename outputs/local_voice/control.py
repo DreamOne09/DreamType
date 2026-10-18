@@ -5,6 +5,7 @@ import subprocess
 import sys
 import psutil
 import httpx
+from tunnel_runtime import configuration as tunnel_configuration, is_owned as owned_tunnel
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -25,12 +26,14 @@ def owned_processes():
             gateway = i + 1 < len(args) and Path(args[i+1]).resolve() == HERE
         engine = exe == str(WORK / 'llama/llama-server.exe').lower()
         translation = engine and '19873' in args
-        tunnel = exe == str(WORK / 'cloudflared.exe').lower() and 'http://127.0.0.1:19870' in args
+        tunnel = owned_tunnel(WORK,exe,args)
         if gateway or engine or tunnel:
             yield process, ('gateway' if gateway else 'translation' if translation else 'engine' if engine else 'tunnel')
 
-def stop(kinds):
-    matches = [p for p, kind in owned_processes() if kind in kinds]
+def stop(kinds,tunnel_mode=None):
+    matches = [p for p, kind in owned_processes() if kind in kinds and
+               (kind!='tunnel' or tunnel_mode is None or
+                ('--token-file' in (p.info['cmdline'] or []))==(tunnel_mode=='named'))]
     for process in matches:
         try:
             process.terminate()
@@ -82,10 +85,9 @@ if action in ('start', 'restart'):
 elif action=='translation':
     stop({'translation'});start_translation()
 elif action == 'tunnel':
-    stop({'tunnel'})
-    spawn('tunnel', [str(WORK / 'cloudflared.exe'), 'tunnel', '--url',
-        'http://127.0.0.1:19870', '--no-autoupdate', '--protocol', 'http2',
-        '--metrics', '127.0.0.1:19872'])
+    tunnel = tunnel_configuration(WORK)
+    stop({'tunnel'},tunnel['mode'])
+    spawn('tunnel', tunnel['arguments'])
 elif action == 'stop':
     stop({'gateway', 'engine','translation', 'tunnel'})
     print('Local Voice and its tunnel stopped.')
