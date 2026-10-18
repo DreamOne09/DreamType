@@ -23,8 +23,28 @@ def password_hash(password, salt):
     return hashlib.pbkdf2_hmac('sha256', password.encode(), bytes.fromhex(salt), 600000).hex()
 
 class Store:
-    def __init__(self, path):
+    def __init__(self, path, entitlement_policy=None):
         self.path = path
+        self.entitlement_policy=entitlement_policy
+        version=0
+        if path.exists():
+            with contextlib.closing(sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True)) as db:
+                version=db.execute('PRAGMA user_version').fetchone()[0]
+        if entitlement_policy is not None and version!=9:
+            raise RuntimeError('Explicit offline billing storage migration is required before enabling a policy.')
+        if version==9:
+            from billing_migration import validate_billing_schema
+            with self.db() as db:
+                db.execute('BEGIN IMMEDIATE')
+                if db.execute('PRAGMA user_version').fetchone()[0]!=9:
+                    raise RuntimeError('Billing database changed while opening.')
+                validate_billing_schema(db)
+                if entitlement_policy is None and db.execute('SELECT 1 FROM billing_mode WHERE required=1').fetchone():
+                    raise RuntimeError('This database requires an explicit billing policy; refusing trial fallback.')
+                if entitlement_policy is not None:db.execute('INSERT OR IGNORE INTO billing_mode VALUES(1)')
+            self.payload_key=key_file(path.parent/'payload.key')
+            return
+        if version>4:raise RuntimeError('Database is newer than this server; refusing to downgrade.')
         path.parent.mkdir(parents=True, exist_ok=True)
         self.payload_key=key_file(path.parent/'payload.key')
         with self.db() as db:
@@ -99,11 +119,22 @@ class Store:
     def me(self,uid):
         month=datetime.now(timezone.utc).strftime('%Y-%m')
         with self.db() as db:
+            self.check_billing_mode(db)
             row=db.execute('SELECT id,name,enabled,allowance,preferences FROM users WHERE id=?',(uid,)).fetchone()
             if not row:raise StoreError(404,'帳號不存在')
+            entitlement=self.entitlement_policy.resolve(db,uid,time.time()) if self.entitlement_policy else None
             used=db.execute("SELECT COALESCE(SUM(seconds),0) FROM jobs WHERE uid=? AND month=? AND state='done'",(uid,month)).fetchone()[0]
             reserved=db.execute("SELECT COALESCE(SUM(seconds),0) FROM jobs WHERE uid=? AND month=? AND state IN ('queued','running')",(uid,month)).fetchone()[0]
-        return {'id':uid,'name':row['name'],'enabled':bool(row['enabled']),'plan':'closed-beta','month_utc':month,'limit_seconds':row['allowance'],'used_seconds':used,'reserved_seconds':reserved,'remaining_seconds':max(0,row['allowance']-used-reserved),'preferences':json.loads(row['preferences'])}
+        limit=entitlement.seconds if entitlement else row['allowance']
+        result={'id':uid,'name':row['name'],'enabled':bool(row['enabled']),'plan':entitlement.plan if entitlement else 'closed-beta','month_utc':month,'limit_seconds':limit,'used_seconds':used,'reserved_seconds':reserved,'remaining_seconds':max(0,limit-used-reserved),'preferences':json.loads(row['preferences'])}
+        if entitlement:result['entitlement_status']=entitlement.status
+        return result
+    def check_billing_mode(self,db):
+        # Query on every admission, including instances opened before a policy
+        # was enabled. They must never fall back to the old trial allowance.
+        if self.entitlement_policy is None and db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='billing_mode'").fetchone():
+            if db.execute('SELECT 1 FROM billing_mode WHERE required=1').fetchone():
+                raise StoreError(503,'服務需要付款設定，請稍後重試','billing_policy_missing')
     def preferences(self,uid,values,expected=None):
         with self.db() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -116,6 +147,7 @@ class Store:
         month=datetime.now(timezone.utc).strftime('%Y-%m')
         with self.db() as db:
             db.execute('BEGIN IMMEDIATE')
+            self.check_billing_mode(db)
             old=db.execute('SELECT * FROM jobs WHERE uid=? AND id=?',(uid,jid)).fetchone()
             if old:
                 if old['digest']!=digest:raise StoreError(409,'同一請求代碼不能用於不同录音或設定')
@@ -125,10 +157,13 @@ class Store:
                 else:return dict(old),False
             user=db.execute('SELECT * FROM users WHERE id=? AND enabled=1',(uid,)).fetchone()
             if not user:raise StoreError(403,'帳號已停用')
+            entitlement=self.entitlement_policy.resolve(db,uid,time.time()) if self.entitlement_policy else None
+            if entitlement and entitlement.status!='active':raise StoreError(402,'請確認訂閱狀態後再使用',entitlement.status)
             if db.execute("SELECT 1 FROM jobs WHERE uid=? AND state IN ('queued','running')",(uid,)).fetchone():raise StoreError(429,'上一段還在處理，請稍候','job_in_progress')
             if db.execute("SELECT 1 FROM receipts r JOIN jobs j ON j.uid=r.uid AND j.id=r.id WHERE r.uid=? AND r.confirmed=0 AND j.state='done'",(uid,)).fetchone():raise StoreError(409,'請先取回上一筆結果，或等候結果過期後釋放額度','result_unconfirmed')
             used=db.execute("SELECT COALESCE(SUM(seconds),0) FROM jobs WHERE uid=? AND month=? AND state IN ('queued','running','done')",(uid,month)).fetchone()[0]
-            if used+seconds>user['allowance']:raise StoreError(402,'本月試用額度已用完')
+            limit=entitlement.seconds if entitlement else user['allowance']
+            if used+seconds>limit:raise StoreError(402,'本月方案額度已用完' if entitlement else '本月試用額度已用完')
             db.execute('INSERT INTO jobs VALUES(?,?,?,?,?,?,?)',(uid,jid,digest,month,seconds,'queued',time.time()))
         return self.job(uid,jid),True
     def job(self,uid,jid):
