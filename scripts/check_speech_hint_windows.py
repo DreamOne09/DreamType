@@ -48,11 +48,11 @@ def contains(prompt):
 old=Probe();list(old.transcribe(None,condition_on_previous_text=False,initial_prompt=HINT)[0])
 assert [contains(p) for p in old.prompts]==[True,False,False]
 # Execute the production recognize function without importing server startup/models.
-tree=ast.parse((ROOT/'outputs/local_voice/server.py').read_text(encoding='utf-8'))
+tree=ast.parse((ROOT/'outputs/local_voice/speech_worker.py').read_text(encoding='utf-8'))
 fn=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='recognize')
 current=Probe();scope={'model':current,'converter':SimpleNamespace(convert=lambda value:value)}
-exec(compile(ast.Module(body=[fn],type_ignores=[]),'server.recognize','exec'),scope)
-text,language=scope['recognize'](None,'zh',HINT)
+exec(compile(ast.Module(body=[fn],type_ignores=[]),'speech_worker.recognize','exec'),scope)
+text,language=scope['recognize'](current,None,'zh',HINT)
 assert len(current.prompts)==3 and all(contains(p) for p in current.prompts)
 assert current.prompts[0]==current.prompts[1]==current.prompts[2], 'Hints duplicated or previous transcript leaked'
 assert text=='測試語音'*3 and language=='zh'
