@@ -24,6 +24,7 @@ final class VoiceApi {
         c.setInstanceFollowRedirects(false); c.setConnectTimeout(15000); c.setReadTimeout(90000);
         c.setRequestProperty("Authorization","Bearer "+config.key);
         c.setRequestProperty("Accept","application/json");
+        if(path.startsWith("/v2/auth/google/")||path.startsWith("/v2/me/google/"))c.setRequestProperty("X-DreamType-Client","android");
         return c;
     }
     static void verify(AppConfig config) throws Exception {

@@ -40,7 +40,7 @@ class SignInHttpTests(unittest.IsolatedAsyncioTestCase):
                 result=await client.post(BASE+'/complete',json=payload);self.assertEqual(result.status_code,200,result.text)
                 self.assertEqual(result.headers['cache-control'],'no-store')
                 session=result.json()['token'];headers={'Authorization':'Bearer '+session}
-                me=await client.get('/v2/me',headers=headers);self.assertEqual(me.json()['remaining_seconds'],0)
+                me=await client.get('/v2/me',headers=headers);self.assertEqual(me.json()['remaining_seconds'],0);self.assertEqual(me.json()['login_methods'],['google']);self.assertNotIn('password',me.json())
                 self.assertEqual((await client.post(BASE+'/complete',json=payload)).status_code,401)
                 deletion=(await client.post(DELETE+'/challenge',json={},headers=headers)).json()
                 payload={'challenge':deletion['challenge'],'secret':deletion['secret'],'id_token':proof.token({'nonce':deletion['nonce']}),'confirm':False}

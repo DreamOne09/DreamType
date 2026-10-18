@@ -10,7 +10,7 @@ tasks.register('prepareDreamTypeManifest') {
         target.text = file('../AndroidManifest.xml').getText('UTF-8')
             .replace(' package="tw.localvoice.keyboard"', '')
             .replaceAll(/<uses-sdk\b[^>]*\/>/, '')
-            .replace('</application>', '<activity android:name="tw.localvoice.keyboard.PlayBillingActivity" android:exported="false" /></application>')
+            .replace('</application>', '<activity android:name="tw.localvoice.keyboard.GoogleAccountActivity" android:exported="false" /><activity android:name="tw.localvoice.keyboard.PlayBillingActivity" android:exported="false" /></application>')
     }
 }
 
@@ -40,5 +40,10 @@ android {
     buildTypes { release { minifyEnabled false } }
 }
 tasks.named('preBuild').configure { dependsOn 'prepareDreamTypeManifest' }
-dependencies { implementation 'com.android.billingclient:billing:9.1.0' }
+dependencies {
+    implementation 'com.android.billingclient:billing:9.1.0'
+    implementation 'androidx.credentials:credentials:1.6.0'
+    implementation 'androidx.credentials:credentials-play-services-auth:1.6.0'
+    implementation 'com.google.android.libraries.identity.googleid:googleid:1.2.1'
+}
 dependencyLocking { lockAllConfigurations() }

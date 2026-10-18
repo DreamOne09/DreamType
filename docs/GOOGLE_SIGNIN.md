@@ -69,3 +69,15 @@ Router 在讀取 body 前限制全服務每分鐘 60 次與同時 4 筆，body �
 只有這五個已安裝路徑交由專屬 router 驗證；其餘 v2 路徑維持原本登入／管理權限。關閉 `allow_signup` 同時拒絕新的 signup challenge 及先前尚未完成的 signup，不影響既有 Google 帳號登入。
 
 整合測試透過完整 install_beta 和合成 RSA Google proof 完成註冊、零額度查詢、重播拒絕及重新驗證刪除；另外驗證非法來源、body 上限／逾時、HTTP 取消後名額保留與未設定時路由不存在。沒有真實 Google OAuth 帳號驗收，沒有啟用線上設定。手機／網頁 UI 及完整真人流程仍待完成。
+
+## Android 候選介面
+
+Play build 新增 `GoogleAccountActivity`，使用官方 Credential Manager 1.6.0 與 googleid 1.2.1（固定依賴鎖）。從「我的帳號 → Google 帳號登入與管理」進入，先讀取服務設定，才顯示登入／允許時的註冊。未啟用時顯示可返回原帳號登入的說明，不啟動 Google 選帳號畫面。新安裝預設改為固定 `https://dreamtype.dreamone.li`，不覆蓋既有自訂網址。
+
+Google ID token 與 challenge 只存在記憶體；只送往固定 DreamType HTTPS origin，不使用任意輸入的主機網址。換登入前明確確認舊登入及未完成錄音的處理；成功後沿用既有 session 比對、加密儲存及偏好更新。Activity 關閉或 session 已變更時拒絕遲到回應，未採用的新 session 嘗試在服務端撤銷。
+
+已連結 Google 的帳號顯示 Google Play 訂閱入口及永久刪除確認。刪除前再次告知不會取消訂閱，並用相同 nonce 流程重新驗證。原帳號頁透過 `/v2/me` 的 `login_methods` 隱藏 Google-only 帳號不適用的密碼修改／密碼刪除。回應不包含密碼雜湊或 Google subject。登出清除應用程式憑證狀態；不會登出整支手機的 Google 帳號。
+
+本候選尚未發布新版簽章 APK，真實 OAuth client ID／Android 套件簽章／測試使用者尚未設定。編譯與 lint 不代表 Pixel 9、Google 選帳號、TalkBack、旋轉／背景切換或真實刪除已驗收。Google 品牌按鈕及正式同意畫面仍需上架前檢視；iOS 與網頁 Google 介面未在此批完成。
+
+官方依據：[Credential Manager 實作](https://developer.android.com/identity/sign-in/credential-manager-siwg-implementation)、[穩定版資訊](https://developer.android.com/jetpack/androidx/releases/credentials)、[Google nonce builder](https://developers.google.com/identity/android-credential-manager/android/reference/com/google/android/libraries/identity/googleid/GetSignInWithGoogleOption.Builder)。
