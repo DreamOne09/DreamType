@@ -21,6 +21,13 @@ class PlayNotifications:
         self.subscription=subscription;self.verify_identity=verify_identity
 
     def receive(self,authorization,body):
+        try:return self._receive(authorization,body)
+        except StoreError as error:
+            from billing_events import MESSAGES,record
+            if error.code in MESSAGES:record(self.store,error.code)
+            raise
+
+    def _receive(self,authorization,body):
         if not isinstance(authorization,str) or not authorization.startswith('Bearer ') or len(authorization)>16384:
             raise StoreError(401,'付款通知驗證失敗')
         try:
@@ -45,9 +52,9 @@ class PlayNotifications:
             if not isinstance(notice,dict):raise ValueError()
             if kind=='testNotification':return {'status':'test_received'}
             if kind not in ('subscriptionNotification','voidedPurchaseNotification'):
-                raise StoreError(503,'此通知類型尚待處理')
+                raise StoreError(503,'此通知類型尚待處理','refund_review_pending' if kind=='pendingRefundReviewNotification' else 'notification_unsupported')
             if kind=='voidedPurchaseNotification' and notice.get('productType')!=1:
-                raise StoreError(503,'此商品類型尚待處理')
+                raise StoreError(503,'此商品類型尚待處理','notification_unsupported')
             digest=token_digest(notice['purchaseToken'])
         except StoreError:raise
         except (ValueError,TypeError,KeyError,AttributeError):
@@ -71,7 +78,7 @@ class PlayNotifications:
                 digest=edge['new_digest']
             row=db.execute('SELECT p.uid,u.enabled FROM play_subscriptions p JOIN users u ON u.id=p.uid WHERE digest=?',(digest,)).fetchone()
             # Never bind an unauthenticated user from notification contents.
-            if not row:raise StoreError(503,'訂閱尚未綁定，請稍後重試')
+            if not row:raise StoreError(503,'訂閱尚未綁定，請稍後重試','purchase_unbound')
             if not row['enabled']:return {'status':'account_disabled'}
             db.execute('UPDATE play_subscriptions SET needs_refresh=1,revision=revision+1 WHERE digest=?',(digest,))
             db.execute('DELETE FROM billing_retry WHERE digest=?',(digest,))

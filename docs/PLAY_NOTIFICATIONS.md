@@ -14,7 +14,7 @@ HTTP 路由上限 32 KiB、讀取 10 秒、預設每分鐘 60 次及同時 4 筆
 
 ## 尚待正式營運補齊
 
-schema 10 已加入持久化 messageId 去重，詳見 NOTIFICATION_STORAGE.md。正式啟用前仍須補無法處理通知的告警與 dead-letter 操作、Google Pub/Sub 實際推送測試，以及退款審查的人工處理流程。不得把 503 重送當作完整退款審查功能。
+schema 10 已加入持久化 messageId 去重，詳見 NOTIFICATION_STORAGE.md。管理頁已加入不含敏感內容的異常提醒，見 BILLING_OPERATIONS.md。正式啟用前仍須補離機告警與 dead-letter 操作、Google Pub/Sub 實際推送測試，以及退款審查的人工處理流程。不得把 503 重送當作完整退款審查功能。
 
 ## 驗證
 

@@ -1,5 +1,6 @@
 """Administrator-only aggregate billing health; no identities or tokens."""
 import time
+from billing_events import recent
 
 
 def snapshot(store,last,worker_alive,*,now=None):
@@ -16,7 +17,8 @@ def snapshot(store,last,worker_alive,*,now=None):
           LEFT JOIN purchase_claims c ON c.provider='google_play' AND c.digest=p.digest
           WHERE u.enabled=1 AND NOT EXISTS(SELECT 1 FROM play_replacements e WHERE e.old_digest=p.digest)''',
           (now-store.entitlement_policy.max_age,now,now-3600)).fetchone()
-    counts=dict(row);alerts=[]
+        notice_alerts=recent(db,now)
+    counts=dict(row);alerts=list(notice_alerts)
     checked=last.get('checked_at')
     started=last.get('started_at')
     if checked is None and started is not None and now-started>600:
