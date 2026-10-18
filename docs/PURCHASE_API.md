@@ -14,3 +14,9 @@
 測試以 ASGI HTTP 與合成 Google 回應串起手機請求、帳號綁定與實際額度政策，另外驗證取消後容量不提早釋放、超量與慢速上傳不觸發 Google。這不是 Android 商店或真實付款測試。
 
 下一步：將路由與付款 runtime、Google 憑證、背景排程和通知整合，完成 Play Console 與實機購買測試後才啟用。
+
+## Ownership refresh in the Play screen
+
+The Play screen treats ownership as a fresh Google Play observation. A successful empty query clears an old purchase so an expired subscription does not permanently block checkout in the same screen. A purchase callback invalidates any older in-flight query; that query cannot reopen checkout. Query failures leave checkout unavailable until a successful refresh. Existing purchases still require server verification and never grant access on the phone alone.
+
+`PurchaseStateTest` covers expiry, stale query races and failed refresh. It runs in the common JVM contracts and the unsigned Play build workflow. These checks do not replace real Play checkout, cancellation, pending-payment and restore tests with a licensed tester account.
