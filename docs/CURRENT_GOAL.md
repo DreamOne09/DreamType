@@ -32,7 +32,7 @@
 ## 本次狀態
 
 - 固定入口 https://dreamtype.dreamone.li 已透過專用 Tunnel 運作。R2 加密同步已啟用，雲端下載還原驗證通過；不改 dreamcube.tw。
-- 新版整理與獨立 ASR 程序已部署，Android 16 原生驗收通過；正在交付新預覽 APK。Pixel 9、正式付款、iOS 與商店發布仍未完成。
+- 新版整理與獨立 ASR 程序已部署，Android 16 原生驗收通過；0.9.21-rc1 預覽 APK 已發布並核對公開下載。Pixel 9、正式付款、iOS 與商店發布仍未完成。
 - App 持續目標已由使用者更新並啟用（active），新增 Apple App Store 上架；週額度門檻改為剩餘 30%。
 
 ## Apple App Store（2026-10-16 新增）
