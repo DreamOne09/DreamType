@@ -12,15 +12,15 @@ python outputs/local_voice/storage_upgrade.py inspect --root "C:/DreamType-insta
 
 回應只包含 schema、下一個支援版本、待處理數量、既有收費政策標記與阻擋原因，不列出帳號、提示詞或金鑰。找不到資料庫時拒絕，不會建立空安裝。檢查完整性、已知資料表、未完成錄音／收件、備份所需主機金鑰存在與既有 uvicorn 程序；拒絕已知路徑跳出選定安裝目錄。
 
-`ready_for_next_step` 是當次預檢結果，不是持續的鎖或保證。正式操作前必須停止該安裝的服務與自動重啟排程，確認工作排空，保留相容程式版本及獨立保管的復原金鑰。預檢不會替你取消錄音、放棄收件或終止程序；不同啟動方式的程序仍需由操作人員確認。
+`preflight_passed` 是當次預檢結果，不是持續的鎖或保證。正式操作前必須停止該安裝的服務與自動重啟排程，確認工作排空，保留相容程式版本及獨立保管的復原金鑰。預檢不會替你取消錄音、放棄收件或終止程序；不同啟動方式的程序仍需由操作人員確認。容器、沙箱或受限權限可能看不到主機程序；未偵測到不等於離線。應在主機可完整查看程序的環境執行，並確認停機及停用自動重啟後，才傳入 `--offline-confirmed`；未帶此旗標不會準備資料庫。
 
 ## 一次只提交一階段
 
 ```powershell
-python outputs/local_voice/storage_upgrade.py prepare --root "C:/DreamType-installation" --from-version 4 --to-version 9
-python outputs/local_voice/storage_upgrade.py prepare --root "C:/DreamType-installation" --from-version 9 --to-version 10
-python outputs/local_voice/storage_upgrade.py prepare --root "C:/DreamType-installation" --from-version 10 --to-version 11
-python outputs/local_voice/storage_upgrade.py prepare --root "C:/DreamType-installation" --from-version 11 --to-version 12
+python outputs/local_voice/storage_upgrade.py prepare --root "C:/DreamType-installation" --offline-confirmed --from-version 4 --to-version 9
+python outputs/local_voice/storage_upgrade.py prepare --root "C:/DreamType-installation" --offline-confirmed --from-version 9 --to-version 10
+python outputs/local_voice/storage_upgrade.py prepare --root "C:/DreamType-installation" --offline-confirmed --from-version 10 --to-version 11
+python outputs/local_voice/storage_upgrade.py prepare --root "C:/DreamType-installation" --offline-confirmed --from-version 11 --to-version 12
 ```
 
 **逐行執行，每一步成功並核對輸出後才執行下一行。** 不要直接整段貼上讓 shell 在失敗後繼續。中途停止時，已成功提交的階段仍存在；再執行 `inspect`，從實際版本接續，不重跑先前階段。重複、跳級、未知或部分遷移的資料庫均拒絕。

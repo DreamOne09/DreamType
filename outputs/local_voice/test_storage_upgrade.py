@@ -29,12 +29,12 @@ class StorageUpgradeTests(unittest.TestCase):
             root,store,uid=self.fixture(d)
             before={p.relative_to(root):p.read_bytes() for p in root.rglob('*') if p.is_file()}
             report=upgrade.inspect(root)
-            self.assertEqual(report['version'],4);self.assertTrue(report['ready_for_next_step'])
+            self.assertEqual(report['version'],4);self.assertTrue(report['preflight_passed'])
             self.assertEqual(before,{p.relative_to(root):p.read_bytes() for p in root.rglob('*') if p.is_file()})
             store.reserve(uid,'synthetic-request-001','digest',1)
             report=upgrade.inspect(root)
-            self.assertEqual(report['counts']['active_jobs'],1);self.assertFalse(report['ready_for_next_step'])
-            with self.assertRaisesRegex(ValueError,'active_jobs'):upgrade.prepare(root,4,9)
+            self.assertEqual(report['counts']['active_jobs'],1);self.assertFalse(report['preflight_passed'])
+            with self.assertRaisesRegex(ValueError,'active_jobs'):upgrade.prepare(root,4,9,offline_confirmed=True)
             self.assertFalse((root/'work/backups').exists())
 
     def test_all_public_steps_preserve_accounts_and_each_snapshot_restores(self):
@@ -42,7 +42,7 @@ class StorageUpgradeTests(unittest.TestCase):
             root,store,uid=self.fixture(d);preferences=store.me(uid)['preferences'];archives=[]
             deleted=store.create('deleted-user','synthetic-password');store.login('fixture','synthetic-password')
             for source,target in ((4,9),(9,10),(10,11),(11,12)):
-                result=upgrade.prepare(root,source,target);archives.append((source,Path(result['backup'])))
+                result=upgrade.prepare(root,source,target,offline_confirmed=True);archives.append((source,Path(result['backup'])))
                 self.assertEqual(upgrade.inspect(root)['version'],target)
                 reopened=Store(store.path)
                 self.assertEqual(reopened.me(uid)['preferences'],preferences)
@@ -79,18 +79,18 @@ class StorageUpgradeTests(unittest.TestCase):
     def test_wrong_step_repeated_step_live_gateway_and_lock_do_not_upgrade(self):
         with tempfile.TemporaryDirectory() as d:
             root,store,uid=self.fixture(d)
-            with self.assertRaisesRegex(ValueError,'one supported step'):upgrade.prepare(root,4,12)
-            with self.assertRaisesRegex(ValueError,'Source version'):upgrade.prepare(root,9,10)
+            with self.assertRaisesRegex(ValueError,'one supported step'):upgrade.prepare(root,4,12,offline_confirmed=True)
+            with self.assertRaisesRegex(ValueError,'Source version'):upgrade.prepare(root,9,10,offline_confirmed=True)
             proc=SimpleNamespace(info={'cmdline':['python','-m','uvicorn','server:app','--app-dir',str(root/'outputs/local_voice')]})
             with patch('billing_migration.psutil.process_iter',return_value=[proc]):
                 self.assertIn('gateway_running',upgrade.inspect(root)['blockers'])
-                with self.assertRaisesRegex(ValueError,'gateway_running'):upgrade.prepare(root,4,9)
+                with self.assertRaisesRegex(ValueError,'gateway_running'):upgrade.prepare(root,4,9,offline_confirmed=True)
             with exclusive(root/'work/maintenance.lock'):
-                with self.assertRaises(LockBusy):upgrade.prepare(root,4,9)
+                with self.assertRaises(LockBusy):upgrade.prepare(root,4,9,offline_confirmed=True)
             self.assertEqual(upgrade.inspect(root)['version'],4)
             self.assertFalse((root/'work/backups').exists())
-            upgrade.prepare(root,4,9)
-            with self.assertRaisesRegex(ValueError,'already completed'):upgrade.prepare(root,4,9)
+            upgrade.prepare(root,4,9,offline_confirmed=True)
+            with self.assertRaisesRegex(ValueError,'already completed'):upgrade.prepare(root,4,9,offline_confirmed=True)
 
     def test_missing_partial_and_unknown_storage_fail_closed(self):
         with tempfile.TemporaryDirectory() as d:
@@ -107,11 +107,11 @@ class StorageUpgradeTests(unittest.TestCase):
 
     def test_existing_required_billing_policy_survives_every_later_step(self):
         with tempfile.TemporaryDirectory() as d:
-            root,store,uid=self.fixture(d);upgrade.prepare(root,4,9)
+            root,store,uid=self.fixture(d);upgrade.prepare(root,4,9,offline_confirmed=True)
             with store.db() as db:db.execute('INSERT INTO billing_mode VALUES(1)')
             for source,target in ((9,10),(10,11),(11,12)):
                 self.assertTrue(upgrade.inspect(root)['billing_policy_required'])
-                upgrade.prepare(root,source,target)
+                upgrade.prepare(root,source,target,offline_confirmed=True)
             self.assertTrue(upgrade.inspect(root)['billing_policy_required'])
             with self.assertRaisesRegex(RuntimeError,'explicit billing policy'):Store(store.path)
 
@@ -122,6 +122,7 @@ class StorageUpgradeTests(unittest.TestCase):
             report=json.loads(output.getvalue());self.assertTrue(report['ok']);self.assertNotIn('synthetic-password',output.getvalue())
             with contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):upgrade.main(['prepare','--root',str(root)])
             self.assertEqual(upgrade.inspect(root)['version'],4)
+            with self.assertRaisesRegex(ValueError,'Confirm the host'):upgrade.prepare(root,4,9)
 
 
 if __name__=='__main__':unittest.main()

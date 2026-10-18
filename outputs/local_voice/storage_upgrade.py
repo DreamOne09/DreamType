@@ -54,11 +54,12 @@ def inspect(root):
     except ValueError:blockers.append('gateway_running')
     return {'version':version,'next_version':STEPS[version][0] if version in STEPS else None,
             'counts':counts,'billing_policy_required':paid,'blockers':blockers,
-            'ready_for_next_step':version in STEPS and not blockers,
+            'preflight_passed':version in STEPS and not blockers,'offline_confirmation_required':True,
             'scope':'read-only preflight; each migration rechecks under its write lock'}
 
 
-def prepare(root,expected,target):
+def prepare(root,expected,target,*,offline_confirmed=False):
+    if offline_confirmed is not True:raise ValueError('Confirm the host service and automatic restarts are stopped; process visibility alone cannot prove this.')
     report=inspect(root)
     if expected not in STEPS or STEPS[expected][0]!=target:raise ValueError('Select exactly one supported step: 4->9, 9->10, 10->11 or 11->12.')
     if report['version']!=expected:raise ValueError('Source version changed or this step already completed; inspect again.')
@@ -74,12 +75,13 @@ def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action',choices=('inspect','prepare'))
     parser.add_argument('--root',type=Path,required=True,help='Existing installation root, not its work directory')
+    parser.add_argument('--offline-confirmed',action='store_true',help='Operator has stopped the host service and its automatic restarts')
     parser.add_argument('--from-version',type=int)
     parser.add_argument('--to-version',type=int)
     args=parser.parse_args(argv)
     if args.action=='prepare' and (args.from_version is None or args.to_version is None):parser.error('prepare requires --from-version and --to-version')
-    if args.action=='inspect' and (args.from_version is not None or args.to_version is not None):parser.error('inspect does not take migration versions')
-    try:result=inspect(args.root) if args.action=='inspect' else prepare(args.root,args.from_version,args.to_version)
+    if args.action=='inspect' and (args.from_version is not None or args.to_version is not None or args.offline_confirmed):parser.error('inspect does not take migration versions')
+    try:result=inspect(args.root) if args.action=='inspect' else prepare(args.root,args.from_version,args.to_version,offline_confirmed=args.offline_confirmed)
     except (ValueError,sqlite3.Error,OSError) as error:
         print(json.dumps({'ok':False,'error':str(error),'action':'Do not restart or downgrade blindly; inspect the current version before retrying.'}));return 1
     except Exception:
