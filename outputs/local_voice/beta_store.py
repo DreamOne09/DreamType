@@ -30,15 +30,18 @@ class Store:
         if path.exists():
             with contextlib.closing(sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True)) as db:
                 version=db.execute('PRAGMA user_version').fetchone()[0]
-        if entitlement_policy is not None and version!=9:
+        if entitlement_policy is not None and version not in (9,10):
             raise RuntimeError('Explicit offline billing storage migration is required before enabling a policy.')
-        if version==9:
+        if version in (9,10):
             from billing_migration import validate_billing_schema
             with self.db() as db:
                 db.execute('BEGIN IMMEDIATE')
-                if db.execute('PRAGMA user_version').fetchone()[0]!=9:
+                if db.execute('PRAGMA user_version').fetchone()[0]!=version:
                     raise RuntimeError('Billing database changed while opening.')
                 validate_billing_schema(db)
+                if version==10:
+                    from notification_migration import validate_notifications
+                    validate_notifications(db)
                 if entitlement_policy is None and db.execute('SELECT 1 FROM billing_mode WHERE required=1').fetchone():
                     raise RuntimeError('This database requires an explicit billing policy; refusing trial fallback.')
                 if entitlement_policy is not None:db.execute('INSERT OR IGNORE INTO billing_mode VALUES(1)')

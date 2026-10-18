@@ -123,6 +123,7 @@ class Beta:
         return result
 
 def install_beta(app,work,provider,decoder,*,billing=None):
+    if billing:billing.validate_storage(work/'beta/accounts.sqlite3')
     beta=Beta(work,provider,decoder,billing.policy if billing else None)
     if billing:billing.bind(app,beta.store)
     previous=app.router.lifespan_context

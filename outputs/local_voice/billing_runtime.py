@@ -2,6 +2,8 @@
 import asyncio
 import time
 import anyio
+import sqlite3
+from contextlib import closing
 from billing_service import PlayPurchaseService
 from billing_notifications import PlayNotifications
 from billing_http import notification_router
@@ -10,6 +12,11 @@ from billing_worker import run
 
 
 class BillingRuntime:
+    def validate_storage(self,path):
+        from notification_migration import validate_notifications
+        with closing(sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True)) as db:
+            validate_notifications(db)
+
     def __init__(self,policy,verifier,*,audience,email,subscription,interval=30):
         if not 5<=interval<=300:raise ValueError('Invalid billing interval')
         # Validate push configuration before enabling the policy on any Store.
@@ -23,6 +30,8 @@ class BillingRuntime:
     def bind(self,app,store):
         if self.store is not None:raise ValueError('Billing runtime already bound')
         if store.entitlement_policy is not self.policy:raise ValueError('Billing must share the dictation policy')
+        from notification_migration import validate_notifications
+        with store.db() as db:validate_notifications(db)
         self.store=store
         app.include_router(purchase_router(PlayPurchaseService(store,self.verifier)))
         app.include_router(notification_router(PlayNotifications(store,**self.push)))
