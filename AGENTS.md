@@ -1,4 +1,7 @@
 # DreamType maintenance
+
+Current-state precedence (2026-10-18): the dated notes below retain historical constraints and must not be mistaken for deployment status. See docs/LAUNCH_STATUS.md for deployed vs main-only work. dreamtype.dreamone.li now has a fixed Named Tunnel and R2 encrypted backup verification has run. Live remains schema 4/free invitation; main has opt-in payment modules and explicit schema 9/10 migrations, not deployed or enabled. Do not auto-migrate or claim real Play purchases, Pixel 9 acceptance, independent-machine restore or iOS delivery. Preserve the original no-secrets, signing identity and no-paid-service constraints. User has authorized the fixed domain/Tunnel/R2 setup and scoped GitHub merges; historical temporary-domain/documentation-only notes do not revoke that authorization.
+
 Latest domain choice: use dreamone.li for DreamType; never change dreamcube.tw for this product. dreamone.li currently delegates DNS to Gandi and is not in the selected Cloudflare account. Named Tunnel, Access and DNS changes remain pending; no domain purchase is authorized.
 User-facing language: Traditional Chinese. Keep the UI simple, monochrome, and explicit about connection state.
 Never commit work/, credentials, signing keys, pairing pages/QRs, audio samples, or machine-specific paths. Distribute APKs through GitHub Releases.
