@@ -1,4 +1,4 @@
-# R2 加密備份與復原（實作完成，尚未啟用真實雲端同步）
+# R2 加密備份與復原
 
 目前新增 `r2_sync.py`、`r2_config.py`、`r2_cli.py` 與維護排程接線。下方原始傳輸核心仍保留；自動同步改用以密文 SHA-256 命名的快照及刪除紀錄，避免每五分鐘重傳整份快照。這些檔案沒有刪除或保留期自動清理。
 
@@ -32,7 +32,7 @@ python outputs/local_voice/r2_cli.py disable
 
 下載大小與雜湊、解密、資料庫、刪除紀錄及索引時間全部核對。`verify` 不安裝明文資料；`restore` 只接受不存在或空的目的目錄，不覆蓋目前主機。刪除紀錄超過 15 分鐘會拒絕，真正災難情境需人工核對後明確加上 `--accept-stale-ledger`；這無法證明來源端在最後同步後沒有新的帳號刪除。復原金鑰必須另存，DPAPI 憑證不能直接搬到另一個 Windows 帳戶，異機復原須另行取得合法 R2 存取權限。
 
-尚未啟用真實憑證或上傳。以下保留原始核心說明，測試證據仍只有本機傳輸替身與 Windows 合成憑證往返，不能稱為已完成雲端備援。
+本機已依授權啟用真實 R2 同步，憑證用 Windows DPAPI 保存；2026-10-18 執行 `r2_cli.py verify` 回報 verified=true、stale_ledger_acknowledged=false、restored=false。這表示雲端密文可下載、解密與核對，不表示已完成另一台電腦的災難復原。復原金鑰仍須使用者另行安全保管，不上傳 R2。以下保留傳輸核心的設計說明。
 
 `outputs/local_voice/r2_backup.py` 提供 `upload_verified_pair`，接收限定貯體的 S3 client、一份 `.dtbackup`、對應最新 `.dtledger` 與只留本機的復原金鑰路徑。依 [Cloudflare 官方 boto3 介面](https://developers.cloudflare.com/r2/examples/aws/boto3/) 設定 R2 endpoint、region `auto` 與貯體專用憑證；此模組不自動取得憑證、不修改帳戶權限。
 

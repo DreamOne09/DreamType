@@ -18,6 +18,15 @@ public final class UpdateCheckTest {
   mixed.put(foreign).put(release("v7.0.0",false).put("assets",new JSONArray())).put(release("v6.0.0-rc1",false));
   if(!UpdateCheck.select(mixed,false).tag.equals("v0.8.0"))throw new AssertionError("Unsafe or missing APK accepted");
   if(!UpdateCheck.select(new JSONArray().put(preview).put(release("v0.9.4",false)),true).tag.equals("v0.9.4"))throw new AssertionError("Stable tie not preferred");
+  if(!UpdateCheck.newer("0.9.20-rc11","0.9.20-rc2")||UpdateCheck.newer("0.9.20-rc2","0.9.20-rc11")
+      ||UpdateCheck.newer("0.9.20-rc11","0.9.20")||!UpdateCheck.newer("0.9.20","0.9.20-rc11")
+      ||UpdateCheck.newer("0.9.20-rc11","0.9.20-rc11"))throw new AssertionError("Preview ordering lost");
+  JSONArray shuffled=new JSONArray().put(release("v0.9.20-rc2",true)).put(release("v0.9.20-rc11",true)).put(release("v0.9.20-rc1",true));
+  if(!UpdateCheck.select(shuffled,true).version.equals("0.9.20-rc11"))throw new AssertionError("Release order affected update choice");
+  JSONObject qualified=release("v0.9.21-rc1",true);
+  String qualifiedName="DreamType-0.9.21-rc1.apk";
+  qualified.getJSONArray("assets").getJSONObject(0).put("name",qualifiedName).put("browser_download_url",UpdateCheck.REPO+"/releases/download/v0.9.21-rc1/"+qualifiedName);
+  if(!UpdateCheck.select(new JSONArray().put(qualified),true).tag.equals("v0.9.21-rc1"))throw new AssertionError("Versioned preview APK missing");
   try{UpdateCheck.select(new JSONArray().put(foreign),true);throw new AssertionError("Invalid release accepted");}catch(java.io.IOException expected){}
   System.out.println("PASS: update opt in, exact release URL, numeric comparison, no downgrade, valid APK filtering");
  }
