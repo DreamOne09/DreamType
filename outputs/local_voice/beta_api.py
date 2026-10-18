@@ -47,8 +47,8 @@ class Beta:
     # Bound the entire provider call, including a peer that keeps sending bytes
     # and therefore never reaches an HTTP read-idle timeout.
     processing_timeout = QUEUED_JOB_SECONDS
-    def __init__(self,work,provider,decoder):
-        self.store=Store(work/'beta/accounts.sqlite3');self.provider,self.decoder=provider,decoder
+    def __init__(self,work,provider,decoder,entitlement_policy=None):
+        self.store=Store(work/'beta/accounts.sqlite3',entitlement_policy);self.provider,self.decoder=provider,decoder
         path=work/'beta/admin.key'
         if not path.exists():path.write_text(secrets.token_urlsafe(32),encoding='ascii')
         self.admin=path.read_text().strip()
@@ -122,15 +122,21 @@ class Beta:
                 if result.get('error_code')=='no_speech' else '處理失敗或服務重啟，這次未扣額度。可重新錄音。')
         return result
 
-def install_beta(app,work,provider,decoder):
-    beta=Beta(work,provider,decoder)
+def install_beta(app,work,provider,decoder,*,billing=None):
+    beta=Beta(work,provider,decoder,billing.policy if billing else None)
+    if billing:billing.bind(app,beta.store)
     previous=app.router.lifespan_context
     @asynccontextmanager
     async def lifespan(application):
         async with previous(application):
             await beta.start()
-            try:yield
-            finally:await beta.stop()
+            try:
+                if billing:await billing.start()
+                yield
+            finally:
+                try:
+                    if billing:await billing.stop()
+                finally:await beta.stop()
     app.router.lifespan_context=lifespan
     @app.exception_handler(StoreError)
     async def store_error(request,error):return JSONResponse({'detail':error.message,'error_code':error.code},status_code=error.status)
@@ -214,7 +220,10 @@ def install_beta(app,work,provider,decoder):
         try:maintenance=json.loads((work/'maintenance-status.json').read_text())
         except (OSError,ValueError):maintenance={'errors':['maintenance_not_run']}
         from operations import summarize
+        from billing_health import snapshot as billing_snapshot
+        billing_health=await asyncio.to_thread(billing_snapshot,beta.store,dict(billing.status),billing.task is not None and not billing.task.done()) if billing else {'state':'disabled'}
         return {'queue_size':beta.queue.qsize(),'jobs_last_24h':counts,'worker_alive':beta.workers_ready(),'maintenance':maintenance,
+                'billing':billing_health,
                 'uploads':{'active':len(beta.uploads),'limit':beta.upload_limit},
                 'decoders':{'active':len(beta.decoders.tasks),'waiting':beta.decoders.waiting,'limit':beta.decoders.limit},
                 'operations':summarize(maintenance,(work/'backup-config.json').is_file())}
@@ -313,14 +322,17 @@ def install_beta(app,work,provider,decoder):
         beta.store.receipt(beta.user(request)['id'],jid);return {'ok':True}
     @app.get('/v2/admin/users')
     async def users():
-        return {'users':beta.store.users(),'queue_size':beta.queue.qsize(),'provider':'home-pc',**admin_address(work)}
+        return {'users':beta.store.users(),'queue_size':beta.queue.qsize(),'provider':'home-pc','billing_enabled':billing is not None,**admin_address(work)}
     @app.post('/v2/admin/users',status_code=201)
     async def create(request:Request):
         body=await object_body(request)
-        uid=await asyncio.to_thread(beta.store.create,body.get('username',''),body.get('password',''),body.get('minutes',1200))
+        if billing and body.get('minutes',0)!=0:raise StoreError(400,'訂閱額度由購買方案決定，不能指定試用分鐘')
+        uid=await asyncio.to_thread(beta.store.create,body.get('username',''),body.get('password',''),body.get('minutes',0 if billing else 1200))
         beta.store.audit('account_created',uid)
         return {'id':uid}
     @app.patch('/v2/admin/users/{uid}')
     async def update(uid:str,request:Request):
-        body=await object_body(request);beta.store.update(uid,body.get('enabled'),body.get('minutes'));beta.store.audit('account_updated',uid);return {'ok':True}
+        body=await object_body(request)
+        if billing and 'minutes' in body:raise StoreError(400,'訂閱額度由購買方案決定，不能修改試用分鐘')
+        beta.store.update(uid,body.get('enabled'),0 if billing else body.get('minutes'));beta.store.audit('account_updated',uid);return {'ok':True}
     return beta
