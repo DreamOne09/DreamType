@@ -18,7 +18,7 @@ async function api(path, body, token = '') {
     headers: {'X-DreamType-Client':'web', 'Content-Type':'application/json', ...(token ? {Authorization:'Bearer ' + token} : {})},
     body: body === undefined ? undefined : JSON.stringify(body)});
   let data; try { data = await response.json(); } catch { throw Error('Google 登入服務尚未開放，請使用原本帳號登入。'); }
-  if (!response.ok) throw Error(response.status === 404 ? 'Google 登入服務尚未開放，請使用原本帳號登入。' : data.detail || '驗證失敗，請重試。');
+  if (!response.ok) throw Error((response.status === 404 || (path === 'auth/google/config' && response.status === 401)) ? 'Google 登入服務尚未開放，請使用原本帳號登入。' : data.detail || '驗證失敗，請重試。');
   return data;
 }
 function button(text, action, parent) {
@@ -36,7 +36,7 @@ export function mountGoogle(root, {run, say, getToken, accept, deleted, deletion
     if (!/^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(config.client_id) || typeof config.signup_enabled !== 'boolean') throw Error('登入設定不完整。');
     if (deletion) { await begin(config, 'delete'); return; }
     button('登入現有 Google 帳號', () => run(() => begin(config, 'signin')), choices);
-    if (config.signup_enabled) button('建立新的 Google 帳號連結', () => run(() => begin(config, 'signup')), choices);
+    if (config.signup_enabled) button('用 Google 註冊 DreamType', () => run(() => begin(config, 'signup')), choices);
     const help = document.createElement('p'); help.textContent = config.signup_enabled ? '建立 DreamType 帳號不會自動訂閱，也不會合併原本的試用帳號。' : '目前未開放自行註冊。原有試用帳號請使用帳號密碼登入。'; choices.append(help);
   }
   async function begin(config, purpose) {

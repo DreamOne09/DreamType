@@ -33,7 +33,7 @@ def check(executable, output):
                 if request.method=='POST':assert request.headers.get('origin')==ORIGIN
             if path.endswith('/config'):
                 data={'client_id':'123-test.apps.googleusercontent.com','signup_enabled':signup}
-                if disabled:status=404;data={'detail':'disabled'}
+                if disabled:status=401;data={'detail':'請先登入'}
             elif path.endswith('/challenge'):data={'challenge':'a'*32,'secret':'b'*43,'nonce':'c'*43,'expires_at':4102444800}
             elif path.endswith('/complete'):
                 assert request.post_data_json['id_token']=='synthetic-proof'
@@ -53,7 +53,7 @@ def check(executable, output):
         page.goto(ORIGIN+'/account');assert not scripts
         page.get_by_role('button',name='使用 Google 帳號',exact=True).click()
         expect(page.get_by_role('button',name='登入現有 Google 帳號')).to_be_visible()
-        assert page.get_by_role('button',name='建立新的 Google 帳號連結').count()==0
+        assert page.get_by_role('button',name='用 Google 註冊 DreamType').count()==0
         page.get_by_role('button',name='登入現有 Google 帳號').click()
         page.get_by_role('button',name='Fixture Google').wait_for()
         assert page.evaluate('proofs[0].nonce')=='c'*43
@@ -80,7 +80,7 @@ def check(executable, output):
         # Dictation tab uses the same flow and retains explicit signup selection.
         signup=True;page.goto(ORIGIN+'/')
         page.get_by_role('button',name='使用 Google 帳號',exact=True).click()
-        page.get_by_role('button',name='建立新的 Google 帳號連結').click()
+        page.get_by_role('button',name='用 Google 註冊 DreamType').click()
         page.get_by_role('button',name='Fixture Google').click()
         expect(page.locator('#workspace')).to_be_visible()
         expect(page.locator('#record')).to_be_enabled()
