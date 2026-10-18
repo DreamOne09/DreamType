@@ -31,6 +31,7 @@ from processing_budget import format_before_deadline
 from translation import validate_translation, translate_text
 from english_layout import english_paragraphs
 from beta_api import install_beta, LocalProvider
+from web_pages import install_web_pages
 from audio_process import isolated_audio_duration, isolated_pcm
 from request_limits import DecoderBudget
 from beta_store import StoreError
@@ -41,6 +42,7 @@ if not KEY_PATH.exists():
     KEY_PATH.write_text(secrets.token_urlsafe(32), encoding='ascii')
 API_KEY = KEY_PATH.read_text(encoding='ascii').strip()
 app = FastAPI(title='Local Voice', docs_url=None, redoc_url=None, openapi_url=None)
+install_web_pages(app)
 converter = OpenCC('s2tw')  # Taiwan glyphs, without context-free phrase substitutions (文件 -> 檔案).
 model = None
 speech_tokenizer = None
@@ -71,7 +73,7 @@ async def size_limit(request, call_next):
         return PlainTextResponse('Content-Length required', status_code=411)
     return await call_next(request)
 
-@app.get('/')
+@app.get('/private')
 async def test_page():
     return FileResponse(Path(__file__).parent / 'phone.html', headers={
         'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer',
