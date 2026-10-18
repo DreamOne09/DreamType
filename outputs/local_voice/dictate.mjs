@@ -1,3 +1,4 @@
+import {mountGoogle} from './google_account.mjs';
 import {DictationSession} from './web_dictation.mjs';
 // Existing owner pairing links carry a fragment, never a server query parameter.
 if (location.hash.startsWith('#key=')) location.replace('/private' + location.hash);
@@ -72,6 +73,10 @@ $('login').onsubmit = event => {
   event.preventDefault(); const password = $('password').value; $('password').value = '';
   run(async () => {
     const me = await session.login($('username').value.trim(), password);
+    showSignedIn(me);
+  });
+};
+function showSignedIn(me) {
     $('identity').textContent = me.name + ' · 本月剩約 ' + Math.floor(me.remaining_seconds / 60) + ' 分鐘';
     const prefs = me.preferences || {};
     for (const [id, key] of [['mode','mode'],['target','target_language'],['source','source_language']]) {
@@ -79,8 +84,11 @@ $('login').onsubmit = event => {
     }
     $('mode').dispatchEvent(new Event('change'));
     $('signin').hidden = true; $('workspace').hidden = false; say('已登入。按圓形按鈕開始錄音。');
-  });
-};
+}
+mountGoogle($('google-signin'), {run, say, getToken:()=>session.token, accept:async token=>{
+  session.clear(); session.token=token;
+  try { showSignedIn(await session.api('me')); } catch(error) { clearPage(); throw error; }
+}});
 $('mode').onchange = () => { $('target-label').hidden = $('mode').value !== 'translate'; };
 $('record').onclick = () => {
   if (recorder) { recorder.stop(); return; }

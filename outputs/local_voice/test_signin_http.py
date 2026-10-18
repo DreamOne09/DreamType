@@ -14,10 +14,29 @@ from signin_http import signin_router,BASE,DELETE,ORIGIN,LIMIT
 from signin_store import SignInStore
 from account_reauth import GoogleAccountDeletion
 from beta_api import install_beta
+from web_pages import install_web_pages
 
 class SignInHttpTests(unittest.IsolatedAsyncioTestCase):
     @classmethod
     def setUpClass(cls):identity.GoogleSignInTests.setUpClass()
+
+    async def test_google_assets_and_policy_are_scoped_to_user_pages(self):
+        with tempfile.TemporaryDirectory() as d:
+            app,store,proof=self.fixture(d);install_web_pages(app)
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url=ORIGIN) as client:
+                for path in ('/','/dictate','/account'):
+                    response=await client.get(path)
+                    self.assertEqual(response.status_code,200)
+                    csp=response.headers['content-security-policy']
+                    self.assertIn('https://accounts.google.com/gsi/client',csp)
+                    self.assertIn("frame-ancestors 'none'",csp)
+                    self.assertIn("base-uri 'none'",csp)
+                    self.assertEqual(response.headers['cross-origin-opener-policy'],'same-origin-allow-popups')
+                self.assertNotIn('accounts.google.com',(await client.get('/admin')).headers['content-security-policy'])
+                response=await client.get('/web/google_account.mjs')
+                self.assertEqual(response.status_code,200)
+                self.assertIn('javascript',response.headers['content-type'])
+                self.assertEqual(response.headers['cache-control'],'no-store')
 
     def fixture(self,d,signup=True,full=True,**limits):
         root,store=storage.SignInStorageTests().fixture(d);prepare_reauth(root)
@@ -59,6 +78,11 @@ class SignInHttpTests(unittest.IsolatedAsyncioTestCase):
                     self.assertEqual((await client.post(BASE+'/challenge',headers=headers,json={'purpose':'signup'})).status_code,403)
                 headers={'X-DreamType-Client':'web','Origin':ORIGIN,'Sec-Fetch-Site':'same-origin'}
                 self.assertEqual((await client.get(BASE+'/config',headers=headers)).status_code,200)
+                get_headers={'X-DreamType-Client':'web','Sec-Fetch-Site':'same-origin'}
+                self.assertEqual((await client.get(BASE+'/config',headers=get_headers)).status_code,200)
+                self.assertEqual((await client.post(BASE+'/challenge',headers=get_headers,json={'purpose':'signin'})).status_code,403)
+                self.assertEqual((await client.get(BASE+'/config',headers={'X-DreamType-Client':'web'})).status_code,403)
+                self.assertEqual((await client.get(BASE+'/config',headers={**get_headers,'Origin':'https://evil.invalid'})).status_code,403)
                 self.assertEqual((await client.post(BASE+'/challenge',headers=headers,json={'purpose':'signup'})).status_code,403)
                 self.assertEqual((await client.post(BASE+'/complete',headers=headers,json={'paid':True})).status_code,400)
                 self.assertEqual((await client.post(DELETE+'/challenge',headers=headers,json={})).status_code,401)

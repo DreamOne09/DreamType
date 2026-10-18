@@ -196,6 +196,9 @@ def install_beta(app,work,provider,decoder,*,billing=None,signin=None):
             response.headers['X-Content-Type-Options']='nosniff'
             response.headers['Referrer-Policy']='no-referrer'
             response.headers['Content-Security-Policy']="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'"
+        if request.url.path=='/account':
+            from web_pages import google_page_headers
+            response.headers.update(google_page_headers(inline=True))
         return response
     @app.get('/admin')
     async def admin_page():return FileResponse(Path(__file__).with_name('admin.html'))

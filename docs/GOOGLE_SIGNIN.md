@@ -62,7 +62,7 @@ iOS 尚需自己的原生登入與 App Store 要求評估，不能以 Android Go
 | `/v2/me/google/delete/challenge` | POST `{}`，Bearer session | 為目前登入產生刪除確認 |
 | `/v2/me/google/delete/complete` | POST `challenge, secret, id_token, confirm: true`，相同 Bearer session | 重新驗證並刪除帳號 |
 
-所有請求需 `X-DreamType-Client: web` 或 `android`。網頁必須帶固定 `https://dreamtype.dreamone.li` Origin；不同 Origin 或跨站 Fetch Metadata 一律拒絕。原生允許沒有 Origin，但這不是裝置認證。使用 JSON／自訂標頭強制瀏覽器跨站 preflight，未授予 CORS。前端必須在自己的登入操作中產生並持有 challenge/secret，不能接受網址或其他頁面提供的登入 callback 資料；Google credential 的 nonce 必須對應這次 challenge。
+所有請求需 `X-DreamType-Client: web` 或 `android`。網頁變更請求必須帶固定 `https://dreamtype.dreamone.li` Origin；唯讀 config GET 若未帶 Origin，必須帶 `Sec-Fetch-Site: same-origin`；不同 Origin 或跨站 Fetch Metadata 一律拒絕。原生允許沒有 Origin，但這不是裝置認證。使用 JSON／自訂標頭強制瀏覽器跨站 preflight，未授予 CORS。前端必須在自己的登入操作中產生並持有 challenge/secret，不能接受網址或其他頁面提供的登入 callback 資料；Google credential 的 nonce 必須對應這次 challenge。
 
 Router 在讀取 body 前限制全服務每分鐘 60 次與同時 4 筆，body 上限 24 KiB、讀取 10 秒、拒絕壓縮或未知欄位；回應不快取。取消 HTTP 等待不會讓仍在驗證的執行緒提前釋放名額。資料庫及驗證 I/O 在背景執行緒進行。這是單主機限制，不代表分散式防濫用或裝置可信。
 
@@ -81,3 +81,14 @@ Google ID token 與 challenge 只存在記憶體；只送往固定 DreamType HTT
 本候選尚未發布新版簽章 APK，真實 OAuth client ID／Android 套件簽章／測試使用者尚未設定。編譯與 lint 不代表 Pixel 9、Google 選帳號、TalkBack、旋轉／背景切換或真實刪除已驗收。Google 品牌按鈕及正式同意畫面仍需上架前檢視；iOS 與網頁 Google 介面未在此批完成。
 
 官方依據：[Credential Manager 實作](https://developer.android.com/identity/sign-in/credential-manager-siwg-implementation)、[穩定版資訊](https://developer.android.com/jetpack/androidx/releases/credentials)、[Google nonce builder](https://developers.google.com/identity/android-credential-manager/android/reference/com/google/android/libraries/identity/googleid/GetSignInWithGoogleOption.Builder)。
+
+
+## 網頁候選介面（2026-10-18）
+
+帳號頁及語音輸入頁共用 `google_account.mjs`。使用者先選擇 Google 帳號方式，再選登入或服務允許的註冊，才載入官方 Google Identity Services script 並顯示官方按鈕；沒有 One Tap 或自動登入。未啟用時保留邀請帳號登入。只在固定 DreamType origin 運作，不讀取 URL 或跨視窗傳入的 credential/challenge。
+
+每次驗證使用服務端 nonce，提供取消與四分鐘內的到期提示。取消後忽略舊 callback；完成時核對同一個分頁 session，未採用的已建立 session 嘗試撤銷。憑證不放入 localStorage/sessionStorage、網址或日誌。Google-only 帳號隱藏密碼刪除，改為明確永久刪除確認及 Google 再驗證，並連結 Play 訂閱管理，說明刪除不等於停訂或退款。
+
+只有使用者頁面加入 Google GIS 指定的 script/style/frame/connect CSP 路徑及 popup policy；管理者頁面維持原限制。Google SDK 只有使用者主動進入驗證時才載入。依據：[Google 網頁設定與 CSP](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid)、[JavaScript API](https://developers.google.com/identity/gsi/web/reference/js-reference)。
+
+隔離 Chrome 驗證登入、註冊開關、nonce、取消後舊 callback、刪除確認、Google-only 欄位、登出、手機寬度及未啟用回退；原有詞庫衝突、錄音、重試、翻譯設定、收件與復原測試維持通過。合成 Google SDK 並不代表真實 OAuth/FedCM/跨瀏覽器驗收。仍未部署新 schema、啟用 OAuth 或發布新簽章 APK；上述早期段落描述的是各階段當時的進度，最新客戶端候選已包含 Android 和網頁。
