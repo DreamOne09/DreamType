@@ -49,3 +49,23 @@ iOS 尚需自己的原生登入與 App Store 要求評估，不能以 Android Go
 回應明確為 `deleted=true`、`subscription_cancelled=false`。**刪除 DreamType 帳號不會取消 Google Play 訂閱或自動退款。** 客戶端在送出刪除前必須告知並提供商店訂閱管理入口，讓使用者自行決定；不得宣稱付款停止。重新註冊不復活舊資料或自動搬移舊購買權益。
 
 儲存層已補刪除能力，HTTP、Google OAuth 設定、原生／網頁重新驗證與清楚的刪除確認介面仍未接線。未接齊前不能開放自助註冊。
+
+## HTTP 與啟用設定（預設停用）
+
+`server.py` 讀取私人 `work/signin-config.json`。不存在或只有 `{"enabled": false}` 時不安裝 Google routes。啟用內容必須完整包含 `enabled: true`、實際 OAuth `client_id`、`presenters` 陣列與布林 `allow_signup`；設定最多 16 KiB，檔案須位於 work 內。需要既有 google-auth dependency overlay；錯誤設定拒絕啟用，不默默降級。先以唯讀方式確認完整 schema 12，才建立共享帳號服務。
+
+| 路徑 | 方法與內容 | 用途 |
+|---|---|---|
+| `/v2/auth/google/config` | GET | 公開 client ID 與註冊開關，不包含秘密 |
+| `/v2/auth/google/challenge` | POST `purpose: signin / signup` | 產生一次性登入請求 |
+| `/v2/auth/google/complete` | POST `challenge, secret, id_token` | 驗證後發出 DreamType session |
+| `/v2/me/google/delete/challenge` | POST `{}`，Bearer session | 為目前登入產生刪除確認 |
+| `/v2/me/google/delete/complete` | POST `challenge, secret, id_token, confirm: true`，相同 Bearer session | 重新驗證並刪除帳號 |
+
+所有請求需 `X-DreamType-Client: web` 或 `android`。網頁必須帶固定 `https://dreamtype.dreamone.li` Origin；不同 Origin 或跨站 Fetch Metadata 一律拒絕。原生允許沒有 Origin，但這不是裝置認證。使用 JSON／自訂標頭強制瀏覽器跨站 preflight，未授予 CORS。前端必須在自己的登入操作中產生並持有 challenge/secret，不能接受網址或其他頁面提供的登入 callback 資料；Google credential 的 nonce 必須對應這次 challenge。
+
+Router 在讀取 body 前限制全服務每分鐘 60 次與同時 4 筆，body 上限 24 KiB、讀取 10 秒、拒絕壓縮或未知欄位；回應不快取。取消 HTTP 等待不會讓仍在驗證的執行緒提前釋放名額。資料庫及驗證 I/O 在背景執行緒進行。這是單主機限制，不代表分散式防濫用或裝置可信。
+
+只有這五個已安裝路徑交由專屬 router 驗證；其餘 v2 路徑維持原本登入／管理權限。關閉 `allow_signup` 同時拒絕新的 signup challenge 及先前尚未完成的 signup，不影響既有 Google 帳號登入。
+
+整合測試透過完整 install_beta 和合成 RSA Google proof 完成註冊、零額度查詢、重播拒絕及重新驗證刪除；另外驗證非法來源、body 上限／逾時、HTTP 取消後名額保留與未設定時路由不存在。沒有真實 Google OAuth 帳號驗收，沒有啟用線上設定。手機／網頁 UI 及完整真人流程仍待完成。

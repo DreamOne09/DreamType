@@ -122,10 +122,12 @@ class Beta:
                 if result.get('error_code')=='no_speech' else '處理失敗或服務重啟，這次未扣額度。可重新錄音。')
         return result
 
-def install_beta(app,work,provider,decoder,*,billing=None):
+def install_beta(app,work,provider,decoder,*,billing=None,signin=None):
+    if signin:signin.validate_storage(work/'beta/accounts.sqlite3')
     if billing:billing.validate_storage(work/'beta/accounts.sqlite3')
     beta=Beta(work,provider,decoder,billing.policy if billing else None)
     if billing:billing.bind(app,beta.store)
+    if signin:signin.bind(app,beta.store)
     previous=app.router.lifespan_context
     @asynccontextmanager
     async def lifespan(application):
@@ -150,7 +152,10 @@ def install_beta(app,work,provider,decoder,*,billing=None):
             if getattr(request.state,'auth_admitted',False):beta.auth_receivers-=1
 
     async def guarded_request(request,call_next):
-        if request.url.path.startswith('/v2/'):
+        # The exact opt-in Google routes enforce their own bounded receiver,
+        # origin checks and (for deletion) session authentication.
+        google_request=signin is not None and request.url.path in signin.public_paths
+        if request.url.path.startswith('/v2/') and not google_request:
             try:
                 length=int(request.headers.get('content-length','0'))
                 cap=2*1024*1024+65536 if request.url.path=='/v2/dictations' else 16384

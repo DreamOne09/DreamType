@@ -36,6 +36,7 @@ from audio_process import isolated_audio_duration, isolated_pcm
 from request_limits import DecoderBudget
 from beta_store import StoreError
 from billing_config import load_billing
+from signin_config import load_signin
 
 PROMPT = (Path(__file__).parent / 'formatting.txt').read_text(encoding='utf-8')
 KEY_PATH = WORK / 'local-voice.key'
@@ -52,7 +53,8 @@ SPEECH_MODEL_PATH = speech_model_path(WORK, SPEECH_PROFILE)
 gpu_lock = asyncio.Lock()
 MAX_BYTES = 25 * 1024 * 1024
 billing = load_billing(WORK)
-beta = install_beta(app, WORK, LocalProvider('http://127.0.0.1:19870', API_KEY), isolated_audio_duration, billing=billing)
+signin = load_signin(WORK)
+beta = install_beta(app, WORK, LocalProvider('http://127.0.0.1:19870', API_KEY), isolated_audio_duration, billing=billing, signin=signin)
 pcm_decoders = DecoderBudget()
 
 async def authorize(request: Request):
