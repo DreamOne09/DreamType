@@ -93,3 +93,16 @@ class BillingStore:
         """No token plaintext in the task inventory; a worker must reverify."""
         with self.store.db() as db:
             return [dict(row) for row in db.execute('SELECT p.digest,p.uid,p.revision,p.needs_refresh FROM play_subscriptions p JOIN users u ON p.uid=u.id WHERE p.ack_pending=1 AND u.enabled=1 AND NOT EXISTS (SELECT 1 FROM play_replacements r WHERE r.old_digest=p.digest) ORDER BY p.checked_at LIMIT 100')]
+
+    def require_acknowledgement(self,uid,digest,revision):
+        """Recheck immediately before provider POST; never grant from a queue row."""
+        with self.store.db() as db:
+            db.execute('BEGIN')
+            row=db.execute('''SELECT p.revision,p.ack_pending FROM play_subscriptions p
+                JOIN users u ON u.id=p.uid WHERE p.digest=? AND p.uid=? AND u.enabled=1
+                AND NOT EXISTS (SELECT 1 FROM play_replacements r WHERE r.old_digest=p.digest)''',(digest,uid)).fetchone()
+            if not row or row['revision']!=revision or not row['ack_pending']:
+                raise StoreError(409,'訂閱狀態已更新','purchase_revision_changed')
+            policy=self.store.entitlement_policy
+            if policy is None or policy.resolve(db,uid,time.time()).status!='active':
+                raise StoreError(402,'訂閱權益尚未授予','entitlement_not_granted')

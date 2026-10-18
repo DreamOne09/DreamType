@@ -120,7 +120,7 @@ class PlayVerifier:
             raise BillingVerificationError('billing_provider_unavailable') from None
         return evaluate_purchase(data,expected_account_id,self.catalog,now,self.allow_test)
 
-    def ensure_acknowledged(self,purchase_token,expected_account_id,now):
+    def ensure_acknowledged(self,purchase_token,expected_account_id,now,*,before_post=None):
         """For a durable acknowledgement job AFTER entitlement is persisted.
 
         Re-query before every attempt. If a prior POST succeeded but its response
@@ -136,6 +136,9 @@ class PlayVerifier:
         except Exception:
             raise BillingVerificationError('billing_credentials_unavailable') from None
         url=API+PACKAGE+'/purchases/subscriptions/'+quote(verified.product_id,safe='')+'/tokens/'+quote(purchase_token,safe='')+':acknowledge'
+        # The worker rechecks local ownership/revision after external I/O.
+        # Do not hold a database transaction across the HTTP request.
+        if before_post is not None:before_post()
         try:
             with httpx.Client(timeout=15,follow_redirects=False,trust_env=False,transport=self.transport) as client:
                 with client.stream('POST',url,headers={'Authorization':'Bearer '+bearer},json={}) as response:
