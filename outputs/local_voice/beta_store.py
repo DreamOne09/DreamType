@@ -30,21 +30,24 @@ class Store:
         if path.exists():
             with contextlib.closing(sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True)) as db:
                 version=db.execute('PRAGMA user_version').fetchone()[0]
-        if entitlement_policy is not None and version not in (9,10,11):
+        if entitlement_policy is not None and version not in (9,10,11,12):
             raise RuntimeError('Explicit offline billing storage migration is required before enabling a policy.')
-        if version in (9,10,11):
+        if version in (9,10,11,12):
             from billing_migration import validate_billing_schema
             with self.db() as db:
                 db.execute('BEGIN IMMEDIATE')
                 if db.execute('PRAGMA user_version').fetchone()[0]!=version:
                     raise RuntimeError('Billing database changed while opening.')
                 validate_billing_schema(db)
-                if version in (10,11):
+                if version in (10,11,12):
                     from notification_migration import validate_notifications
                     validate_notifications(db)
-                if version==11:
+                if version in (11,12):
                     from signin_migration import validate_signin
                     validate_signin(db)
+                if version==12:
+                    from reauth_migration import validate_reauth
+                    validate_reauth(db)
                 if entitlement_policy is None and db.execute('SELECT 1 FROM billing_mode WHERE required=1').fetchone():
                     raise RuntimeError('This database requires an explicit billing policy; refusing trial fallback.')
                 if entitlement_policy is not None:db.execute('INSERT OR IGNORE INTO billing_mode VALUES(1)')
@@ -232,6 +235,8 @@ class Store:
             db.execute('DELETE FROM reset_codes WHERE expires<=?',(time.time(),))
             if db.execute("SELECT 1 FROM sqlite_master WHERE name='login_challenges' AND type='table'").fetchone():
                 db.execute('DELETE FROM login_challenges WHERE expires<=?',(time.time(),))
+            if db.execute("SELECT 1 FROM sqlite_master WHERE name='deletion_challenges' AND type='table'").fetchone():
+                db.execute('DELETE FROM deletion_challenges WHERE expires<=?',(time.time(),))
             db.execute('DELETE FROM audit WHERE created<?',(time.time()-90*86400,))
     def expect_receipt(self,uid,jid):
         with self.db() as db:db.execute('INSERT OR IGNORE INTO receipts(uid,id) VALUES(?,?)',(uid,jid))

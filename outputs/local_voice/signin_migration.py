@@ -13,7 +13,7 @@ TABLES={
 COLUMNS={'login_identities':{'provider','subject','uid'},'login_challenges':{'id','secret','nonce','purpose','expires'}}
 
 def validate_signin(db):
-    if db.execute('PRAGMA user_version').fetchone()[0]!=11:
+    if db.execute('PRAGMA user_version').fetchone()[0] not in (11,12):
         raise ValueError('Explicit sign-in storage preparation required.')
     for name,columns in COLUMNS.items():
         if {r[1] for r in db.execute('PRAGMA table_info('+name+')')}!=columns:
