@@ -7,7 +7,7 @@ final class UpdateCheck {
  static final String REPO="https://github.com/DreamOne09/DreamType";
  static final class Release {
   final String tag,version,url;final boolean preview;
-  Release(String tag,boolean preview){this.tag=tag;this.version=core(tag);this.preview=preview;this.url=REPO+"/releases/tag/"+tag;}
+  Release(String tag,boolean preview){this.tag=tag;this.version=tag.replaceFirst("^v","");this.preview=preview;this.url=REPO+"/releases/tag/"+tag;}
  }
  static Release latest(boolean previews)throws Exception{
   String endpoint="https://api.github.com/repos/DreamOne09/DreamType/releases"+(previews?"?per_page=100":"/latest");
@@ -25,9 +25,9 @@ final class UpdateCheck {
    JSONObject item=releases.optJSONObject(i);if(item==null||item.optBoolean("draft"))continue;
    String tag=item.optString("tag_name","");if(!tag.matches("v?[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"))continue;
    boolean preview=item.optBoolean("prerelease")||tag.contains("-rc");if(preview&&!previews)continue;
-   String name="DreamType-"+core(tag)+".apk";
+   String name="DreamType-"+core(tag)+".apk",qualifiedName="DreamType-"+tag.replaceFirst("^v","")+".apk";
    JSONArray assets=item.optJSONArray("assets");boolean apk=false;
-   if(assets!=null)for(int j=0;j<assets.length();j++){JSONObject asset=assets.optJSONObject(j);if(asset==null)continue;String actual=asset.optString("name");String expected=REPO+"/releases/download/"+tag+"/"+actual;if((name.equals(actual)||"DreamType.apk".equals(actual))&&expected.equals(asset.optString("browser_download_url"))&&asset.optLong("size",0)>0)apk=true;}
+   if(assets!=null)for(int j=0;j<assets.length();j++){JSONObject asset=assets.optJSONObject(j);if(asset==null)continue;String actual=asset.optString("name");String expected=REPO+"/releases/download/"+tag+"/"+actual;if((name.equals(actual)||qualifiedName.equals(actual)||"DreamType.apk".equals(actual))&&expected.equals(asset.optString("browser_download_url"))&&asset.optLong("size",0)>0)apk=true;}
    if(!apk)continue;
    Release candidate=new Release(tag,preview);
    if(best==null||newer(candidate.version,best.version)||(candidate.version.equals(best.version)&&best.preview&&!candidate.preview))best=candidate;
@@ -35,8 +35,15 @@ final class UpdateCheck {
   if(best==null)throw new IOException("No installable release");return best;
  }
  static boolean newer(String available,String current){
+  String valid="v?[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?";
+  if(!available.matches(valid)||!current.matches(valid))return false;
   String a=core(available),b=core(current);if(!a.matches("[0-9]+\\.[0-9]+\\.[0-9]+")||!b.matches("[0-9]+\\.[0-9]+\\.[0-9]+"))return false;
   String[] x=a.split("\\."),y=b.split("\\.");
-  for(int i=0;i<3;i++){int delta=new java.math.BigInteger(x[i]).compareTo(new java.math.BigInteger(y[i]));if(delta!=0)return delta>0;}return false;
+  for(int i=0;i<3;i++){int delta=new java.math.BigInteger(x[i]).compareTo(new java.math.BigInteger(y[i]));if(delta!=0)return delta>0;}
+  boolean ar=available.contains("-rc"),br=current.contains("-rc");
+  if(ar!=br)return !ar;
+  if(!ar)return false;
+  return new java.math.BigInteger(available.substring(available.indexOf("-rc")+3)).compareTo(
+      new java.math.BigInteger(current.substring(current.indexOf("-rc")+3)))>0;
  }
 }

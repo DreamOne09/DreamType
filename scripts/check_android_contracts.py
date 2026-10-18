@@ -9,7 +9,7 @@ import urllib.request
 
 JSON_SHA256 = '3ea61b2a06e31edf1c91134fe9106b0ebb16628be169f3db75bc7a2b06b45796'
 JSON_URL = 'https://repo.maven.apache.org/maven2/org/json/json/20250517/json-20250517.jar'
-TESTS = ('EmptyResultCheck', 'TranslationContractTest', 'VoiceRecoveryTest', 'EncryptedRecordingTest', 'ErrorMessageTest', 'ReceiptRecoveryTest', 'UpdateCheckTest', 'WordSuggestionsTest', 'ResponseDeadlineTest', 'DefaultServerTest', 'ServiceDiscoveryTest')
+TESTS = ('EmptyResultCheck', 'TranslationContractTest', 'VoiceRecoveryTest', 'EncryptedRecordingTest', 'ErrorMessageTest', 'ReceiptRecoveryTest', 'UpdateCheckTest', 'WordSuggestionsTest', 'ResponseDeadlineTest', 'DefaultServerTest', 'ServiceDiscoveryTest', 'UploadProgressTest')
 RECOVERY_TESTS = ('AccountPlanTest', 'PurchaseRecoveryTest', 'ConnectionPersistenceTest',
                   'ConnectionVerificationTest', 'PendingAudioSessionTest', 'PreferenceSyncTest',
                   'ReceiptPendingAudioTest', 'ResponseIntegrityTest', 'SessionClearFailureTest',

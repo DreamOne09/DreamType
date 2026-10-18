@@ -26,6 +26,7 @@ from opencc import OpenCC
 from personalization import formatting_prompt, speech_hint, validate_preferences, validate_identifiers, protect_formatting_literals, restore_identifiers, explicit_list_hint, apply_explicit_layout
 from taiwan_typography import normalize_taiwan_typography, preserve_prose_layout, chinese_bullet_style, readable_layout
 from speech_profile import speech_model_path
+from speech_process import SpeechProcess, SpeechUnavailable, finish_before_cancel
 from translation import validate_translation, translate_text
 from english_layout import english_paragraphs
 from beta_api import install_beta, LocalProvider
@@ -41,6 +42,7 @@ API_KEY = KEY_PATH.read_text(encoding='ascii').strip()
 app = FastAPI(title='Local Voice', docs_url=None, redoc_url=None, openapi_url=None)
 converter = OpenCC('s2tw')  # Taiwan glyphs, without context-free phrase substitutions (文件 -> 檔案).
 model = None
+speech_tokenizer = None
 SPEECH_PROFILE = os.environ.get('DREAMTYPE_ASR_MODEL', 'turbo')
 SPEECH_MODEL_PATH = speech_model_path(WORK, SPEECH_PROFILE)
 gpu_lock = asyncio.Lock()
@@ -86,10 +88,16 @@ async def android_apk():
 
 @app.on_event('startup')
 async def load_model():
-    from faster_whisper import WhisperModel
-    global model
-    model = await asyncio.to_thread(WhisperModel, str(SPEECH_MODEL_PATH),
-        device='cuda', compute_type='int8_float16', cpu_threads=4, num_workers=1, local_files_only=True)
+    from tokenizers import Tokenizer
+    global model, speech_tokenizer
+    speech_tokenizer = Tokenizer.from_file(str(SPEECH_MODEL_PATH / 'tokenizer.json'))
+    model = SpeechProcess(SPEECH_MODEL_PATH)
+    await finish_before_cancel(model.start)
+
+@app.on_event('shutdown')
+async def close_model():
+    if model is not None:
+        await finish_before_cancel(model.close)
 
 @app.get('/health')
 async def health():
@@ -105,8 +113,10 @@ async def health():
         async with httpx.AsyncClient(timeout=2) as client:translation_ready=(await client.get('http://127.0.0.1:19873/health')).status_code==200
     except httpx.HTTPError:pass
     workers_ready=beta.workers_ready()
-    return {'status': 'ready' if model is not None and llm_ready and workers_ready and (translation_ready or not translation_configured) else 'starting',
-            'speech_ready': model is not None, 'speech_profile': SPEECH_PROFILE, 'formatting_ready': llm_ready,
+    speech_state = model.status() if model is not None else {'ready': False, 'stage': 'stopped'}
+    speech_ready = speech_state['ready']
+    return {'status': 'ready' if speech_ready and llm_ready and workers_ready and (translation_ready or not translation_configured) else 'starting',
+            'organizer': 'faithful-v1', 'speech_ready': speech_ready, 'speech_worker': speech_state, 'speech_profile': SPEECH_PROFILE, 'formatting_ready': llm_ready,
             'translation_ready':translation_ready,
             'workers_ready':workers_ready,
             'processing': 'local', 'audio_decoding': 'isolated-process', 'version': 1}
@@ -154,19 +164,18 @@ async def format_text(text, personal_prompt='', vocabulary='', taiwan_places=Tru
         validate_identifiers(text, edited)
         return readable_layout(chinese_bullet_style(edited), personal_prompt)
 
+from organizing.service import bind_formatter
+format_text = bind_formatter(format_text, API_KEY)
+
+
 def speech_token_count(text):
-    tokenizer=getattr(model,'hf_tokenizer',None)
-    return len(tokenizer.encode(text,add_special_tokens=False).ids) if tokenizer is not None else len(text)
+    return len(speech_tokenizer.encode(text, add_special_tokens=False).ids)
 
 
 def recognize(audio, language, prompt):
-    segments, info = model.transcribe(audio, language=language, beam_size=1,
-        vad_filter=True, vad_parameters={'min_silence_duration_ms': 350},
-        # With previous-text conditioning disabled, initial_prompt disappears
-        # after the first decoding window. Bounded hints must reach every window.
-        condition_on_previous_text=False, hotwords=prompt)
-    text = ''.join(segment.text for segment in segments).strip()
-    return (converter.convert(text) if info.language=='zh' else text), info.language
+    text, detected = model.recognize(audio.astype('<f4', copy=False).tobytes(), language, prompt)
+    return (converter.convert(text) if detected == 'zh' else text), detected
+
 
 async def acquire():
     try:
@@ -215,8 +224,11 @@ async def transcribe(file: UploadFile = File(...), model: str = Form('local-dict
         if selected=='zh-TW':selected='zh'
         hint=speech_hint(prompt if selected=='zh' else '',vocabulary,taiwan_places,
                          token_count=speech_token_count,chinese=selected=='zh')
-        raw, detected = await asyncio.to_thread(recognize, audio,
-            None if selected in ('', 'auto') else selected, hint)
+        try:
+            raw, detected = await finish_before_cancel(recognize, audio,
+                None if selected in ('', 'auto') else selected, hint)
+        except SpeechUnavailable:
+            raise StoreError(503, '語音辨識逾時或暫時無法使用，請重試這段錄音。', 'speech_unavailable')
         if not raw.strip():
             raise StoreError(422,'未偵測到語音，請確認麥克風並重新錄音。','no_speech')
         speech_seconds = time.perf_counter() - speech_start

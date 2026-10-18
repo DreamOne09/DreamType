@@ -288,6 +288,9 @@ public final class SmokeInstrumentation extends Instrumentation {
   }finally{listener.close();fixture.interrupt();fixture.join(6000);}
  }
  @Override public void onStart(){
+  // Instrumentation.start() races Application.onCreate(). Observe startup only
+  // after the main-thread lifecycle has finished; do not invoke cleanup here.
+  waitForIdleSync();
   Bundle result=new Bundle();
   try{
    Context context=getTargetContext();

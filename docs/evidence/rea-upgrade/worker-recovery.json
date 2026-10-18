@@ -1,0 +1,26 @@
+{
+  "fault": "terminated owned idle speech child; no active account jobs",
+  "health_detected_exit": true,
+  "next_public_recording_status": 200,
+  "recovery_seconds": 5.266,
+  "gateway_restarted": false,
+  "text_saved": false,
+  "health_after": {
+    "status": "ready",
+    "organizer": "faithful-v1",
+    "speech_ready": true,
+    "speech_worker": {
+      "ready": true,
+      "stage": "idle",
+      "elapsed_seconds": 0,
+      "failures": 0
+    },
+    "speech_profile": "turbo",
+    "formatting_ready": true,
+    "translation_ready": true,
+    "workers_ready": true,
+    "processing": "local",
+    "audio_decoding": "isolated-process",
+    "version": 1
+  }
+}
