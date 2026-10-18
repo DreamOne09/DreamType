@@ -25,3 +25,15 @@ Android 優先使用 Google 身分建立／找回 DreamType 帳號；現有邀�
 iOS 尚需自己的原生登入與 App Store 要求評估，不能以 Android Google 登入完成取代。
 
 依據：[Google ID token 後端驗證](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token)、[Google OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect)。
+
+## 一次性登入儲存（schema 11 候選）
+
+`signin_migration.prepare_signin(root)` 明確離線升級 10→11；先檢查原有付款／通知資料表、完整性、待處理錄音與收件，取得維護及寫入鎖並完成加密備份後，才在同一交易建立身分與 challenge 資料表。啟動不自動遷移，正式主機仍為 schema 4。
+
+`SignInStore` 建立五分鐘 challenge，包含隨機 nonce 與只回傳一次的客戶端秘密；資料庫只留秘密雜湊。最多保存 1,000 筆未到期請求，定期清理或建立下一筆時清除過期資料。Google 驗證在資料庫寫入鎖外進行，成功後重新檢查 challenge、帳號是否啟用，再以單一交易消耗 challenge、建立／尋找身分及發出七天 session。相同 challenge 最多成功一次；多個獨立 challenge 的相同 Google subject 仍對應同一帳號。
+
+`signin` 找不到帳號時拒絕，不重建已刪除帳號；只有明確 `signup` 意圖能建立新帳號。新帳號沒有可用密碼、沒有免費額度，不會自動連結現有邀請帳號。原有密碼帳號保持不變。停用帳號不得繞過到 signup 重新取得權限；真正刪除後的明確 signup 可以建立全新的零額度帳號，不復活舊 uid／偏好／訂閱。
+
+加密備份保留 provider/subject 對應；不保留登入 challenge 或 session。還原會再次清除 challenge，並依最新刪除紀錄連動移除身分。schema 9／10 的備份繼續支援。遷移或 session 寫入失敗須回滾整個交易，不能只留下空帳號或提早消耗 challenge。
+
+這些目前是可測試的儲存服務，仍未接 HTTP、設定或手機 UI。開放前還必須完成原生 Google 登入、發起者綁定與 login CSRF、接收／驗證限流、身分連結及 Google-only 帳號以重新驗證身分刪除帳號的流程；既有密碼刪除介面不能直接套用 Google-only 帳號。不得先開放註冊再補資料刪除。
