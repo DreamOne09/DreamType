@@ -9,6 +9,36 @@ import endpoint_publish as publication
 
 
 class PublicationTests(unittest.TestCase):
+    def test_fixed_origin_bypasses_quicktunnel_and_replaces_old_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            work=Path(directory);requests=[];published=[]
+            url='https://dreamtype.dreamone.li'
+            (work/'endpoint-discovery.json').write_text(json.dumps({'public_url':url}))
+            (work/'endpoint-published.json').write_text(json.dumps({'url':'https://old.trycloudflare.com','expires':1800090000}))
+            def respond(request):
+                requests.append(str(request.url))
+                self.assertEqual(str(request.url),url+'/health')
+                return httpx.Response(200,json={'status':'ready'})
+            def prepare(work,address,now):
+                self.assertEqual(address,url)
+                (work/'endpoint-public.json').write_text('{}')
+                return dict(url=address,serial=now,expires=now+86400)
+            def api(method,path,body=None):
+                published.append(method)
+                return {'sha':'old'} if method=='GET' else {'commit':{'sha':'new'}}
+            with httpx.Client(transport=httpx.MockTransport(respond)) as client,patch.object(publication,'prepare',prepare):
+                self.assertEqual(publication.publish(work,1800000000,client,api)['url'],url)
+            self.assertEqual(requests,[url+'/health'])
+            self.assertEqual(published,['GET','PUT'])
+
+    def test_invalid_fixed_origin_never_falls_back_or_publishes(self):
+        for value in ('',None,'http://dreamtype.dreamone.li','https://evil.example','https://old.trycloudflare.com'):
+            with self.subTest(value=value),tempfile.TemporaryDirectory() as directory:
+                work=Path(directory)
+                (work/'endpoint-discovery.json').write_text(json.dumps({'public_url':value}))
+                with httpx.Client(transport=httpx.MockTransport(lambda request:self.fail('Unexpected network'))) as client,self.assertRaises(ValueError):
+                    publication.publish(work,1800000000,client,lambda *args:self.fail('Unexpected publication'))
+
     def test_renewal_is_public_only_and_cached_until_due(self):
         with tempfile.TemporaryDirectory() as directory:
             work=Path(directory);calls=[]
