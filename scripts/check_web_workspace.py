@@ -15,7 +15,7 @@ ASSETS=ROOT/'outputs/local_voice'
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*args):pass
     def do_GET(self):
-        name={'/':'dictate.html','/web/dictate.mjs':'dictate.mjs','/web/web_dictation.mjs':'web_dictation.mjs'}.get(self.path)
+        name={'/web/google_account.mjs':'google_account.mjs','/':'dictate.html','/web/dictate.mjs':'dictate.mjs','/web/web_dictation.mjs':'web_dictation.mjs'}.get(self.path)
         if not name:self.send_error(404);return
         content=(ASSETS/name).read_bytes()
         self.send_response(200)

@@ -26,10 +26,12 @@ def signin_router(signin,deletion,client_id,*,allow_signup=False,per_minute=60,c
     async def handle(request,operation):
         nonlocal active
         # A custom header forces cross-origin browser preflight. No CORS is granted.
-        # Missing Origin is accepted only for native clients; this is not attestation.
+        # Mutating browser requests require Origin; native headers are not attestation.
         origin=request.headers.get('origin');client=request.headers.get('x-dreamtype-client')
         site=request.headers.get('sec-fetch-site')
-        if client not in ('web','android') or (origin is not None and origin!=ORIGIN) or (client=='web' and origin!=ORIGIN) or (site is not None and site!='same-origin'):
+        # Same-origin browser GET omits Origin; Fetch Metadata is required for this read-only exception.
+        browser_get=operation=='config' and request.method=='GET' and origin is None and site=='same-origin'
+        if client not in ('web','android') or (origin is not None and origin!=ORIGIN) or (client=='web' and origin!=ORIGIN and not browser_get) or (site is not None and site!='same-origin'):
             return response({'detail':'請從 DreamType 開始登入。'},403)
         now=time.monotonic()
         while arrivals and arrivals[0]<=now-60:arrivals.popleft()
