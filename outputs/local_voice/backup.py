@@ -14,6 +14,7 @@ from datetime import datetime,timezone
 from pathlib import Path
 
 FILES={'accounts.sqlite3','admin.key','local-voice.key','manifest.json'}
+BILLING_FILES=FILES|{'billing.key'}
 
 def export_deletions(root):
     """Export an encrypted, separate deletion ledger for reconciling old backups."""
@@ -57,6 +58,10 @@ def create(root):
     if not database.exists():raise ValueError('Start DreamType once before creating a backup.')
     keys={'admin.key':work/'beta/admin.key','local-voice.key':work/'local-voice.key'}
     contents={name:p.read_bytes() for name,p in keys.items()}
+    billing_key=work/'beta/billing.key'
+    if billing_key.exists():
+        contents['billing.key']=billing_key.read_bytes()
+        if len(contents['billing.key'])!=32:raise ValueError('Invalid billing encryption key.')
     target=work/'backups';target.mkdir(exist_ok=True)
     archive=target/('beta-'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+secrets.token_hex(3)+'.dtbackup')
     with closing(sqlite3.connect(':memory:')) as db:
@@ -70,7 +75,7 @@ def create(root):
                 if table in tables:db.execute('DELETE FROM '+table)
         db.execute('VACUUM')
         contents['accounts.sqlite3']=db.serialize()
-    contents['manifest.json']=json.dumps({'format':1,'snapshot_completed_at':time.time(),'contains_secrets':True,'audio_included':False,'transcripts_included':False}).encode()
+    contents['manifest.json']=json.dumps({'format':2 if 'billing.key' in contents else 1,'snapshot_completed_at':time.time(),'contains_secrets':True,'audio_included':False,'transcripts_included':False}).encode()
     buffer=io.BytesIO()
     with zipfile.ZipFile(buffer,'w',zipfile.ZIP_DEFLATED) as package:
         for name,data in contents.items():package.writestr(name,data)
@@ -93,11 +98,13 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None,*,_verify_only=F
         if recovery_key is None:raise ValueError('Encrypted backup requires the separately stored recovery key.')
         data=decrypt(Path(recovery_key).read_bytes(),data[4:],b'DreamType backup v1')
     with zipfile.ZipFile(io.BytesIO(data)) as package:
-        if len(package.namelist())!=len(FILES) or set(package.namelist())!=FILES:raise ValueError('Unexpected backup contents.')
+        names=package.namelist()
+        if len(names)!=len(set(names)) or set(names) not in (FILES,BILLING_FILES):raise ValueError('Unexpected backup contents.')
         if any(i.file_size>64*1024*1024 for i in package.infolist()):raise ValueError('Backup exceeds supported size.')
-        contents={name:package.read(name) for name in FILES}
+        contents={name:package.read(name) for name in names}
     manifest=json.loads(contents['manifest.json'])
-    if manifest.get('format')!=1:raise ValueError('Unsupported backup format.')
+    if manifest.get('format')!=(2 if 'billing.key' in contents else 1):raise ValueError('Unsupported backup format.')
+    if 'billing.key' in contents and len(contents['billing.key'])!=32:raise ValueError('Invalid billing encryption key.')
     snapshot_time=manifest.get('snapshot_completed_at',0)
     if type(snapshot_time) not in (int,float) or not 0<=snapshot_time<=time.time()+300:raise ValueError('Invalid backup timestamp.')
     for name in ('admin.key','local-voice.key'):
@@ -118,7 +125,11 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None,*,_verify_only=F
         db.execute('PRAGMA temp_store=MEMORY')
         with db:
             db.execute('PRAGMA foreign_keys=ON')
-            if db.execute('PRAGMA user_version').fetchone()[0]>4:raise ValueError('Backup database is newer than this restore tool.')
+            version=db.execute('PRAGMA user_version').fetchone()[0]
+            if version>4 and version!=9:raise ValueError('Backup database is newer than this restore tool.')
+            tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            if version!=9 and tables & {'purchase_claims','play_subscriptions','billing_retry','play_replacements','billing_mode'}:
+                raise ValueError('Billing tables require a complete supported migration.')
             if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('Invalid database.')
             if db.execute('PRAGMA foreign_key_check').fetchall():raise ValueError('Invalid database references.')
             db.execute('DELETE FROM sessions')
@@ -130,16 +141,27 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None,*,_verify_only=F
             for uid, in db.execute('SELECT uid FROM deletions').fetchall():
                 db.execute('DELETE FROM users WHERE id=?',(uid,))
                 if has_audit:db.execute('DELETE FROM audit WHERE uid=?',(uid,))
-            db.execute('PRAGMA user_version=4')
+            if version==9:
+                from billing_crypto import BillingCipher
+                from billing_migration import validate_billing_schema
+                validate_billing_schema(db)
+                for uid,digest,payload in db.execute('SELECT uid,digest,token FROM play_subscriptions'):
+                    if 'billing.key' not in contents:raise ValueError('Billing records require the original billing key.')
+                    raw=decrypt(contents['billing.key'],payload,BillingCipher.context(uid,digest))
+                    if hashlib.sha256(raw).hexdigest()!=digest:raise ValueError('Invalid billing token digest.')
+                db.execute('UPDATE play_subscriptions SET needs_refresh=1')
+                db.execute('DELETE FROM billing_retry')
+            db.execute('PRAGMA user_version='+str(max(4,version)))
         db.execute('VACUUM')
+        _check_restored(db)
         if _verify_only:
-            _check_restored(db)
             return
         work.mkdir(parents=True,exist_ok=True)
         beta.mkdir(exist_ok=True)
         # Targets are known filenames in a new host directory; never extract arbitrary ZIP paths.
         (beta/'accounts.sqlite3').write_bytes(db.serialize())
         (beta/'admin.key').write_bytes(contents['admin.key'])
+        if 'billing.key' in contents:(beta/'billing.key').write_bytes(contents['billing.key'])
         key.write_bytes(contents['local-voice.key'])
     return beta
 
