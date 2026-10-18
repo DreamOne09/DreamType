@@ -16,4 +16,4 @@
 
 合成資料測試涵蓋實際 reserve 額度、到期／過舊查驗／還原限制、升級與亂序替換、跨帳號與循環關聯拒絕、交易回滾、憑證加密、缺失金鑰與付費模式不可退回試用。billing_test_fixture 僅供暫存單元測試，正式遷移必須使用 billing_migration.prepare_storage。
 
-BillingStore 的 save_verified 是內部接口，僅能接收可信 Google 驗證器結果；不能把手機 JSON 直接轉成此參數。此批次沒有新增公開購買 API、Google 憑證供應、定期重查／確認工作或通知入口。待補上述生命週期、Android Billing 與 Play Console 真實交易測試後，才可考慮啟用付款。
+BillingStore 的 save_verified 是內部接口，僅能接收可信 Google 驗證器結果；不能把手機 JSON 直接轉成此參數。已加入 PlayPurchaseService 與可明確呼叫的定期重查／確認工作，見 BILLING_LIFECYCLE.md；尚未提供公開購買 API、Google 憑證供應、正式排程或通知入口。待補上述生命週期、Android Billing 與 Play Console 真實交易測試後，才可考慮啟用付款。
