@@ -20,6 +20,7 @@ from inference_queue import InferenceQueue
 from request_limits import DecoderBudget
 from audio_worker import audio_duration
 from processing_budget import LOCAL_PROVIDER_SECONDS, QUEUED_JOB_SECONDS
+from service_address import admin_address
 
 async def object_body(request):
     try:body=await request.json()
@@ -312,12 +313,7 @@ def install_beta(app,work,provider,decoder):
         beta.store.receipt(beta.user(request)['id'],jid);return {'ok':True}
     @app.get('/v2/admin/users')
     async def users():
-        url=''
-        try:
-            matches=re.findall(r'https://[a-z0-9-]+\.trycloudflare\.com',(work/'logs/tunnel.err.log').read_text(encoding='utf-8'))
-            if matches:url=matches[-1]
-        except OSError:pass
-        return {'users':beta.store.users(),'queue_size':beta.queue.qsize(),'provider':'home-pc','service_url':url}
+        return {'users':beta.store.users(),'queue_size':beta.queue.qsize(),'provider':'home-pc',**admin_address(work)}
     @app.post('/v2/admin/users',status_code=201)
     async def create(request:Request):
         body=await object_body(request)

@@ -9,6 +9,7 @@ import time
 import httpx
 from endpoint_cli import atomic, prepare
 from endpoint_manifest import endpoint
+from service_address import fixed_address
 from process_lock import exclusive
 
 REPO='DreamOne09/DreamType'
@@ -37,8 +38,10 @@ def publish(work, now=None, client=None, api=github):
         own_client=client is None
         client=httpx.Client(timeout=10,follow_redirects=False,trust_env=False) if own_client else client
         try:
-            reply=client.get('http://127.0.0.1:19872/quicktunnel');reply.raise_for_status()
-            url=endpoint('https://'+reply.json()['hostname'])
+            url=fixed_address(work)
+            if url is None:
+                reply=client.get('http://127.0.0.1:19872/quicktunnel');reply.raise_for_status()
+                url=endpoint('https://'+reply.json()['hostname'])
             saved=work/'endpoint-published.json'
             previous=json.loads(saved.read_text()) if saved.exists() else {}
             if previous.get('url')==url and previous.get('expires',0)>now+43200 and previous.get('checked_at',now)<=now:
