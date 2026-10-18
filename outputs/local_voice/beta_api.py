@@ -19,6 +19,7 @@ from translation import validate_translation
 from inference_queue import InferenceQueue
 from request_limits import DecoderBudget
 from audio_worker import audio_duration
+from processing_budget import LOCAL_PROVIDER_SECONDS, QUEUED_JOB_SECONDS
 
 async def object_body(request):
     try:body=await request.json()
@@ -30,19 +31,21 @@ class LocalProvider:
     """Replace this adapter to migrate inference without changing the phone API."""
     def __init__(self,url,key):self.url,self.key=url,key
     async def transcribe(self,audio,prefs):
-        async with httpx.AsyncClient(timeout=100) as client:
-            r=await client.post(self.url+'/v1/audio/transcriptions',headers={'Authorization':'Bearer '+self.key},
-                files={'file':('voice.m4a',audio,'application/octet-stream')},data={'model':'local-dictation',**{k:v for k,v in prefs.items() if k!='word_replacements'}})
-            if r.status_code==422:
-                try:code=r.json().get('error_code')
-                except (ValueError,AttributeError):code=None
-                if code=='no_speech':raise StoreError(422,'未偵測到語音','no_speech')
-            r.raise_for_status();return r.json()
+        async with asyncio.timeout(LOCAL_PROVIDER_SECONDS):
+            async with httpx.AsyncClient(timeout=LOCAL_PROVIDER_SECONDS) as client:
+                r=await client.post(self.url+'/v1/audio/transcriptions',headers={'Authorization':'Bearer '+self.key},
+                    files={'file':('voice.m4a',audio,'application/octet-stream')},data={'model':'local-dictation',**{k:v for k,v in prefs.items() if k!='word_replacements'}})
+                if r.status_code==422:
+                    try:code=r.json().get('error_code')
+                    except (ValueError,AttributeError):code=None
+                    if code=='no_speech':raise StoreError(422,'未偵測到語音','no_speech')
+                r.raise_for_status();return r.json()
+
 
 class Beta:
     # Bound the entire provider call, including a peer that keeps sending bytes
     # and therefore never reaches an HTTP read-idle timeout.
-    processing_timeout = 240
+    processing_timeout = QUEUED_JOB_SECONDS
     def __init__(self,work,provider,decoder):
         self.store=Store(work/'beta/accounts.sqlite3');self.provider,self.decoder=provider,decoder
         path=work/'beta/admin.key'

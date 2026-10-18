@@ -126,6 +126,31 @@ class RequestIsolationTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(server.gpu_lock.locked())
         formatter.assert_not_awaited()
 
+    async def test_format_deadline_preserves_dictation_but_never_returns_fake_translation(self):
+        import asyncio
+        original='請幫我生成計畫，不要取消明天的預約。'
+        async def stalled(*args):await asyncio.Event().wait()
+        with patch('processing_budget.FORMAT_SECONDS', .02), \
+                patch.object(server, 'isolated_pcm', lambda *a: bytes(32000)), \
+                patch.object(server, 'recognize', lambda *a: (original, 'zh')), \
+                patch.object(server, 'format_text', stalled):
+            organized=await self.client.post('/v1/audio/transcriptions', headers=self.auth,
+                files={'file':('fixture.wav', b'fixture')}, data={'mode':'organize'})
+            self.assertEqual(organized.status_code, 200)
+            self.assertEqual(organized.json()['text'], original)
+            self.assertEqual(organized.json()['raw_text'], original)
+            self.assertTrue(organized.json()['warning'])
+            translated=await self.client.post('/v1/audio/transcriptions', headers=self.auth,
+                files={'file':('fixture.wav', b'fixture')}, data={'mode':'translate','target_language':'th'})
+            self.assertEqual(translated.status_code, 503)
+            self.assertNotIn('text', translated.json())
+            self.assertFalse(server.gpu_lock.locked())
+
+            text_result=await self.client.post('/v1/chat/completions', headers=self.auth,
+                json={'messages':[{'role':'user','content':original}]})
+            self.assertEqual(text_result.status_code, 503)
+            self.assertFalse(server.gpu_lock.locked())
+
     async def test_identifiers_are_hidden_from_model_and_restored_before_return(self):
         import json
         original = '訂單 AB-007，電話 0912-003-456，網址 example.com.tw。'
