@@ -14,7 +14,7 @@ public final class AccountActivity extends Activity {
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
  private TextView status;
  private LinearLayout page;
- private boolean busy,reconnect,replacePendingConfirmed;
+ private boolean busy,reconnect,replacePendingConfirmed,firstResume=true;
  private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
  private void text(String s,int size){TextView t=new TextView(this);t.setText(s);t.setTextColor(Ui.INK);t.setTextSize(size);t.setPadding(0,dp(12),0,dp(8));page.addView(t);}
  private EditText field(String hint,String value,boolean password){
@@ -34,6 +34,7 @@ public final class AccountActivity extends Activity {
   ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Ui.PAPER);page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(24),dp(20),dp(24),dp(24));scroll.addView(page);setContentView(scroll);
   scroll.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
   text("我的帳號",28);AppConfig current=AppConfig.load(this);
+  try { final Class<?> googlePage=Class.forName("tw.localvoice.keyboard.GoogleAccountActivity");button("Google 帳號登入與管理",false,v->startActivity(new android.content.Intent(this,googlePage))); } catch(ClassNotFoundException ignored) { }
   status=new TextView(this);status.setTextColor(Ui.MUTED);status.setTextSize(16);status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
   if(current.ready()&&current.accountMode&&!reconnect){
    text("帳號已登入",17);text("查看方案與本月用量，取得服務目前確認的狀態。",15);page.addView(status);
@@ -41,13 +42,14 @@ public final class AccountActivity extends Activity {
    button("查看方案與用量",true,v->task(()->{JSONObject me=VoiceApi.json(current,"GET","/v2/me",null);return AccountPlan.describe(me.optString("plan"),me.optString("entitlement_status"))+"\n帳號："+me.getString("name")+"\n本月已用 "+AccountPlan.minutes(me.getLong("used_seconds"))+" 分鐘\n處理中保留 "+AccountPlan.minutes(me.getLong("reserved_seconds"))+" 分鐘\n尚可使用 "+AccountPlan.minutes(me.getLong("remaining_seconds"))+" 分鐘\n額度每月依 UTC 重算。";},false));
    button("同步我的偏好",false,v->task(()->{JSONObject me=VoiceApi.json(current,"GET","/v2/me",null);AppConfig.savePreferences(this,current,me.getJSONObject("preferences"),null);return "已取回帳號的提示詞與常用詞。";},false));
    button("更新服務網址並重新登入",false,v->{reconnect=true;replacePendingConfirmed=false;show();});
-   button("修改密碼",false,v->{LinearLayout fields=new LinearLayout(this);fields.setOrientation(LinearLayout.VERTICAL);EditText oldPass=new EditText(this),newPass=new EditText(this);oldPass.setHint("目前密碼");newPass.setHint("新密碼（至少 12 字元）");for(EditText e:new EditText[]{oldPass,newPass}){e.setInputType(129);e.setSaveEnabled(false);e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);fields.addView(e);}
-    new AlertDialog.Builder(this).setTitle("修改密碼").setMessage("完成後，所有裝置都需要重新登入。").setView(fields).setPositiveButton("儲存",(d,w)->{final String oldValue=oldPass.getText().toString(),newValue=newPass.getText().toString();oldPass.setText("");newPass.setText("");task(()->{VoiceApi.json(current,"POST","/v2/me/password",new JSONObject().put("current_password",oldValue).put("new_password",newValue));AppConfig.clearSessionIfCurrent(this,current);return "密碼已更新，請重新登入。";},true);}).setNegativeButton("取消",null).show();});
-   button("登出",false,v->task(()->{VoiceApi.json(current,"POST","/v2/logout",new JSONObject());AppConfig.clearSessionIfCurrent(this,current);return "已登出，手機上的帳號設定已清除。";},true));
+   Button passwordAction=button("修改密碼",false,v->{LinearLayout fields=new LinearLayout(this);fields.setOrientation(LinearLayout.VERTICAL);EditText oldPass=new EditText(this),newPass=new EditText(this);oldPass.setHint("目前密碼");newPass.setHint("新密碼（至少 12 字元）");for(EditText e:new EditText[]{oldPass,newPass}){e.setInputType(129);e.setSaveEnabled(false);e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);fields.addView(e);}
+    new AlertDialog.Builder(this).setTitle("修改密碼").setMessage("完成後，所有裝置都需要重新登入。").setView(fields).setPositiveButton("儲存",(d,w)->{final String oldValue=oldPass.getText().toString(),newValue=newPass.getText().toString();oldPass.setText("");newPass.setText("");task(()->{VoiceApi.json(current,"POST","/v2/me/password",new JSONObject().put("current_password",oldValue).put("new_password",newValue));AppConfig.clearSessionIfCurrent(this,current);clearGoogleState();return "密碼已更新，請重新登入。";},true);}).setNegativeButton("取消",null).show();});
+   button("登出",false,v->task(()->{VoiceApi.json(current,"POST","/v2/logout",new JSONObject());AppConfig.clearSessionIfCurrent(this,current);clearGoogleState();return "已登出，手機上的帳號設定已清除。";},true));
    button("移除手機登入資料",false,v->new AlertDialog.Builder(this).setTitle("清除這支手機的登入？").setMessage("連不到服務時可使用。只清除手機資料，不會撤銷其他裝置的登入，也不會刪除帳號。")
-     .setPositiveButton("清除",(d,w)->task(()->{AppConfig.clearSessionIfCurrent(this,current);return "手機上的登入資料已移除。";},true)).setNegativeButton("取消",null).show());
-   button("刪除我的帳號",false,v->{EditText password=new EditText(this);password.setHint("再次輸入密碼");password.setInputType(129);password.setSaveEnabled(false);password.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
-    new AlertDialog.Builder(this).setTitle("永久刪除帳號？").setMessage("線上帳號、所有登入、個人偏好與用量紀錄將刪除。歷史備份不會立即改寫，主機保留帳號 ID 與刪除時間供還原核對。詳見「資料與隱私」。").setView(password).setPositiveButton("永久刪除",(d,w)->{final String pass=password.getText().toString();password.setText("");task(()->{VoiceApi.json(current,"DELETE","/v2/me",new JSONObject().put("password",pass));AppConfig.clearSessionIfCurrent(this,current);return "帳號已刪除。";},true);}).setNegativeButton("取消",null).show();});
+     .setPositiveButton("清除",(d,w)->task(()->{AppConfig.clearSessionIfCurrent(this,current);clearGoogleState();return "手機上的登入資料已移除。";},true)).setNegativeButton("取消",null).show());
+   Button passwordDelete=button("刪除我的帳號",false,v->{EditText password=new EditText(this);password.setHint("再次輸入密碼");password.setInputType(129);password.setSaveEnabled(false);password.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
+    new AlertDialog.Builder(this).setTitle("永久刪除帳號？").setMessage("線上帳號、所有登入、個人偏好與用量紀錄將刪除。歷史備份不會立即改寫，主機保留帳號 ID 與刪除時間供還原核對。詳見「資料與隱私」。").setView(password).setPositiveButton("永久刪除",(d,w)->{final String pass=password.getText().toString();password.setText("");task(()->{VoiceApi.json(current,"DELETE","/v2/me",new JSONObject().put("password",pass));AppConfig.clearSessionIfCurrent(this,current);clearGoogleState();return "帳號已刪除。";},true);}).setNegativeButton("取消",null).show();});
+   worker.execute(()->{try{org.json.JSONArray methods=VoiceApi.json(current,"GET","/v2/me",null).optJSONArray("login_methods");if(methods==null)return;boolean hasPassword=false;for(int i=0;i<methods.length();i++)if("password".equals(methods.optString(i)))hasPassword=true;final boolean visible=hasPassword;runOnUiThread(()->{if(!isDestroyed()&&current.sameSession(AppConfig.load(this))){passwordAction.setVisibility(visible?View.VISIBLE:View.GONE);passwordDelete.setVisibility(visible?View.VISIBLE:View.GONE);}});}catch(Exception ignored){}});
   }else{
    text("輸入管理者提供的網址與試用帳號。",16);
    EditText server=field("服務網址（https://…）",AppConfig.setupServer(current.server),false);
@@ -73,5 +75,7 @@ public final class AccountActivity extends Activity {
   button("資料與隱私",false,v->startActivity(new android.content.Intent(this,PrivacyActivity.class)));
   button("返回",false,v->finish());
  }
+ private void clearGoogleState(){try{Class.forName("tw.localvoice.keyboard.GoogleAccountActivity").getMethod("clearProviderState",android.content.Context.class).invoke(null,this);}catch(Exception ignored){}}
+ @Override protected void onResume(){super.onResume();if(firstResume){firstResume=false;return;}if(page!=null&&!busy)show();}
  @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
 }

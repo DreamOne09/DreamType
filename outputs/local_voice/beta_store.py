@@ -129,13 +129,17 @@ class Store:
         month=datetime.now(timezone.utc).strftime('%Y-%m')
         with self.db() as db:
             self.check_billing_mode(db)
-            row=db.execute('SELECT id,name,enabled,allowance,preferences FROM users WHERE id=?',(uid,)).fetchone()
+            row=db.execute('SELECT id,name,enabled,allowance,preferences,password FROM users WHERE id=?',(uid,)).fetchone()
             if not row:raise StoreError(404,'帳號不存在')
+            methods=[] if row['password']=='!google-only' else ['password']
+            if db.execute("SELECT 1 FROM sqlite_master WHERE name='login_identities' AND type='table'").fetchone():
+                methods.extend(r[0] for r in db.execute('SELECT provider FROM login_identities WHERE uid=?',(uid,)))
             entitlement=self.entitlement_policy.resolve(db,uid,time.time()) if self.entitlement_policy else None
             used=db.execute("SELECT COALESCE(SUM(seconds),0) FROM jobs WHERE uid=? AND month=? AND state='done'",(uid,month)).fetchone()[0]
             reserved=db.execute("SELECT COALESCE(SUM(seconds),0) FROM jobs WHERE uid=? AND month=? AND state IN ('queued','running')",(uid,month)).fetchone()[0]
         limit=entitlement.seconds if entitlement else row['allowance']
         result={'id':uid,'name':row['name'],'enabled':bool(row['enabled']),'plan':entitlement.plan if entitlement else 'closed-beta','month_utc':month,'limit_seconds':limit,'used_seconds':used,'reserved_seconds':reserved,'remaining_seconds':max(0,limit-used-reserved),'preferences':json.loads(row['preferences'])}
+        result['login_methods']=methods
         if entitlement:result['entitlement_status']=entitlement.status
         return result
     def check_billing_mode(self,db):
