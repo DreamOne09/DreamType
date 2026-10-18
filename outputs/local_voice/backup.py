@@ -71,7 +71,7 @@ def create(root):
             tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             if 'receipts' in tables:
                 db.execute("UPDATE jobs SET state='failed' WHERE state='done' AND EXISTS (SELECT 1 FROM receipts r WHERE r.uid=jobs.uid AND r.id=jobs.id AND r.confirmed=0)")
-            for table in ('results','sessions','reset_codes','receipts','pending_audio'):
+            for table in ('results','sessions','reset_codes','receipts','pending_audio','login_challenges'):
                 if table in tables:db.execute('DELETE FROM '+table)
         db.execute('VACUUM')
         contents['accounts.sqlite3']=db.serialize()
@@ -126,9 +126,9 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None,*,_verify_only=F
         with db:
             db.execute('PRAGMA foreign_keys=ON')
             version=db.execute('PRAGMA user_version').fetchone()[0]
-            if version>4 and version not in (9,10):raise ValueError('Backup database is newer than this restore tool.')
+            if version>4 and version not in (9,10,11):raise ValueError('Backup database is newer than this restore tool.')
             tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-            if version not in (9,10) and tables & {'purchase_claims','play_subscriptions','billing_retry','play_replacements','billing_mode'}:
+            if version not in (9,10,11) and tables & {'purchase_claims','play_subscriptions','billing_retry','play_replacements','billing_mode'}:
                 raise ValueError('Billing tables require a complete supported migration.')
             if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('Invalid database.')
             if db.execute('PRAGMA foreign_key_check').fetchall():raise ValueError('Invalid database references.')
@@ -141,11 +141,16 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None,*,_verify_only=F
             for uid, in db.execute('SELECT uid FROM deletions').fetchall():
                 db.execute('DELETE FROM users WHERE id=?',(uid,))
                 if has_audit:db.execute('DELETE FROM audit WHERE uid=?',(uid,))
-            if version!=10 and 'play_notifications' in tables:raise ValueError('Notification table requires schema 10.')
-            if version==10:
+            if version not in (10,11) and 'play_notifications' in tables:raise ValueError('Notification table requires schema 10.')
+            if version in (10,11):
                 from notification_migration import validate_notifications
                 validate_notifications(db)
-            if version in (9,10):
+            if version!=11 and tables & {'login_identities','login_challenges'}:raise ValueError('Sign-in tables require schema 11.')
+            if version==11:
+                from signin_migration import validate_signin
+                validate_signin(db)
+                db.execute('DELETE FROM login_challenges')
+            if version in (9,10,11):
                 from billing_crypto import BillingCipher
                 from billing_migration import validate_billing_schema
                 validate_billing_schema(db)
@@ -172,7 +177,7 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None,*,_verify_only=F
 
 def _check_restored(db):
     tables={row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    for table in ('sessions','results','reset_codes','receipts','pending_audio'):
+    for table in ('sessions','results','reset_codes','receipts','pending_audio','login_challenges'):
         if table in tables and db.execute('SELECT count(*) FROM '+table).fetchone()[0]:
             raise ValueError('Restored snapshot contains transient private data.')
     if db.execute("SELECT count(*) FROM jobs WHERE state IN ('queued','running')").fetchone()[0]:
