@@ -1,0 +1,57 @@
+{
+  "scope": "Existing licensed public speech; route availability, not native-speaker translation acceptance",
+  "cases": [
+    {
+      "mode": "organize",
+      "target": "en",
+      "status": 200,
+      "seconds": 2.312,
+      "text": "我今天和明天都要上課。",
+      "warning": null,
+      "returned_mode": "organize",
+      "returned_target": "zh-TW"
+    },
+    {
+      "mode": "translate",
+      "target": "en",
+      "status": 200,
+      "seconds": 8.203,
+      "text": "I have classes today and tomorrow.",
+      "warning": null,
+      "returned_mode": "translate",
+      "returned_target": "en"
+    },
+    {
+      "mode": "translate",
+      "target": "ja",
+      "status": 200,
+      "seconds": 1.563,
+      "text": "私は今日と明日、授業に出席します。",
+      "warning": null,
+      "returned_mode": "translate",
+      "returned_target": "ja"
+    },
+    {
+      "mode": "translate",
+      "target": "th",
+      "status": 200,
+      "seconds": 2.016,
+      "text": "วันนี้และพรุ่งนี้ฉันมีเรียน",
+      "warning": null,
+      "returned_mode": "translate",
+      "returned_target": "th"
+    },
+    {
+      "mode": "translate",
+      "target": "ms",
+      "status": 200,
+      "seconds": 2.218,
+      "text": "Saya mempunyai kelas hari ini dan esok.",
+      "warning": null,
+      "returned_mode": "translate",
+      "returned_target": "ms"
+    }
+  ],
+  "all_routes_returned_nonempty": true,
+  "public_health": "ready"
+}
