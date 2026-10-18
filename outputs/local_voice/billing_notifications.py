@@ -5,6 +5,8 @@ identity/audience/subscription configuration and bounded HTTP request bodies.
 """
 import base64
 import json
+import hashlib
+import time
 from beta_store import StoreError
 from billing_store import token_digest
 from play_billing import PACKAGE
@@ -31,7 +33,11 @@ class PlayNotifications:
             if not isinstance(body,bytes) or len(body)>32768:raise ValueError()
             envelope=json.loads(body)
             if envelope['subscription']!=self.subscription:raise ValueError()
+            message_id=envelope['message']['messageId']
+            if not isinstance(message_id,str) or not 1<=len(message_id)<=256:raise ValueError()
+            message_hash=hashlib.sha256((self.subscription+'\0'+message_id).encode()).hexdigest()
             event=json.loads(base64.b64decode(envelope['message']['data'],validate=True))
+            payload_hash=hashlib.sha256(json.dumps(event,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
             if event['packageName']!=PACKAGE:raise ValueError()
             kinds=[key for key in ('subscriptionNotification','voidedPurchaseNotification','testNotification','oneTimeProductNotification','pendingRefundReviewNotification') if key in event]
             if len(kinds)!=1:raise ValueError()
@@ -48,6 +54,13 @@ class PlayNotifications:
             raise StoreError(400,'付款通知格式錯誤') from None
         with self.store.db() as db:
             db.execute('BEGIN IMMEDIATE')
+            from notification_migration import validate_notifications
+            validate_notifications(db)
+            db.execute('DELETE FROM play_notifications WHERE created<?',(time.time()-90*86400,))
+            previous=db.execute('SELECT payload_hash FROM play_notifications WHERE message_hash=?',(message_hash,)).fetchone()
+            if previous:
+                if previous['payload_hash']!=payload_hash:raise StoreError(409,'通知識別碼內容不一致')
+                return {'status':'duplicate'}
             # A late notification for a retired purchase refreshes its successor.
             seen=set()
             while True:
@@ -62,4 +75,5 @@ class PlayNotifications:
             if not row['enabled']:return {'status':'account_disabled'}
             db.execute('UPDATE play_subscriptions SET needs_refresh=1,revision=revision+1 WHERE digest=?',(digest,))
             db.execute('DELETE FROM billing_retry WHERE digest=?',(digest,))
+            db.execute('INSERT INTO play_notifications VALUES(?,?,?,?)',(message_hash,payload_hash,row['uid'],time.time()))
         return {'status':'refresh_queued'}

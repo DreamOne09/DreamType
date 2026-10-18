@@ -5,6 +5,7 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 from beta_store import StoreError
+from billing_test_fixture import notification_store
 from billing_notifications import PlayNotifications
 from billing_store import BillingStore,token_digest
 import test_billing_worker as worker_fixture
@@ -13,12 +14,14 @@ from play_billing import PACKAGE
 
 class NotificationTests(unittest.TestCase):
     def receiver(self,store,claims=None):
+        with store.db() as db:version=db.execute('PRAGMA user_version').fetchone()[0]
+        if version==9:notification_store(store)
         identity={'aud':'https://fixture.invalid/push','email':'push@fixture.iam.gserviceaccount.com','email_verified':True}
         return PlayNotifications(store,audience=identity['aud'],email=identity['email'],subscription='projects/fixture/subscriptions/play',verify_identity=lambda token,aud:identity if claims is None else claims)
 
     def body(self,token='fixture-token',package=PACKAGE):
         event={'packageName':package,'subscriptionNotification':{'purchaseToken':token,'notificationType':12}}
-        return json.dumps({'subscription':'projects/fixture/subscriptions/play','message':{'data':base64.b64encode(json.dumps(event).encode()).decode()}}).encode()
+        return json.dumps({'subscription':'projects/fixture/subscriptions/play','message':{'messageId':'synthetic-message','data':base64.b64encode(json.dumps(event).encode()).decode()}}).encode()
 
     def test_notification_fences_inflight_state_and_requires_reverification(self):
         with tempfile.TemporaryDirectory() as d:
@@ -29,7 +32,7 @@ class NotificationTests(unittest.TestCase):
             with self.assertRaises(StoreError):billing.refresh_verified(uid,'fixture-token',value,1)
             # A delayed/repeated notification still cannot assert a purchase state.
             receiver.receive('Bearer fixture',self.body())
-            billing.refresh_verified(uid,'fixture-token',replace(value,entitled=False,needs_acknowledgement=False,state='SUBSCRIPTION_STATE_EXPIRED'),3)
+            billing.refresh_verified(uid,'fixture-token',replace(value,entitled=False,needs_acknowledgement=False,state='SUBSCRIPTION_STATE_EXPIRED'),2)
             self.assertEqual(store.me(uid)['entitlement_status'],'subscription_required')
 
     def test_wrong_identity_malformed_and_unknown_token_never_write(self):

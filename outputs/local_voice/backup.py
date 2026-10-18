@@ -126,9 +126,9 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None,*,_verify_only=F
         with db:
             db.execute('PRAGMA foreign_keys=ON')
             version=db.execute('PRAGMA user_version').fetchone()[0]
-            if version>4 and version!=9:raise ValueError('Backup database is newer than this restore tool.')
+            if version>4 and version not in (9,10):raise ValueError('Backup database is newer than this restore tool.')
             tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-            if version!=9 and tables & {'purchase_claims','play_subscriptions','billing_retry','play_replacements','billing_mode'}:
+            if version not in (9,10) and tables & {'purchase_claims','play_subscriptions','billing_retry','play_replacements','billing_mode'}:
                 raise ValueError('Billing tables require a complete supported migration.')
             if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('Invalid database.')
             if db.execute('PRAGMA foreign_key_check').fetchall():raise ValueError('Invalid database references.')
@@ -141,7 +141,11 @@ def restore(root,archive,recovery_key=None,deletion_ledger=None,*,_verify_only=F
             for uid, in db.execute('SELECT uid FROM deletions').fetchall():
                 db.execute('DELETE FROM users WHERE id=?',(uid,))
                 if has_audit:db.execute('DELETE FROM audit WHERE uid=?',(uid,))
-            if version==9:
+            if version!=10 and 'play_notifications' in tables:raise ValueError('Notification table requires schema 10.')
+            if version==10:
+                from notification_migration import validate_notifications
+                validate_notifications(db)
+            if version in (9,10):
                 from billing_crypto import BillingCipher
                 from billing_migration import validate_billing_schema
                 validate_billing_schema(db)

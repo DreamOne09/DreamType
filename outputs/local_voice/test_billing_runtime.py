@@ -8,7 +8,7 @@ from pathlib import Path
 import httpx
 from fastapi import FastAPI
 from beta_api import install_beta
-from billing_test_fixture import prepared_store
+from billing_test_fixture import prepared_store,notification_store
 from billing_runtime import BillingRuntime
 from entitlements import SubscriptionPolicy
 from play_billing import PlayVerifier
@@ -16,11 +16,21 @@ from billing_service import play_account_id
 
 
 class RuntimeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_old_prepared_schema_rejected_before_paid_marker_changes(self):
+        with tempfile.TemporaryDirectory() as d:
+            store=prepared_store(Path(d)/'beta/accounts.sqlite3')
+            policy=SubscriptionPolicy({('fixture','monthly'):('pro',120)})
+            runtime=BillingRuntime(policy,PlayVerifier(lambda:'fixture',{('fixture','monthly')}),audience='https://fixture.invalid/push',email='push@fixture.iam.gserviceaccount.com',subscription='projects/fixture/subscriptions/play')
+            with self.assertRaises(ValueError):install_beta(FastAPI(),Path(d),object(),lambda _:1,billing=runtime)
+            with store.db() as db:
+                self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],9)
+                self.assertEqual(db.execute('SELECT count(*) FROM billing_mode').fetchone()[0],0)
+
     async def test_shutdown_waits_for_running_pass_before_releasing_runtime(self):
         with tempfile.TemporaryDirectory() as d:
             policy=SubscriptionPolicy({('fixture','monthly'):('pro',120)})
             runtime=BillingRuntime(policy,PlayVerifier(lambda:'fixture',{('fixture','monthly')}),audience='https://fixture.invalid/push',email='push@fixture.iam.gserviceaccount.com',subscription='projects/fixture/subscriptions/play')
-            store=prepared_store(Path(d)/'accounts.sqlite3',policy)
+            store=notification_store(prepared_store(Path(d)/'accounts.sqlite3',policy))
             runtime.bind(FastAPI(),store)
             started=threading.Event();release=threading.Event()
             def blocked(*args):
@@ -45,7 +55,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
                 return httpx.Response(200,json={'externalAccountIdentifiers':{'obfuscatedExternalAccountId':identity[0]},'subscriptionState':'SUBSCRIPTION_STATE_ACTIVE','acknowledgementState':'ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED','lineItems':[{'productId':'fixture','offerDetails':{'basePlanId':'monthly'},'expiryTime':'2027-01-01T00:00:00Z'}]})
             policy=SubscriptionPolicy({('fixture','monthly'):('pro',120)})
             runtime=BillingRuntime(policy,PlayVerifier(lambda:'fixture',{('fixture','monthly')},transport=httpx.MockTransport(google)),audience='https://fixture.invalid/push',email='push@fixture.iam.gserviceaccount.com',subscription='projects/fixture/subscriptions/play')
-            prepared_store(Path(d)/'beta/accounts.sqlite3')
+            notification_store(prepared_store(Path(d)/'beta/accounts.sqlite3'))
             app=FastAPI();beta=install_beta(app,Path(d),object(),lambda _:1,billing=runtime)
             uid=beta.store.create('alice','fixture-password');identity[0]=play_account_id(uid)
             session=beta.store.login('alice','fixture-password')['token'];headers={'Authorization':'Bearer '+session}
