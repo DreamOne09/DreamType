@@ -12,7 +12,7 @@ from pathlib import Path
 import httpx
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, FileResponse
-from beta_store import Store, StoreError
+from beta_store import Store, StoreError, preferences_etag
 from personalization import validate_preferences
 from word_replacements import validate_word_replacements
 from translation import validate_translation
@@ -223,19 +223,34 @@ def install_beta(app,work,provider,decoder):
     async def latest(request:Request):
         uid=beta.user(request)['id'];jid=beta.store.latest(uid)
         return beta.progress(uid,jid) if jid else {'state':'none','message':'還沒有錄音紀錄'}
+    @app.get('/v2/me/preferences')
+    async def read_preferences(request:Request):
+        values=beta.store.me(beta.user(request)['id'])['preferences']
+        version=preferences_etag(values)
+        return JSONResponse(values,headers={'ETag':version,'X-DreamType-Preferences-Version':version})
     @app.post('/v2/me/preferences')
     @app.patch('/v2/me/preferences')
     async def prefs(request:Request):
         body=await object_body(request)
         uid=beta.user(request)['id']
         previous=beta.store.me(uid)['preferences']
+        expected=request.headers.get('if-match')
+        if expected is not None:
+            if expected!=preferences_etag(previous):
+                raise StoreError(412,'設定已在其他裝置更新。請先載入最新設定，再儲存。','preferences_conflict')
+            allowed={'personal_prompt','vocabulary','taiwan_places','mode','target_language','source_language','word_replacements'}
+            if set(body)-allowed:raise StoreError(400,'設定包含不支援的欄位')
+            body={**previous,**body}
         try:
             p,v,t=validate_preferences(body.get('personal_prompt',''),body.get('vocabulary',''),body.get('taiwan_places',True))
             mode,target,source=validate_translation(body.get('mode','organize'),body.get('target_language','en'),body.get('source_language','zh-TW'))
             replacements=validate_word_replacements(body.get('word_replacements',previous.get('word_replacements','')))
         except ValueError as e:raise StoreError(400,str(e))
-        beta.store.preferences(uid,{'personal_prompt':p,'vocabulary':v,'taiwan_places':t,'mode':mode,'target_language':target,'source_language':source,'word_replacements':replacements})
-        return beta.store.me(uid)['preferences']
+        values={'personal_prompt':p,'vocabulary':v,'taiwan_places':t,'mode':mode,'target_language':target,'source_language':source,'word_replacements':replacements}
+        if expected is not None:values={**previous,**values}
+        beta.store.preferences(uid,values,expected=expected)
+        version=preferences_etag(values)
+        return JSONResponse(values,headers={'ETag':version,'X-DreamType-Preferences-Version':version})
     @app.delete('/v2/me')
     async def delete(request:Request):
         uid=beta.user(request)['id'];body=await object_body(request)

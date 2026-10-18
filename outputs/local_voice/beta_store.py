@@ -15,6 +15,10 @@ class StoreError(Exception):
         self.status, self.message, self.code = status, message, code
         super().__init__(message)
 
+def preferences_etag(values):
+    canonical=json.dumps(values,sort_keys=True,separators=(',',':'),ensure_ascii=False)
+    return '"'+hashlib.sha256(canonical.encode('utf-8')).hexdigest()+'"'
+
 def password_hash(password, salt):
     return hashlib.pbkdf2_hmac('sha256', password.encode(), bytes.fromhex(salt), 600000).hex()
 
@@ -100,8 +104,14 @@ class Store:
             used=db.execute("SELECT COALESCE(SUM(seconds),0) FROM jobs WHERE uid=? AND month=? AND state='done'",(uid,month)).fetchone()[0]
             reserved=db.execute("SELECT COALESCE(SUM(seconds),0) FROM jobs WHERE uid=? AND month=? AND state IN ('queued','running')",(uid,month)).fetchone()[0]
         return {'id':uid,'name':row['name'],'enabled':bool(row['enabled']),'plan':'closed-beta','month_utc':month,'limit_seconds':row['allowance'],'used_seconds':used,'reserved_seconds':reserved,'remaining_seconds':max(0,row['allowance']-used-reserved),'preferences':json.loads(row['preferences'])}
-    def preferences(self,uid,values):
-        with self.db() as db:db.execute('UPDATE users SET preferences=? WHERE id=?',(json.dumps(values,ensure_ascii=False),uid))
+    def preferences(self,uid,values,expected=None):
+        with self.db() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row=db.execute('SELECT preferences FROM users WHERE id=?',(uid,)).fetchone()
+            if not row:raise StoreError(404,'帳號不存在')
+            if expected is not None and expected!=preferences_etag(json.loads(row['preferences'])):
+                raise StoreError(412,'設定已在其他裝置更新。請先載入最新設定，再儲存。','preferences_conflict')
+            db.execute('UPDATE users SET preferences=? WHERE id=?',(json.dumps(values,ensure_ascii=False),uid))
     def reserve(self,uid,jid,digest,seconds,retry_failed=False):
         month=datetime.now(timezone.utc).strftime('%Y-%m')
         with self.db() as db:
