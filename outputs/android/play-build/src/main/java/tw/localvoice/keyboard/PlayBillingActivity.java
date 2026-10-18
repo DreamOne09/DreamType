@@ -22,7 +22,8 @@ public final class PlayBillingActivity extends Activity {
  private LinearLayout offers;
  private String accountId;
  private volatile boolean destroyed;
- private boolean ownedKnown,hasOwned,checking,checkout,querying,recheck;
+ private final PurchaseState ownership=new PurchaseState();
+ private boolean checking,checkout,querying,recheck;
  private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
  private boolean current(){return !destroyed&&!isFinishing()&&session.sameSession(AppConfig.load(this));}
  private void message(String text){runOnUiThread(()->{if(current())status.setText(text);});}
@@ -86,8 +87,9 @@ public final class PlayBillingActivity extends Activity {
  }
  private static String period(String code){if("P1M".equals(code))return "月";if("P1Y".equals(code))return "年";if("P1W".equals(code))return "週";return null;}
  private void buy(ProductDetails product,ProductDetails.SubscriptionOfferDetails offer){
-  if(billing==null||!billing.isReady()||!ownedKnown||checking||checkout){message("請先等候訂閱確認完成。");return;}
-  if(hasOwned){message("已找到現有購買。請先恢復購買或管理訂閱，避免重複訂閱。");return;}
+  if(billing==null||!billing.isReady()||checking||checkout){message("請先等候訂閱確認完成。");return;}
+  if(ownership.owned()){message("已找到現有購買。請先恢復購買或管理訂閱，避免重複訂閱。");return;}
+  if(!ownership.known()){message("請先恢復購買，確認 Google Play 購買紀錄。");return;}
   BillingFlowParams params=BillingFlowParams.newBuilder().setObfuscatedAccountId(accountId).setProductDetailsParamsList(Collections.singletonList(BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(product).setOfferToken(offer.getOfferToken()).build())).build();
   checkout=true;
   BillingResult result=billing.launchBillingFlow(this,params);
@@ -96,20 +98,22 @@ public final class PlayBillingActivity extends Activity {
  private void restore(){
   if(billing==null||!billing.isReady()){message("請等候 Google Play 連線，或稍後重開此頁。");return;}
   if(checking||querying){recheck=true;return;}
-  querying=true;ownedKnown=false;
+  querying=true;final long queryRevision=ownership.beginQuery();
   billing.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build(),(result,purchases)->runOnUiThread(()->{
    querying=false;
    if(!current())return;
    if(result.getResponseCode()!=BillingClient.BillingResponseCode.OK){message("無法讀取購買紀錄，請稍後重試。");return;}
-   ownedKnown=true;hasOwned=hasOwned||!purchases.isEmpty();verify(purchases);
+   if(!ownership.applyQuery(queryRevision,purchases.size())){restore();return;}
+   verify(purchases);
   }));
  }
  private void verify(List<Purchase> purchases){
   runOnUiThread(()->{
    if(!current())return;
+   if(purchases!=null&&!purchases.isEmpty())ownership.observedPurchase();
    if(checking){recheck=true;return;}
    if(purchases==null||purchases.isEmpty()){message("此 Google Play 帳號目前沒有可恢復的訂閱。");if(recheck){recheck=false;restore();}return;}
-   hasOwned=true;checking=true;message("正在由服務確認購買，請勿重複付款…");
+   checking=true;message("正在由服務確認購買，請勿重複付款…");
    worker.execute(()->{
     String result="付款仍在等待確認，完成後請恢復購買。";
     try{

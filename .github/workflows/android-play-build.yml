@@ -23,9 +23,10 @@ jobs:
       - name: Check account display and purchase recovery
         run: |
           mkdir -p work/play-contracts
-          javac -d work/play-contracts outputs/android/src/tw/localvoice/keyboard/AccountPlan.java outputs/android/src/tw/localvoice/keyboard/PurchaseRecovery.java outputs/android/tests/AccountPlanTest.java outputs/android/tests/PurchaseRecoveryTest.java
+          javac -d work/play-contracts outputs/android/src/tw/localvoice/keyboard/AccountPlan.java outputs/android/src/tw/localvoice/keyboard/PurchaseRecovery.java outputs/android/src/tw/localvoice/keyboard/PurchaseState.java outputs/android/tests/PurchaseStateTest.java outputs/android/tests/AccountPlanTest.java outputs/android/tests/PurchaseRecoveryTest.java
           java -cp work/play-contracts tw.localvoice.keyboard.AccountPlanTest
           java -cp work/play-contracts tw.localvoice.keyboard.PurchaseRecoveryTest
+          java -cp work/play-contracts tw.localvoice.keyboard.PurchaseStateTest
       - name: Build unsigned APK and AAB and run Android lint
         working-directory: outputs/android/play-build
         run: bash gradlew --no-daemon --console plain assembleRelease bundleRelease lintRelease
