@@ -1,0 +1,33 @@
+{
+  "speech_control": {
+    "nonempty": true,
+    "characters": 11,
+    "content_saved": false
+  },
+  "synthetic_audio_only": false,
+  "native_device_test": false,
+  "real_background_noise_test": false,
+  "results": [
+    {
+      "kind": "silence",
+      "duration_seconds": 4,
+      "status": 422,
+      "rejected_as_no_speech": true,
+      "processing_seconds": 0.285
+    },
+    {
+      "kind": "quiet_noise",
+      "duration_seconds": 4,
+      "status": 422,
+      "rejected_as_no_speech": true,
+      "processing_seconds": 0.29
+    },
+    {
+      "kind": "hum_60hz",
+      "duration_seconds": 4,
+      "status": 422,
+      "rejected_as_no_speech": true,
+      "processing_seconds": 0.269
+    }
+  ]
+}

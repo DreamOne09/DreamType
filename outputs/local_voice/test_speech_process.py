@@ -88,6 +88,14 @@ class SpeechProcessTests(unittest.TestCase):
                 self.worker.recognize(pcm, 'zh', '')
         self.assertIsNone(self.worker.child)
 
+    def test_health_does_not_report_overdue_inference_as_ready(self):
+        self.worker.start()
+        self.worker.stage = 'recognizing'
+        self.worker.started_at = time.monotonic() - self.worker.timeout - 1
+        self.assertFalse(self.worker.status()['ready'])
+        self.worker.started_at = time.monotonic()
+        self.assertTrue(self.worker.status()['ready'])
+
 
 class CancellationTests(unittest.IsolatedAsyncioTestCase):
     async def test_repeated_cancellation_keeps_lock_until_thread_done(self):

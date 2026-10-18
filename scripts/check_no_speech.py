@@ -12,6 +12,17 @@ import wave
 import httpx
 
 
+def rejected_as_no_speech(response):
+    """Only the documented no-speech response passes, never a generic failure."""
+    if response.status_code != 422:
+        return False
+    try:
+        body = response.json()
+    except ValueError:
+        return False
+    return isinstance(body, dict) and body.get('error_code') == 'no_speech'
+
+
 def sample(kind):
     rate, duration = 16000, 4
     rng = random.Random(20260922)
@@ -44,9 +55,8 @@ def main():
             response=client.post('http://127.0.0.1:19870/v1/audio/transcriptions',
                 headers={'Authorization':'Bearer '+key},files={'file':('synthetic.wav',sample(kind),'audio/wav')},
                 data={'model':'local-raw','language':'zh','source_language':'zh-TW'})
-            response.raise_for_status()
-            text=response.json()['text']
-            results.append({'kind':kind,'duration_seconds':4,'text':text,'empty':text=='',
+            results.append({'kind':kind,'duration_seconds':4,'status':response.status_code,
+                'rejected_as_no_speech':rejected_as_no_speech(response),
                 'processing_seconds':round(time.perf_counter()-start,3)})
         response=client.post('http://127.0.0.1:19870/v1/audio/transcriptions',
             headers={'Authorization':'Bearer '+key},files={'file':('control.m4a',args.speech_control.read_bytes(),'audio/mp4')},
@@ -58,7 +68,7 @@ def main():
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(json.dumps(report,ensure_ascii=True))
-    return 0 if control['nonempty'] and all(item['empty'] for item in results) else 1
+    return 0 if control['nonempty'] and all(item['rejected_as_no_speech'] for item in results) else 1
 
 
 if __name__=='__main__':

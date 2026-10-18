@@ -52,11 +52,14 @@ class SpeechProcess:
         self.failures = 0
 
     def status(self):
-        age = time.monotonic() - self.started_at if self.started_at is not None else 0
-        limit = self.startup_timeout if self.stage == 'loading' else self.timeout
-        alive = self.child is not None and self.child.poll() is None
-        return {'ready': alive and self.stage in ('idle', 'recognizing') and age < limit,
-                'stage': self.stage, 'elapsed_seconds': round(age, 1), 'failures': self.failures}
+        # Health is read by the event loop while the worker thread can replace
+        # these references. Snapshot before dereferencing a nullable value.
+        child, started_at, stage = self.child, self.started_at, self.stage
+        age = time.monotonic() - started_at if started_at is not None else 0
+        limit = self.startup_timeout if stage == 'loading' else self.timeout
+        alive = child is not None and child.poll() is None
+        return {'ready': alive and stage in ('idle', 'recognizing') and age < limit,
+                'stage': stage, 'elapsed_seconds': round(age, 1), 'failures': self.failures}
 
     def _stop(self):
         child, job = self.child, self.close_job

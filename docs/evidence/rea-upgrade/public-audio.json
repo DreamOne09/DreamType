@@ -1,0 +1,199 @@
+{
+  "scope": "Previously used CC0 Taiwan speech regression; not held-out or Pixel quality",
+  "manifest_sha256": "d4283aa28a463fd9fc7088f8c4a7bfa97c6f8f8f4dfe3cc24241d2f497441c4b",
+  "cases": [
+    {
+      "index": 0,
+      "status": 200,
+      "seconds": 2.469,
+      "reference_chars": 11,
+      "raw_text": "我們的人口結構極速老化。",
+      "text": "我們的人口結構極速老化。",
+      "raw_errors": 1,
+      "formatted_errors": 1,
+      "warning": null,
+      "timings": {
+        "speech_seconds": 1.72,
+        "format_seconds": 0.507,
+        "total_seconds": 2.455
+      }
+    },
+    {
+      "index": 1,
+      "status": 200,
+      "seconds": 0.578,
+      "reference_chars": 3,
+      "raw_text": "新店端",
+      "text": "新店端",
+      "raw_errors": 0,
+      "formatted_errors": 0,
+      "warning": null,
+      "timings": {
+        "speech_seconds": 0.211,
+        "format_seconds": 0.126,
+        "total_seconds": 0.581
+      }
+    },
+    {
+      "index": 2,
+      "status": 200,
+      "seconds": 0.703,
+      "reference_chars": 12,
+      "raw_text": "則正確地說明瞭星球的大小。",
+      "text": "則正確地說明瞭星球的大小。",
+      "raw_errors": 2,
+      "formatted_errors": 2,
+      "warning": null,
+      "timings": {
+        "speech_seconds": 0.234,
+        "format_seconds": 0.218,
+        "total_seconds": 0.695
+      }
+    },
+    {
+      "index": 3,
+      "status": 200,
+      "seconds": 0.563,
+      "reference_chars": 4,
+      "raw_text": "開源服務",
+      "text": "開源服務",
+      "raw_errors": 0,
+      "formatted_errors": 0,
+      "warning": null,
+      "timings": {
+        "speech_seconds": 0.194,
+        "format_seconds": 0.116,
+        "total_seconds": 0.558
+      }
+    },
+    {
+      "index": 4,
+      "status": 200,
+      "seconds": 0.64,
+      "reference_chars": 8,
+      "raw_text": "東華大學連外道路。",
+      "text": "東華大學連外道路。",
+      "raw_errors": 1,
+      "formatted_errors": 1,
+      "warning": null,
+      "timings": {
+        "speech_seconds": 0.209,
+        "format_seconds": 0.192,
+        "total_seconds": 0.632
+      }
+    },
+    {
+      "index": 5,
+      "status": 200,
+      "seconds": 0.688,
+      "reference_chars": 10,
+      "raw_text": "我今天和明天都要上課。",
+      "text": "我今天和明天都要上課。",
+      "raw_errors": 0,
+      "formatted_errors": 0,
+      "warning": null,
+      "timings": {
+        "speech_seconds": 0.24,
+        "format_seconds": 0.197,
+        "total_seconds": 0.686
+      }
+    },
+    {
+      "index": 6,
+      "status": 200,
+      "seconds": 0.687,
+      "reference_chars": 9,
+      "raw_text": "室內建的瀏覽器功能。",
+      "text": "室內建的瀏覽器功能。",
+      "raw_errors": 1,
+      "formatted_errors": 1,
+      "warning": null,
+      "timings": {
+        "speech_seconds": 0.237,
+        "format_seconds": 0.184,
+        "total_seconds": 0.681
+      }
+    },
+    {
+      "index": 7,
+      "status": 200,
+      "seconds": 0.579,
+      "reference_chars": 6,
+      "raw_text": "土地任養案例",
+      "text": "土地任養案例",
+      "raw_errors": 1,
+      "formatted_errors": 1,
+      "warning": null,
+      "timings": {
+        "speech_seconds": 0.209,
+        "format_seconds": 0.125,
+        "total_seconds": 0.564
+      }
+    },
+    {
+      "index": 8,
+      "status": 200,
+      "seconds": 0.562,
+      "reference_chars": 7,
+      "raw_text": "雖然我沒有辦法",
+      "text": "雖然我沒有辦法",
+      "raw_errors": 0,
+      "formatted_errors": 0,
+      "warning": null,
+      "timings": {
+        "speech_seconds": 0.205,
+        "format_seconds": 0.12,
+        "total_seconds": 0.565
+      }
+    },
+    {
+      "index": 9,
+      "status": 200,
+      "seconds": 0.703,
+      "reference_chars": 13,
+      "raw_text": "華盾山學院最受歡迎的談判課",
+      "text": "華盾山學院最受歡迎的談判課",
+      "raw_errors": 2,
+      "formatted_errors": 2,
+      "warning": null,
+      "timings": {
+        "speech_seconds": 0.236,
+        "format_seconds": 0.199,
+        "total_seconds": 0.69
+      }
+    },
+    {
+      "index": 10,
+      "status": 422,
+      "seconds": 0.313
+    },
+    {
+      "index": 11,
+      "status": 200,
+      "seconds": 0.609,
+      "reference_chars": 5,
+      "raw_text": "你等我模擬。",
+      "text": "你等我模擬。",
+      "raw_errors": 0,
+      "formatted_errors": 0,
+      "warning": null,
+      "timings": {
+        "speech_seconds": 0.211,
+        "format_seconds": 0.143,
+        "total_seconds": 0.607
+      }
+    }
+  ],
+  "summary": {
+    "count": 12,
+    "http_success": 11,
+    "fallbacks": 0,
+    "raw_cer_on_success": 0.09090909090909091,
+    "formatted_cer_on_success": 0.09090909090909091,
+    "p50_local_seconds": 0.6245,
+    "p95_nearest_rank_seconds": 2.469,
+    "cer_including_rejected_speech": 0.13043478260869565,
+    "all_reference_chars": 92
+  },
+  "complete": true
+}
