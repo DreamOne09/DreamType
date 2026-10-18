@@ -14,7 +14,8 @@ public final class AccountActivity extends Activity {
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
  private TextView status;
  private LinearLayout page;
- private boolean busy,reconnect,replacePendingConfirmed,firstResume=true;
+ private boolean busy,reconnect,replacePendingConfirmed;
+ private AppConfig displayed;
  private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
  private void text(String s,int size){TextView t=new TextView(this);t.setText(s);t.setTextColor(Ui.INK);t.setTextSize(size);t.setPadding(0,dp(12),0,dp(8));page.addView(t);}
  private EditText field(String hint,String value,boolean password){
@@ -33,7 +34,7 @@ public final class AccountActivity extends Activity {
  private void show(){
   ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Ui.PAPER);page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(24),dp(20),dp(24),dp(24));scroll.addView(page);setContentView(scroll);
   scroll.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
-  text("我的帳號",28);AppConfig current=AppConfig.load(this);
+  text("我的帳號",28);AppConfig current=AppConfig.load(this);displayed=current;
   try { final Class<?> googlePage=Class.forName("tw.localvoice.keyboard.GoogleAccountActivity");button("Google 帳號登入與管理",false,v->startActivity(new android.content.Intent(this,googlePage))); } catch(ClassNotFoundException ignored) { }
   status=new TextView(this);status.setTextColor(Ui.MUTED);status.setTextSize(16);status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
   if(current.ready()&&current.accountMode&&!reconnect){
@@ -76,6 +77,6 @@ public final class AccountActivity extends Activity {
   button("返回",false,v->finish());
  }
  private void clearGoogleState(){try{Class.forName("tw.localvoice.keyboard.GoogleAccountActivity").getMethod("clearProviderState",android.content.Context.class).invoke(null,this);}catch(Exception ignored){}}
- @Override protected void onResume(){super.onResume();if(firstResume){firstResume=false;return;}if(page!=null&&!busy)show();}
+ @Override protected void onResume(){super.onResume();if(page!=null&&!busy&&displayed!=null&&!displayed.sameSession(AppConfig.load(this)))show();}
  @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
 }
