@@ -75,7 +75,7 @@ public final class GoogleAccountActivity extends Activity {
       if(!(credential instanceof CustomCredential)||!GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(credential.getType()))throw new Exception();
       String token=GoogleIdTokenCredential.createFrom(credential.getData()).getIdToken();complete(purpose,c,token);
      }catch(Exception e){state(false,"無法確認 Google 身分，請重新開始。");}}
-     public void onError(GetCredentialException e){if(current())state(false,e instanceof GetCredentialCancellationException?"已取消，沒有更動帳號。":"Google 身分確認未完成，請稍後重試。");}
+     public void onError(GetCredentialException e){if(current())state(false,e instanceof GetCredentialCancellationException?"已取消，沒有更動帳號。":e instanceof NoCredentialException?"找不到可用的 Google 登入方式。請確認手機的 Google 帳號與 Play 服務，或返回使用原帳號。":"Google 身分確認未完成，請稍後重試。");}
     });}catch(Exception e){state(false,"Google 身分服務無法開啟，請稍後重試。");}
    });
   }catch(Exception e){state(false,"無法開始身分確認，請稍後重試。");}});
