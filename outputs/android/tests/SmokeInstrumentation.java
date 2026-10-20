@@ -148,6 +148,15 @@ public final class SmokeInstrumentation extends Instrumentation {
   AppConfig.clearSessionIfCurrent(context,second);
   if(!AppConfig.load(context).key.isEmpty())throw new AssertionError("Current account logout failed");
  }
+ private void preferencesLayoutCheck(Context context)throws Exception{
+  new AppConfig("https://example.invalid","synthetic-preferences-token",false).save(context);
+  Activity preferences=open(ManageActivity.class);waitForIdleSync();
+  runOnMainSync(()->{
+   TextView save=find(preferences.getWindow().getDecorView(),"儲存我的偏好");android.graphics.Rect visible=new android.graphics.Rect();
+   if(save==null||!save.getGlobalVisibleRect(visible)||visible.height()<48*context.getResources().getDisplayMetrics().density)throw new AssertionError("Preferences save is not visible without scrolling");
+   if(find(preferences.getWindow().getDecorView(),"返回")==null)throw new AssertionError("Preferences back action missing");
+  });screenshot("preferences-fixed-save");AppConfig.clearSession(context);runOnMainSync(()->preferences.finish());waitForIdleSync();
+ }
  private EditText input(View view){
   if(view instanceof EditText)return (EditText)view;
   if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++){EditText found=input(((ViewGroup)view).getChildAt(i));if(found!=null)return found;}
@@ -311,6 +320,7 @@ public final class SmokeInstrumentation extends Instrumentation {
     if((appearance&WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS)==0)throw new AssertionError("Status bar icons are not dark on the light home screen");
    });
    screenshot("home");
+   if(!configureVoice)preferencesLayoutCheck(context);
    ActivityMonitor monitor=addMonitor(AccountActivity.class.getName(),null,false);
    runOnMainSync(()->login[0].performClick());
    Activity account=waitForMonitorWithTimeout(monitor,5000);removeMonitor(monitor);

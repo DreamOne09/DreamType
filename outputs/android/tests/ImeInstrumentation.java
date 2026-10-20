@@ -11,7 +11,7 @@ import java.io.*;
 
 public final class ImeInstrumentation extends Instrumentation {
  private boolean visualOnly;
- @Override public void onCreate(Bundle args){super.onCreate(args);visualOnly=args!=null&&args.getBoolean("visual_only",false);if(args!=null&&"true".equals(args.getString("visual_only")))visualOnly=true;start();}
+ @Override public void onCreate(Bundle args){super.onCreate(args);visualOnly=args!=null&&"true".equals(args.getString("visual_only"));start();}
  private AccessibilityNodeInfo find(AccessibilityNodeInfo node,String text){
   if(node==null)return null;
   if(text.contentEquals(node.getText()==null?"":node.getText())||text.contentEquals(node.getContentDescription()==null?"":node.getContentDescription()))return node;
