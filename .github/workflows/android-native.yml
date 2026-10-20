@@ -52,12 +52,18 @@ jobs:
             python scripts/check_native_ime.py --account
             python scripts/check_native_ime.py --backend
             python scripts/check_native_ime.py --backend --interruptions
+            adb shell settings put system font_scale 1.3
+            adb shell am instrument -w -e visual_only true tw.dreamtype.fixture/.ImeInstrumentation | tee work/emulator-probe/large-font.txt
+            grep -q 'ime_visual=passed' work/emulator-probe/large-font.txt
+            adb pull /sdcard/Android/data/tw.dreamtype.fixture/files work/emulator-probe/screenshots/large-font
+            adb shell settings put system font_scale 1.0
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: native-probe-evidence
           path: |
             work/emulator-probe/result.txt
+            work/emulator-probe/large-font.txt
             work/emulator-probe/restart-*.txt
             work/emulator-probe/ime-result.json
             work/emulator-probe/ime-instrumentation.txt

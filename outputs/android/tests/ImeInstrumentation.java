@@ -10,7 +10,8 @@ import android.widget.EditText;
 import java.io.*;
 
 public final class ImeInstrumentation extends Instrumentation {
- @Override public void onCreate(Bundle args){super.onCreate(args);start();}
+ private boolean visualOnly;
+ @Override public void onCreate(Bundle args){super.onCreate(args);visualOnly=args!=null&&args.getBoolean("visual_only",false);if(args!=null&&"true".equals(args.getString("visual_only")))visualOnly=true;start();}
  private AccessibilityNodeInfo find(AccessibilityNodeInfo node,String text){
   if(node==null)return null;
   if(text.contentEquals(node.getText()==null?"":node.getText())||text.contentEquals(node.getContentDescription()==null?"":node.getContentDescription()))return node;
@@ -52,6 +53,11 @@ public final class ImeInstrumentation extends Instrumentation {
   android.graphics.Rect del=bounds("退格刪除");long down=SystemClock.uptimeMillis();touch(down,0,del.centerX(),del.centerY());SystemClock.sleep(700);touch(down,1,del.centerX(),del.centerY());SystemClock.sleep(200);
   int remaining=editorText(activity).length();if(remaining>=9||remaining==0)throw new AssertionError("Hold backspace failed: "+remaining);
   setEditor(activity,"",0,0);
+  click("開始說話");
+  long cancelDeadline=SystemClock.uptimeMillis()+10000;while(find("取消這次錄音")==null&&SystemClock.uptimeMillis()<cancelDeadline)SystemClock.sleep(100);
+  click("取消這次錄音");SystemClock.sleep(300);
+  if(find("開始說話")==null||find("停止並整理")!=null)throw new AssertionError("Recording cancellation did not return to idle");
+  screenshot("ime-cancelled");
   android.graphics.Rect mic=bounds("開始說話");if(Math.abs(mic.width()-mic.height())>3)throw new AssertionError("Speak button not circular");
   down=SystemClock.uptimeMillis();touch(down,0,mic.centerX(),mic.centerY());
   long menuDeadline=SystemClock.uptimeMillis()+5000;while(find("翻譯成英文")==null&&SystemClock.uptimeMillis()<menuDeadline)SystemClock.sleep(100);
@@ -84,7 +90,7 @@ public final class ImeInstrumentation extends Instrumentation {
     setEditor(activity,"",0,0);
     click("插入文字");SystemClock.sleep(500);
     setEditor(activity,"明天下午四點半到板橋。補充",13,13);
-    if(find("復原剛才輸入")!=null)click("復原剛才輸入");SystemClock.sleep(300);
+    if(find("復原剛才輸入")!=null&&find("復原剛才輸入").isEnabled())click("復原剛才輸入");SystemClock.sleep(300);
     if(!"明天下午四點半到板橋。補充".equals(editorText(activity)))throw new AssertionError("Undo changed edited text");
     return;}
    SystemClock.sleep(100);
@@ -114,6 +120,12 @@ public final class ImeInstrumentation extends Instrumentation {
    check(activity,101,true,"ime-normal");
    check(activity,102,false,"ime-password");
    check(activity,101,true,"ime-normal-return");
+   if(visualOnly){
+    int width=getTargetContext().getResources().getDisplayMetrics().widthPixels;
+    float density=getTargetContext().getResources().getDisplayMetrics().density;
+    for(String label:new String[]{"開始說話","換鍵盤","退格刪除","換行","復原剛才輸入","更多"}){android.graphics.Rect r=bounds(label);if(r.left<0||r.right>width||r.width()<48*density-2||r.height()<48*density-2)throw new AssertionError("Clipped or undersized control: "+label);}
+    screenshot("ime-large-font");result.putString("ime_visual","passed");finish(Activity.RESULT_OK,result);return;
+   }
    interactionChecks(activity);
    recordAndInsert(activity);
    result.putString("ime","passed");result.putString("checks","circle, selection and emoji backspace, hold delete, long press slide translation, external editor, real IME window, password disables voice, normal field restores voice, MediaRecorder upload, fixed Traditional Chinese response inserted");finish(Activity.RESULT_OK,result);
