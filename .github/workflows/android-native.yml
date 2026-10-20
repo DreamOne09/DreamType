@@ -53,10 +53,17 @@ jobs:
             python scripts/check_native_ime.py --backend
             python scripts/check_native_ime.py --backend --interruptions
             adb shell settings put system font_scale 1.3
+            adb shell ime reset
+            adb shell am instrument -w -e configure_voice true -e account_voice false tw.localvoice.keyboard/.SmokeInstrumentation | tee work/emulator-probe/large-font-setup.txt
+            grep -q 'dreamtype=passed' work/emulator-probe/large-font-setup.txt
+            adb shell pm grant tw.localvoice.keyboard android.permission.RECORD_AUDIO
+            adb shell ime enable tw.localvoice.keyboard/.VoiceIme
+            adb shell ime set tw.localvoice.keyboard/.VoiceIme
+            adb shell settings put secure show_ime_with_hard_keyboard 1
             adb shell am instrument -w -e visual_only true tw.dreamtype.fixture/.ImeInstrumentation | tee work/emulator-probe/large-font.txt
-            grep -q 'ime_visual=passed' work/emulator-probe/large-font.txt
             adb pull /sdcard/Android/data/tw.dreamtype.fixture/files work/emulator-probe/screenshots/large-font
             adb shell settings put system font_scale 1.0
+            grep -q 'ime_visual=passed' work/emulator-probe/large-font.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -64,6 +71,7 @@ jobs:
           path: |
             work/emulator-probe/result.txt
             work/emulator-probe/large-font.txt
+            work/emulator-probe/large-font-setup.txt
             work/emulator-probe/restart-*.txt
             work/emulator-probe/ime-result.json
             work/emulator-probe/ime-instrumentation.txt
