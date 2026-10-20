@@ -28,12 +28,17 @@ public final class ImeInstrumentation extends Instrumentation {
  }
  private void click(String label){
   long deadline=SystemClock.uptimeMillis()+20000;
+  android.graphics.Rect previous=new android.graphics.Rect();long stableSince=0;
   while(SystemClock.uptimeMillis()<deadline){
    AccessibilityNodeInfo node=find(label);
-   if(node!=null&&node.isEnabled()){
+   if(node!=null&&node.isEnabled()&&node.isVisibleToUser()){
     android.graphics.Rect r=new android.graphics.Rect();node.getBoundsInScreen(r);
-    if(!r.isEmpty()){long down=SystemClock.uptimeMillis();touch(down,0,r.centerX(),r.centerY());touch(down,1,r.centerX(),r.centerY());return;}
-   }
+    // IME height changes animate the window. Wait for rendered bounds before
+    // injecting a real touch, rather than tapping the pre-layout coordinates.
+    if(!r.isEmpty()&&r.equals(previous)){
+     if(SystemClock.uptimeMillis()-stableSince>=300){long down=SystemClock.uptimeMillis();touch(down,0,r.centerX(),r.centerY());touch(down,1,r.centerX(),r.centerY());return;}
+    }else{previous.set(r);stableSince=SystemClock.uptimeMillis();}
+   }else{previous.setEmpty();stableSince=0;}
    SystemClock.sleep(100);
   }
   throw new AssertionError("Cannot click: "+label);
@@ -55,7 +60,8 @@ public final class ImeInstrumentation extends Instrumentation {
   setEditor(activity,"",0,0);
   click("開始說話");
   long cancelDeadline=SystemClock.uptimeMillis()+10000;while(find("取消這次錄音")==null&&SystemClock.uptimeMillis()<cancelDeadline)SystemClock.sleep(100);
-  click("取消這次錄音");SystemClock.sleep(300);
+  screenshot("ime-before-cancel");click("取消這次錄音");
+  cancelDeadline=SystemClock.uptimeMillis()+5000;while(find("開始說話")==null&&SystemClock.uptimeMillis()<cancelDeadline)SystemClock.sleep(100);
   if(find("開始說話")==null||find("停止並整理")!=null)throw new AssertionError("Recording cancellation did not return to idle");
   screenshot("ime-cancelled");
   android.graphics.Rect mic=bounds("開始說話");if(Math.abs(mic.width()-mic.height())>3)throw new AssertionError("Speak button not circular");
