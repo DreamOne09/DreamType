@@ -43,7 +43,18 @@ public final class ImeInstrumentation extends Instrumentation {
   }
   throw new AssertionError("Cannot click: "+label);
  }
- private android.graphics.Rect bounds(String label){AccessibilityNodeInfo node=find(label);if(node==null)throw new AssertionError("Missing "+label);android.graphics.Rect r=new android.graphics.Rect();node.getBoundsInScreen(r);return r;}
+ private android.graphics.Rect bounds(String label){
+  long deadline=SystemClock.uptimeMillis()+10000,stableSince=0;android.graphics.Rect previous=new android.graphics.Rect();
+  while(SystemClock.uptimeMillis()<deadline){
+   AccessibilityNodeInfo node=find(label);android.graphics.Rect r=new android.graphics.Rect();
+   if(node!=null&&node.isVisibleToUser())node.getBoundsInScreen(r);
+   if(!r.isEmpty()&&r.equals(previous)){
+    if(SystemClock.uptimeMillis()-stableSince>=300)return r;
+   }else{previous.set(r);stableSince=SystemClock.uptimeMillis();}
+   SystemClock.sleep(100);
+  }
+  throw new AssertionError("Missing or moving control: "+label);
+ }
  private void touch(long down,int action,float x,float y){android.view.MotionEvent e=android.view.MotionEvent.obtain(down,SystemClock.uptimeMillis(),action,x,y,0);e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);getUiAutomation().injectInputEvent(e,true);e.recycle();}
  private String editorText(Activity activity){final String[] value={""};runOnMainSync(()->value[0]=((EditText)activity.findViewById(101)).getText().toString());return value[0];}
  private void setEditor(Activity activity,String text,int start,int end){runOnMainSync(()->{EditText f=activity.findViewById(101);f.setText(text);f.setSelection(start,end);});waitForIdleSync();SystemClock.sleep(750);}
