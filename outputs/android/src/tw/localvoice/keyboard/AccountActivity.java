@@ -34,6 +34,7 @@ public final class AccountActivity extends Activity {
  private void show(){
   ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Ui.PAPER);page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(24),dp(20),dp(24),dp(24));scroll.addView(page);setContentView(scroll);
   scroll.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
+  Ui.quiet(button("返回",false,v->finish()));
   text("我的帳號",28);AppConfig current=AppConfig.load(this);displayed=current;
   try { final Class<?> googlePage=Class.forName("tw.localvoice.keyboard.GoogleAccountActivity");button("Google 帳號登入與管理",false,v->startActivity(new android.content.Intent(this,googlePage))); } catch(ClassNotFoundException ignored) { }
   status=new TextView(this);status.setTextColor(Ui.MUTED);status.setTextSize(16);status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
@@ -52,10 +53,11 @@ public final class AccountActivity extends Activity {
     new AlertDialog.Builder(this).setTitle("永久刪除帳號？").setMessage("線上帳號、所有登入、個人偏好與用量紀錄將刪除。歷史備份不會立即改寫，主機保留帳號 ID 與刪除時間供還原核對。詳見「資料與隱私」。").setView(password).setPositiveButton("永久刪除",(d,w)->{final String pass=password.getText().toString();password.setText("");task(()->{VoiceApi.json(current,"DELETE","/v2/me",new JSONObject().put("password",pass));AppConfig.clearSessionIfCurrent(this,current);clearGoogleState();return "帳號已刪除。";},true);}).setNegativeButton("取消",null).show();});
    worker.execute(()->{try{org.json.JSONArray methods=VoiceApi.json(current,"GET","/v2/me",null).optJSONArray("login_methods");if(methods==null)return;boolean hasPassword=false;for(int i=0;i<methods.length();i++)if("password".equals(methods.optString(i)))hasPassword=true;final boolean visible=hasPassword;runOnUiThread(()->{if(!isDestroyed()&&current.sameSession(AppConfig.load(this))){passwordAction.setVisibility(visible?View.VISIBLE:View.GONE);passwordDelete.setVisibility(visible?View.VISIBLE:View.GONE);}});}catch(Exception ignored){}});
   }else{
-   text("輸入管理者提供的網址與試用帳號。",16);
-   EditText server=field("服務網址（https://…）",AppConfig.setupServer(current.server),false);
+   text("登入你的試用帳號，服務網址已設定好。",16);
+   LinearLayout mainPage=page,connection=new LinearLayout(this);connection.setOrientation(LinearLayout.VERTICAL);
+   page=connection;EditText server=field("服務網址（https://…）",AppConfig.setupServer(current.server),false);
+   Ui.quiet(button("取得最新服務網址",false,v->DiscoverySetup.refresh(this,server,status,worker)));page=mainPage;
    EditText username=field("帳號","",false),password=field("密碼","",true);page.addView(status);
-   button("取得最新服務網址",false,v->DiscoverySetup.refresh(this,server,status,worker));
    button("登入",true,v->{
     if(current.ready()&&!replacePendingConfirmed&&new java.io.File(getNoBackupFilesDir(),"pending-recording.bin").exists()){
      new AlertDialog.Builder(this).setTitle("仍有未完成錄音").setMessage("重新登入成功後，舊登入的未完成錄音會清除。若需要保留，請取消並先回鍵盤處理。").setPositiveButton("清除舊錄音並登入",(dialog,which)->{replacePendingConfirmed=true;v.performClick();}).setNegativeButton("取消",null).show();return;
@@ -70,11 +72,12 @@ public final class AccountActivity extends Activity {
      AppConfig.replaceSession(this,current,config,me.getJSONObject("preferences"));reconnect=false;return "登入成功。回到首頁，繼續啟用鍵盤。";
     },true);
    });
-   text("目前由管理者建立帳號，不開放自行註冊。登入有效七天，到期後重新登入。",14);
+   connection.setVisibility(reconnect?View.VISIBLE:View.GONE);
+   Ui.quiet(button(reconnect?"收起連線設定 ▴":"連線設定 ▾",false,v->{boolean show=connection.getVisibility()!=View.VISIBLE;connection.setVisibility(show?View.VISIBLE:View.GONE);((Button)v).setText(show?"收起連線設定 ▴":"連線設定 ▾");}));page.addView(connection);
+   text("試用帳號由管理者提供。登入有效七天，到期後重新登入。",14);
    if(current.server.isEmpty()||reconnect)DiscoverySetup.refresh(this,server,status,worker);
   }
   button("資料與隱私",false,v->startActivity(new android.content.Intent(this,PrivacyActivity.class)));
-  button("返回",false,v->finish());
  }
  private void clearGoogleState(){try{Class.forName("tw.localvoice.keyboard.GoogleAccountActivity").getMethod("clearProviderState",android.content.Context.class).invoke(null,this);}catch(Exception ignored){}}
  @Override protected void onResume(){super.onResume();if(page!=null&&!busy&&displayed!=null&&!displayed.sameSession(AppConfig.load(this)))show();}

@@ -16,10 +16,13 @@ public final class ManageActivity extends Activity {
  private int dp(int v){return Math.round(v*getResources().getDisplayMetrics().density);}
  private void text(LinearLayout p,String s,int size){TextView t=new TextView(this);t.setText(s);t.setTextColor(Ui.INK);t.setTextSize(size);t.setPadding(0,dp(12),0,dp(8));p.addView(t);}
  private Button button(LinearLayout p,String s,View.OnClickListener action){Button b=new Button(this);b.setText(s);Ui.button(b,false);b.setOnClickListener(action);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(56));lp.setMargins(0,dp(8),0,dp(8));p.addView(b,lp);return b;}
- private EditText field(LinearLayout p,String hint,String value,int max){EditText e=new EditText(this);e.setTextSize(16);e.setText(value);e.setHint(hint);e.setMinLines(3);e.setGravity(Gravity.TOP);e.setFilters(new InputFilter[]{new InputFilter.LengthFilter(max)});e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);p.addView(e);return e;}
+ private EditText field(LinearLayout p,String hint,String value,int max){EditText e=new EditText(this);e.setTextSize(16);e.setText(value);e.setHint(hint);e.setMinLines(3);e.setGravity(Gravity.TOP);e.setFilters(new InputFilter[]{new InputFilter.LengthFilter(max)});e.setPadding(dp(12),dp(12),dp(12),dp(12));android.graphics.drawable.GradientDrawable border=new android.graphics.drawable.GradientDrawable();border.setColor(android.graphics.Color.WHITE);border.setStroke(dp(1),android.graphics.Color.rgb(146,146,154));border.setCornerRadius(dp(12));e.setBackground(border);e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);p.addView(e);return e;}
  @Override public void onCreate(Bundle state){super.onCreate(state);
-  ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Ui.PAPER);LinearLayout p=new LinearLayout(this);p.setOrientation(LinearLayout.VERTICAL);p.setPadding(dp(24),dp(16),dp(24),dp(24));scroll.addView(p);setContentView(scroll);
-  scroll.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
+  LinearLayout shell=new LinearLayout(this);shell.setOrientation(LinearLayout.VERTICAL);shell.setBackgroundColor(Ui.PAPER);setContentView(shell);
+  Button back=button(shell,"返回",v->finish());Ui.quiet(back);back.setGravity(Gravity.START|Gravity.CENTER_VERTICAL);back.setPadding(dp(24),0,dp(24),0);
+  ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Ui.PAPER);shell.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));LinearLayout p=new LinearLayout(this);p.setOrientation(LinearLayout.VERTICAL);p.setPadding(dp(24),dp(16),dp(24),dp(24));scroll.addView(p);
+  LinearLayout footer=new LinearLayout(this);footer.setOrientation(LinearLayout.VERTICAL);footer.setPadding(dp(24),dp(8),dp(24),dp(8));footer.setBackgroundColor(android.graphics.Color.WHITE);shell.addView(footer);
+  shell.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
   AppConfig config=AppConfig.load(this);
   text(p,"我的 DreamType",28);text(p,config.accountMode?"偏好儲存在你的帳號，可在其他裝置取回。":"設定只保存在這支手機；其他人的偏好不會被改動。",16);
   text(p,"說完之後",20);
@@ -59,7 +62,7 @@ public final class ManageActivity extends Activity {
      message="已儲存，下次錄音生效。";
     }catch(Exception e){message=VoiceApi.friendly(e);}final String result=message;runOnUiThread(()->{if(!isDestroyed()){status.setText(result);v.setEnabled(true);}});
    });
-  });Ui.button(save,true);
+  });Ui.button(save,true);p.removeView(status);p.removeView(save);footer.addView(status);footer.addView(save);
   text(p,"連線與更新",20);
   text(p,"帳號模式：未完成錄音在手機加密保留一份，成功後刪除。超過一小時不可重試，下一次使用時清除過期檔案；登出亦清除。可在鍵盤「更多」手動刪除。",14);
   button(p,"測試電腦連線",v->{status.setText("正在測試…");v.setEnabled(false);worker.execute(()->{String result;try{VoiceApi.verify(AppConfig.load(this));result="電腦已連線。";}catch(Exception e){result=VoiceApi.friendly(e);}final String message=result;runOnUiThread(()->{if(!isDestroyed()){status.setText(message);v.setEnabled(true);}});});});
@@ -89,7 +92,7 @@ public final class ManageActivity extends Activity {
   });
   }
   try{text(p,"App 版本 "+getPackageManager().getPackageInfo(getPackageName(),0).versionName,14);}catch(Exception ignored){}
-  button(p,"返回",v->finish());
+
  }
  @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
 }

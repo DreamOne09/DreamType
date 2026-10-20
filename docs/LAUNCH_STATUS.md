@@ -1,10 +1,12 @@
-# 上線狀態（2026-10-18）
+# 上線狀態（2026-10-21）
+
+最新預覽版為 [0.9.22-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.22-rc1)，versionCode 42。鍵盤、首次登入、設定與網頁 UI 已更新，原簽章／公開下載雜湊及 Android 16 操作與 1.3 倍字體驗證通過。仍是免費邀請測試，沒有啟用付款或 Google OAuth；Pixel 9 尚待驗收。見 [交付證據](RELEASE_0_9_22.md)。
 
 部署操作新增 [資料庫逐步升級與回復](STORAGE_UPGRADE.md)：只讀預檢、明確離線升級及完整合成還原鏈已有工具與證據，正式主機仍未遷移。
 
 目前是可下載的封閉測試產品，尚不能公開付費上線，也沒有證據證明整體比 Typeless 更好。本文彙整當前差距，歷史版本文件的完成項目不能代替這些門檻。
 
-最新預覽版為 [0.9.21-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.21-rc1)，versionCode 41。已修正上傳進度與預覽版更新判斷，沿用原套件與簽章。公開未登入下載雜湊、v2/v3 簽章、22 組 JVM 契約、Android 16 原生流程與 Play APK/AAB/lint 已核對；Pixel 9 與真實付款仍待驗收。詳見 [版本證據](RELEASE_0_9_21.md)。
+前一版為 [0.9.21-rc1](https://github.com/DreamOne09/DreamType/releases/tag/v0.9.21-rc1)，versionCode 41。已修正上傳進度與預覽版更新判斷，沿用原套件與簽章。公開未登入下載雜湊、v2/v3 簽章、22 組 JVM 契約、Android 16 原生流程與 Play APK/AAB/lint 已核對；Pixel 9 與真實付款仍待驗收。詳見 [版本證據](RELEASE_0_9_21.md)。
 
 | 要求 | 已有證據 | 尚缺 |
 |---|---|---|
@@ -43,7 +45,7 @@
 | 家用正式主機 | 固定 HTTPS 入口、schema 4 免費邀請帳號、中文整理／翻譯、常駐 ASR、R2 加密同步；新版管理頁已部署 | 付費服務、無人值守可用性或異機復原完成 |
 | GitHub main | PR #90–#107 的付款模組、Google 身分驗證／schema 11–12、Android 與網頁登入／再驗證刪除候選 | 這些付款後端模組已部署或 Google 已驗收 |
 | Android 候選 | PR #106 已加入 Credential Manager Google 登入與刪除，23 組 JVM 契約及 unsigned Play APK/AAB/lint 通過 | 已發布新的簽章 APK、已在 Pixel 9 使用，或真實付款通過 |
-| 已發布 APK | 上方 0.9.21-rc1 仍為下載版本 | 包含之後 main 的所有修正 |
+| 已發布 APK | 0.9.22-rc1 為最新下載版本 | 包含之後 main 的所有修正 |
 
 付款相關部署必須先完成 [設定條件](BILLING_CONFIGURATION.md)、[schema 4→9 離線遷移](BILLING_STORAGE.md) 與 [9→10 通知遷移](NOTIFICATION_STORAGE.md)。預設啟動不自動遷移；不能為展示功能直接把線上試用資料庫切成收費模式。
 

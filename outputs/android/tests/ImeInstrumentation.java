@@ -10,7 +10,8 @@ import android.widget.EditText;
 import java.io.*;
 
 public final class ImeInstrumentation extends Instrumentation {
- @Override public void onCreate(Bundle args){super.onCreate(args);start();}
+ private boolean visualOnly;
+ @Override public void onCreate(Bundle args){super.onCreate(args);visualOnly=args!=null&&"true".equals(args.getString("visual_only"));start();}
  private AccessibilityNodeInfo find(AccessibilityNodeInfo node,String text){
   if(node==null)return null;
   if(text.contentEquals(node.getText()==null?"":node.getText())||text.contentEquals(node.getContentDescription()==null?"":node.getContentDescription()))return node;
@@ -27,17 +28,33 @@ public final class ImeInstrumentation extends Instrumentation {
  }
  private void click(String label){
   long deadline=SystemClock.uptimeMillis()+20000;
+  android.graphics.Rect previous=new android.graphics.Rect();long stableSince=0;
   while(SystemClock.uptimeMillis()<deadline){
    AccessibilityNodeInfo node=find(label);
-   if(node!=null&&node.isEnabled()){
+   if(node!=null&&node.isEnabled()&&node.isVisibleToUser()){
     android.graphics.Rect r=new android.graphics.Rect();node.getBoundsInScreen(r);
-    if(!r.isEmpty()){long down=SystemClock.uptimeMillis();touch(down,0,r.centerX(),r.centerY());touch(down,1,r.centerX(),r.centerY());return;}
-   }
+    // IME height changes animate the window. Wait for rendered bounds before
+    // injecting a real touch, rather than tapping the pre-layout coordinates.
+    if(!r.isEmpty()&&r.equals(previous)){
+     if(SystemClock.uptimeMillis()-stableSince>=300){long down=SystemClock.uptimeMillis();touch(down,0,r.centerX(),r.centerY());touch(down,1,r.centerX(),r.centerY());return;}
+    }else{previous.set(r);stableSince=SystemClock.uptimeMillis();}
+   }else{previous.setEmpty();stableSince=0;}
    SystemClock.sleep(100);
   }
   throw new AssertionError("Cannot click: "+label);
  }
- private android.graphics.Rect bounds(String label){AccessibilityNodeInfo node=find(label);if(node==null)throw new AssertionError("Missing "+label);android.graphics.Rect r=new android.graphics.Rect();node.getBoundsInScreen(r);return r;}
+ private android.graphics.Rect bounds(String label){
+  long deadline=SystemClock.uptimeMillis()+10000,stableSince=0;android.graphics.Rect previous=new android.graphics.Rect();
+  while(SystemClock.uptimeMillis()<deadline){
+   AccessibilityNodeInfo node=find(label);android.graphics.Rect r=new android.graphics.Rect();
+   if(node!=null&&node.isVisibleToUser())node.getBoundsInScreen(r);
+   if(!r.isEmpty()&&r.equals(previous)){
+    if(SystemClock.uptimeMillis()-stableSince>=300)return r;
+   }else{previous.set(r);stableSince=SystemClock.uptimeMillis();}
+   SystemClock.sleep(100);
+  }
+  throw new AssertionError("Missing or moving control: "+label);
+ }
  private void touch(long down,int action,float x,float y){android.view.MotionEvent e=android.view.MotionEvent.obtain(down,SystemClock.uptimeMillis(),action,x,y,0);e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);getUiAutomation().injectInputEvent(e,true);e.recycle();}
  private String editorText(Activity activity){final String[] value={""};runOnMainSync(()->value[0]=((EditText)activity.findViewById(101)).getText().toString());return value[0];}
  private void setEditor(Activity activity,String text,int start,int end){runOnMainSync(()->{EditText f=activity.findViewById(101);f.setText(text);f.setSelection(start,end);});waitForIdleSync();SystemClock.sleep(750);}
@@ -52,6 +69,13 @@ public final class ImeInstrumentation extends Instrumentation {
   android.graphics.Rect del=bounds("退格刪除");long down=SystemClock.uptimeMillis();touch(down,0,del.centerX(),del.centerY());SystemClock.sleep(700);touch(down,1,del.centerX(),del.centerY());SystemClock.sleep(200);
   int remaining=editorText(activity).length();if(remaining>=9||remaining==0)throw new AssertionError("Hold backspace failed: "+remaining);
   setEditor(activity,"",0,0);
+  android.graphics.Rect idleMic=bounds("開始說話");click("開始說話");
+  long cancelDeadline=SystemClock.uptimeMillis()+10000;while(find("取消這次錄音")==null&&SystemClock.uptimeMillis()<cancelDeadline)SystemClock.sleep(100);
+  if(!idleMic.equals(bounds("停止並整理")))throw new AssertionError("Recording moved the main button");
+  screenshot("ime-before-cancel");click("取消這次錄音");
+  cancelDeadline=SystemClock.uptimeMillis()+5000;while(find("開始說話")==null&&SystemClock.uptimeMillis()<cancelDeadline)SystemClock.sleep(100);
+  if(find("開始說話")==null||find("停止並整理")!=null)throw new AssertionError("Recording cancellation did not return to idle");
+  screenshot("ime-cancelled");
   android.graphics.Rect mic=bounds("開始說話");if(Math.abs(mic.width()-mic.height())>3)throw new AssertionError("Speak button not circular");
   down=SystemClock.uptimeMillis();touch(down,0,mic.centerX(),mic.centerY());
   long menuDeadline=SystemClock.uptimeMillis()+5000;while(find("翻譯成英文")==null&&SystemClock.uptimeMillis()<menuDeadline)SystemClock.sleep(100);
@@ -84,7 +108,7 @@ public final class ImeInstrumentation extends Instrumentation {
     setEditor(activity,"",0,0);
     click("插入文字");SystemClock.sleep(500);
     setEditor(activity,"明天下午四點半到板橋。補充",13,13);
-    if(find("復原剛才輸入")!=null)click("復原剛才輸入");SystemClock.sleep(300);
+    if(find("復原剛才輸入")!=null&&find("復原剛才輸入").isEnabled())click("復原剛才輸入");SystemClock.sleep(300);
     if(!"明天下午四點半到板橋。補充".equals(editorText(activity)))throw new AssertionError("Undo changed edited text");
     return;}
    SystemClock.sleep(100);
@@ -114,6 +138,12 @@ public final class ImeInstrumentation extends Instrumentation {
    check(activity,101,true,"ime-normal");
    check(activity,102,false,"ime-password");
    check(activity,101,true,"ime-normal-return");
+   if(visualOnly){
+    int width=getTargetContext().getResources().getDisplayMetrics().widthPixels;
+    float density=getTargetContext().getResources().getDisplayMetrics().density;
+    for(String label:new String[]{"開始說話","換鍵盤","退格刪除","換行","復原剛才輸入","更多"}){android.graphics.Rect r=bounds(label);if(r.left<0||r.right>width||r.width()<48*density-2||r.height()<48*density-2)throw new AssertionError("Clipped or undersized control: "+label);}
+    screenshot("ime-large-font");result.putString("ime_visual","passed");finish(Activity.RESULT_OK,result);return;
+   }
    interactionChecks(activity);
    recordAndInsert(activity);
    result.putString("ime","passed");result.putString("checks","circle, selection and emoji backspace, hold delete, long press slide translation, external editor, real IME window, password disables voice, normal field restores voice, MediaRecorder upload, fixed Traditional Chinese response inserted");finish(Activity.RESULT_OK,result);

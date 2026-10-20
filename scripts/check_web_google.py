@@ -93,6 +93,8 @@ def check(executable, output):
         disabled=True;page.get_by_role('button',name='使用 Google 帳號',exact=True).click()
         expect(page.locator('#status')).to_contain_text('尚未開放')
         expect(page.locator('#login button')).to_be_enabled()
+        page.reload();expect(page.get_by_role('button',name='使用 Google 帳號',exact=True,include_hidden=True)).to_be_hidden()
+        expect(page.locator('#login button')).to_be_enabled()
         assert not errors,errors
         browser.close()
     report={'passed':True,'real_google_acceptance':False,'checks':['lazy SDK','explicit signup','challenge nonce','cancel rejects late callback','Google-only deletion','deletion cancellation','dictation login and logout','unavailable fallback','memory only','mobile width'],'browser_errors':errors}

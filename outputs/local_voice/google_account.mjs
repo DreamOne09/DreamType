@@ -28,6 +28,12 @@ export function mountGoogle(root, {run, say, getToken, accept, deleted, deletion
   let cancel = () => {}, active = false;
   const entry = button(deletion ? '用 Google 再次驗證並刪除' : '使用 Google 帳號', () => run(open), root);
   const choices = document.createElement('div'); root.append(choices);
+  // Do not advertise a login method the installed service has not enabled.
+  // This probes our own origin only; the Google SDK remains explicitly opt-in.
+  entry.hidden = true;
+  if (location.origin === ORIGIN) api('auth/google/config').then(config => {
+    entry.hidden = !(/^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(config.client_id) && typeof config.signup_enabled === 'boolean');
+  }).catch(() => {});
   addEventListener('pagehide', () => cancel());
   async function open() {
     if (location.origin !== ORIGIN) throw Error('Google 登入請使用 https://dreamtype.dreamone.li。');

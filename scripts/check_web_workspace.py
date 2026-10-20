@@ -79,8 +79,16 @@ def check(executable,output):
             page.set_viewport_size({'width':360,'height':800})
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
             page.screenshot(path=str(output/'mobile.png'),full_page=True)
-            page.locator('#record').click();page.get_by_text('正在錄音，再按一次就會停止。',exact=True).wait_for()
-            page.locator('#cancel').click();page.get_by_text('已取消，沒有上傳這次錄音。',exact=True).wait_for()
+            for width in (320,390,700,1280):
+                page.set_viewport_size({'width':width,'height':800})
+                assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'),width
+                for control in ('#record','#copy','#erase','#undo'):
+                    assert page.locator(control).bounding_box()['height']>=48,(width,control)
+            page.emulate_media(reduced_motion='reduce')
+            page.locator('#record').focus();page.keyboard.press('Space');page.get_by_text('正在錄音，再按一次就會停止。',exact=True).wait_for()
+            assert page.locator('#record').get_attribute('aria-pressed')=='true'
+            assert page.locator('#record').evaluate("e => getComputedStyle(e).animationName")=='none'
+            page.locator('#cancel').focus();page.keyboard.press('Enter');page.get_by_text('已取消，沒有上傳這次錄音。',exact=True).wait_for()
             assert len(uploads)==2
             page.locator('#logout').click();page.locator('#signin').wait_for(state='visible')
             assert page.locator('#text').input_value()==''

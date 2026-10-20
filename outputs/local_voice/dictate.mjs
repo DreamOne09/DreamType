@@ -8,6 +8,7 @@ let busy = false, recorder = null, stream = null, timer = null, canceled = false
 let original = '', undo = '', receiptId = '', operation = 0;
 const say = text => { $('status').textContent = text; };
 function controls() {
+  $('workspace').setAttribute('aria-busy', String(busy));
   $('record').disabled = busy || !!session.pending || !!receiptId;
   $('record').setAttribute('aria-pressed', String(!!recorder));
   $('record-label').textContent = recorder ? '停止錄音' : '開始錄音';
@@ -48,6 +49,7 @@ async function display(progress) {
     original = typeof result.raw_text === 'string' ? result.raw_text : '';
     $('raw').textContent = original || '這筆沒有提供辨識原文。'; $('restore').disabled = !original;
     $('result').hidden = false; session.pending = null;
+    if (matchMedia('(max-width:700px)').matches) $('result').scrollIntoView({block:'start', behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'});
     receiptId = result.receipt_required ? result.id : ''; $('receipt').hidden = !receiptId;
     say(result.warning ? '已完成；整理未完整成功，請核對原文。' : '完成了。你可以修改，再複製到任何地方。');
     await acknowledge(); return true;
