@@ -31,7 +31,7 @@ public final class VoiceIme extends InputMethodService {
     private AppConfig sessionConfig,recordingConfig;
     private TextView status,preview,hint,clock;
     private Button mic,edit,discard,restore,undo,modeButton,cancel;
-    private LinearLayout editRow;
+    private LinearLayout editRow,recordingActions;
     private ScrollView resultArea;
     private PopupWindow languagePanel;
     private final java.util.ArrayList<Button> languageChoices=new java.util.ArrayList<>();
@@ -126,9 +126,12 @@ public final class VoiceIme extends InputMethodService {
             case MotionEvent.ACTION_MOVE:if(e.getX()<0||e.getY()<0||e.getX()>v.getWidth()||e.getY()>v.getHeight()){deleteHeld=false;main.removeCallbacks(repeatDelete);v.setPressed(false);}return true;
             case MotionEvent.ACTION_UP:case MotionEvent.ACTION_CANCEL:deleteHeld=false;main.removeCallbacks(repeatDelete);v.setPressed(false);return true;
             default:return true;}});
-        clock=new TextView(this);clock.setTextSize(18);clock.setTextColor(Ui.INK);clock.setGravity(Gravity.CENTER);clock.setTypeface(android.graphics.Typeface.MONOSPACE);clock.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);root.addView(clock);
-        hint=new TextView(this);hint.setText("點一下說話 · 長按往上滑翻譯");hint.setTextSize(13);hint.setTextColor(Ui.MUTED);hint.setGravity(Gravity.CENTER);root.addView(hint);
-        cancel=button(root,"取消這次錄音",v->{cancelRecording();refresh();status.setText("已取消，這段錄音沒有上傳。");},1f);cancel.setLayoutParams(new LinearLayout.LayoutParams(-1,dp(48)));Ui.quiet(cancel);
+        // Keep the same 48dp area while recording so Stop does not move after Start.
+        FrameLayout feedback=new FrameLayout(this);root.addView(feedback,new LinearLayout.LayoutParams(-1,dp(48)));
+        hint=new TextView(this);hint.setTextSize(13);hint.setTextColor(Ui.MUTED);hint.setGravity(Gravity.CENTER);feedback.addView(hint,new FrameLayout.LayoutParams(-1,-1));
+        recordingActions=new LinearLayout(this);recordingActions.setGravity(Gravity.CENTER_VERTICAL);feedback.addView(recordingActions,new FrameLayout.LayoutParams(-1,-1));
+        clock=new TextView(this);clock.setTextSize(18);clock.setTextColor(Ui.INK);clock.setGravity(Gravity.CENTER);clock.setTypeface(android.graphics.Typeface.MONOSPACE);clock.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);recordingActions.addView(clock,new LinearLayout.LayoutParams(dp(72),-1));
+        cancel=button(recordingActions,"取消這次錄音",v->{cancelRecording();refresh();status.setText("已取消，這段錄音沒有上傳。");},1f);cancel.setLayoutParams(new LinearLayout.LayoutParams(0,-1,1f));Ui.quiet(cancel);
         View divider=new View(this);divider.setBackgroundColor(Ui.LINE);LinearLayout.LayoutParams line=new LinearLayout.LayoutParams(-1,dp(1));line.setMargins(0,dp(12),0,0);root.addView(divider,line);
         LinearLayout row=new LinearLayout(this);root.addView(row);
         Button enter=button(row,"換行",v->{InputConnection c=getCurrentInputConnection();if(c!=null)c.commitText("\n",1);},1f);Ui.quiet(enter);
@@ -161,9 +164,9 @@ public final class VoiceIme extends InputMethodService {
         modeButton.setText(chosen.modeLabel()+" ▾");modeButton.setEnabled(!busy&&!recordingNow&&!pending&&!retained);
         mic.setContentDescription(recordingNow?(translating?"停止並翻譯":"停止並整理"):busy?(translating?"正在翻譯…":"正在整理…"):pending?"插入文字":retained?"重試上一段":"開始說話");mic.setText(recordingNow?"停止":busy?"處理中":pending?"插入":retained?"重試":"說話");mic.setEnabled(!busy&&!protectedField);
         Ui.symbol(mic,recordingNow?"stop":busy?"waiting":pending?"insert":retained?"retry":"mic",Color.WHITE,28);
-        if(clock!=null){clock.setVisibility(recordingNow?View.VISIBLE:View.GONE);if(!recordingNow)clock.setText("0:00");}
-        if(cancel!=null)cancel.setVisibility(recordingNow?View.VISIBLE:View.GONE);
-        if(hint!=null)hint.setText(recordingNow?"再按圓形按鈕，停止並送出":pending?"確認內容後按插入":retained?"按重試可接續上一段錄音":busy?"錄音已送達，請稍候":"長按圓形按鈕，往上滑選擇翻譯");
+        if(clock!=null&&!recordingNow)clock.setText("0:00");
+        if(recordingActions!=null)recordingActions.setVisibility(recordingNow?View.VISIBLE:View.GONE);
+        if(hint!=null){hint.setVisibility(recordingNow?View.GONE:View.VISIBLE);hint.setText(pending?"確認內容後按插入":retained?"按重試可接續上一段錄音":busy?"錄音已送達，請稍候":"長按圓形按鈕，往上滑選擇翻譯");}
         if(undo!=null)undo.setEnabled(!pending&&!busy&&!recordingNow&&!protectedField&&undoEnd>=0&&generation==undoGeneration);
         if(editRow!=null)editRow.setVisibility(pending?View.VISIBLE:View.GONE);
         if(resultArea!=null)resultArea.setVisibility(pending?View.VISIBLE:View.GONE);

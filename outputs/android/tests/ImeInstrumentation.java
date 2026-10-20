@@ -69,8 +69,9 @@ public final class ImeInstrumentation extends Instrumentation {
   android.graphics.Rect del=bounds("退格刪除");long down=SystemClock.uptimeMillis();touch(down,0,del.centerX(),del.centerY());SystemClock.sleep(700);touch(down,1,del.centerX(),del.centerY());SystemClock.sleep(200);
   int remaining=editorText(activity).length();if(remaining>=9||remaining==0)throw new AssertionError("Hold backspace failed: "+remaining);
   setEditor(activity,"",0,0);
-  click("開始說話");
+  android.graphics.Rect idleMic=bounds("開始說話");click("開始說話");
   long cancelDeadline=SystemClock.uptimeMillis()+10000;while(find("取消這次錄音")==null&&SystemClock.uptimeMillis()<cancelDeadline)SystemClock.sleep(100);
+  if(!idleMic.equals(bounds("停止並整理")))throw new AssertionError("Recording moved the main button");
   screenshot("ime-before-cancel");click("取消這次錄音");
   cancelDeadline=SystemClock.uptimeMillis()+5000;while(find("開始說話")==null&&SystemClock.uptimeMillis()<cancelDeadline)SystemClock.sleep(100);
   if(find("開始說話")==null||find("停止並整理")!=null)throw new AssertionError("Recording cancellation did not return to idle");
