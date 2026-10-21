@@ -10,12 +10,14 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 final class Ui {
- static final int INK=Color.rgb(24,24,27), MUTED=Color.rgb(82,82,91), PAPER=Color.rgb(250,250,250), LINE=Color.rgb(228,228,231);
+ // Petal pink is paired with dark evergreen text, never small white labels.
+ static final int INK=Color.rgb(21,61,53), MUTED=Color.rgb(81,101,94), PAPER=Color.rgb(252,251,249), LINE=Color.rgb(216,222,218);
+ static final int PRIMARY=Color.rgb(245,169,197), PRIMARY_TEXT=INK, ACCENT=Color.rgb(165,49,96);
  static void button(Button b,boolean primary){
   float d=b.getResources().getDisplayMetrics().density;
-  GradientDrawable shape=new GradientDrawable();shape.setColor(primary?INK:Color.WHITE);shape.setCornerRadius(16*d);if(!primary)shape.setStroke((int)d,LINE);
+  GradientDrawable shape=new GradientDrawable();shape.setColor(primary?PRIMARY:Color.WHITE);shape.setCornerRadius(16*d);shape.setStroke(Math.max(1,(int)d),Color.rgb(119,137,128));
   b.setBackgroundTintList(null);b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22777777),shape,null));
-  b.setTextColor(new ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{}},new int[]{Color.rgb(140,140,145),primary?Color.WHITE:INK}));
+  b.setTextColor(new ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{}},new int[]{Color.rgb(140,140,145),primary?PRIMARY_TEXT:INK}));
   b.setStateListAnimator(null);b.setElevation(0);b.setAllCaps(false);b.setMinimumHeight((int)(48*d));
  }
  static void quiet(Button b){
