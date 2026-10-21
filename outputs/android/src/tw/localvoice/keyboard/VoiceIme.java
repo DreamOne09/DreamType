@@ -114,8 +114,8 @@ public final class VoiceIme extends InputMethodService {
         ScrollView scroll=new ScrollView(this);resultArea=scroll;preview=new TextView(this);preview.setTextSize(17);preview.setTextColor(Ui.INK);preview.setPadding(dp(8),dp(4),dp(8),dp(4));scroll.addView(preview);root.addView(scroll,new LinearLayout.LayoutParams(-1,dp(100)));
         LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER_VERTICAL);root.addView(controls);
         Button switcher=button(controls,"鍵盤",v->((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showInputMethodPicker(),1f);switcher.setContentDescription("換鍵盤");Ui.quiet(switcher);Ui.symbol(switcher,"keyboard",Ui.INK,24);switcher.getLayoutParams().height=dp(72);
-        mic=new Button(this);mic.setAllCaps(false);mic.setTextSize(17);mic.setGravity(Gravity.CENTER);mic.setPadding(0,dp(12),0,dp(12));mic.setTextColor(Color.WHITE);Ui.button(mic,true);
-        android.graphics.drawable.GradientDrawable circle=new android.graphics.drawable.GradientDrawable();circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);circle.setColor(Ui.INK);
+        mic=new Button(this);mic.setAllCaps(false);mic.setTextSize(17);mic.setGravity(Gravity.CENTER);mic.setPadding(0,dp(12),0,dp(12));mic.setTextColor(Ui.PRIMARY_TEXT);Ui.button(mic,true);
+        android.graphics.drawable.GradientDrawable circle=new android.graphics.drawable.GradientDrawable();circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);circle.setColor(Ui.PRIMARY);circle.setStroke(dp(1),Color.rgb(119,137,128));
         mic.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x55777777),circle,null));
         mic.setOnClickListener(v->{closeLanguages();if(pending)insertPending();else if(recordingNow)finishRecording();else if(retained)retryRecording();else startRecording();});
         mic.setOnTouchListener(this::micTouch);mic.setOnLongClickListener(v->{if(!canChooseLanguage())return false;showLanguages();return true;});
@@ -163,7 +163,7 @@ public final class VoiceIme extends InputMethodService {
         AppConfig chosen=recordingNow&&recordingConfig!=null?recordingConfig:active;boolean translating=chosen.mode.equals("translate");
         modeButton.setText(chosen.modeLabel()+" ▾");modeButton.setEnabled(!busy&&!recordingNow&&!pending&&!retained);
         mic.setContentDescription(recordingNow?(translating?"停止並翻譯":"停止並整理"):busy?(translating?"正在翻譯…":"正在整理…"):pending?"插入文字":retained?"重試上一段":"開始說話");mic.setText(recordingNow?"停止":busy?"處理中":pending?"插入":retained?"重試":"說話");mic.setEnabled(!busy&&!protectedField);
-        Ui.symbol(mic,recordingNow?"stop":busy?"waiting":pending?"insert":retained?"retry":"mic",Color.WHITE,28);
+        Ui.symbol(mic,recordingNow?"stop":busy?"waiting":pending?"insert":retained?"retry":"mic",Ui.PRIMARY_TEXT,28);
         if(clock!=null&&!recordingNow)clock.setText("0:00");
         if(recordingActions!=null)recordingActions.setVisibility(recordingNow?View.VISIBLE:View.GONE);
         if(hint!=null){hint.setVisibility(recordingNow?View.GONE:View.VISIBLE);hint.setText(pending?"確認內容後按插入":retained?"按重試可接續上一段錄音":busy?"錄音已送達，請稍候":"長按圓形按鈕，往上滑選擇翻譯");}
